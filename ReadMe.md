@@ -18,7 +18,7 @@ make
 
 # 3.修改配置项
 
-![](.\config.png)
+![](https://github.com/yubaihe/mediasync/blob/main/config.png)
 
 # 4.运行
 
