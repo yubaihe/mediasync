@@ -12,7 +12,7 @@ sudo apt-get install yasm
 # 2.编译
 
 ```
-source /home/relech/Linux/initenv.sh LINUX /home/relech/syncmedia/
+source ./initenv.sh LINUX /home/relech/syncmedia/
 make
 ```
 
