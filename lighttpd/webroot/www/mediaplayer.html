@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>展示视频和图片</title>
+</head>
+<link rel="stylesheet" href="./css/bootstrap.min.css"/>
+<link rel="stylesheet" href="./css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="./css/animate.css"/>
+<link rel="stylesheet" href="./css/Common.css"/>
+<script src="./js/Api.js?id=1"></script>
+<script src="./js/jquery-3.4.1.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script src="./js/masonry.pkgd.min.js"></script>
+<script src="./js/imagesloaded.pkgd.min.js"></script>
+<script src="./js/Common.js"></script>
+<link rel="stylesheet" href="./css/dialog.css"/>
+<script type="text/javascript" src="./js/dialog.min.js"></script>
+<script type="text/javascript" src="./js/Toast.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+
+<link href="./css/video-js.min.css" rel="stylesheet">
+<script src="./js/video.min.js"></script>
+
+<script src="./js/pinch-zoom.js"></script>
+<style type="text/css">
+    .video-js .vjs-volume-panel
+    {
+        display: none !important;
+    }
+    .video-js .vjs-big-play-button 
+    {
+        display: none !important;
+    }
+    .mediaitem { 
+        position: relative;
+        width: 98%;
+        height: 7vh;
+        border-bottom:#e9e8e8 1px solid;
+        margin: 0 auto;
+        line-height: 7vh;
+
+    }
+    .mediaitemtitle
+    {
+        width: 12vh;
+    }
+    .vjs-big-play-button {
+    left: 50% !important;
+    top: 50% !important;
+    margin-left: -2em;
+    margin-top: -1.3em;
+    }
+    video{
+        width: 100%; 
+        height: 100%; 
+        object-fit: fill;
+    }
+    .MediaItemImage{
+	width: 100%;
+	height: 100%;
+	background-image: url(./img/background.png);
+    background-size: 100% 100%;
+  	overflow: auto;
+}
+    #imgid
+    {
+    width: 100%;
+	height: 100%;
+	margin: 0 auto;
+	background-repeat:no-repeat;
+	background-size: 100% 100%;
+	background-position: center;
+}
+    </style>
+
+
+<script>
+    var ServerApi = new API("http://" + window.location.host);
+    var DeviceApi = new API("");
+    var mPlayer = null;
+
+    $(document).ready(function()
+    {
+        DisableContextMenu();
+        $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
+        $(".favorite").click(function(){
+            var favorite = $(".favorite").attr("favorite");
+            DeviceApi.device.favorite(favorite);
+            //$(this).find('img').eq(0).attr("src", "./img/favorite.png");
+        });
+        $(".cover").click(function(){
+            var cover = $(".cover").attr("cover");
+            DeviceApi.device.cover(cover);
+            //$(this).find('img').eq(0).attr("src", "./img/favorite.png");
+        });
+        $(".mediaitemdel").click(function(){
+            ShowConfirm("确认", "删除后将永远丢失该媒体的存储,请确认!", 1, "确定", function(){
+            DeviceApi.device.confirm("1");
+        }, "取消", function(){
+            //DeviceApi.device.confirm("0");
+            UnSetToast();
+        });
+        });
+        // SetInfo(35, 2,'http://192.168.1.58:80/media/2022/1664993416662.mp4','http://192.168.1.58:80/media/.media/2022/1664993416662_mp4.jpg', 720,1280,'2022-10-05 14:55:22','未知', '02分06秒', '2022-10-06 02:10:31', '9.0MB', '0','1', 'M2007J17C');
+    });
+    var g_selectGroupIds="";
+    function RequestGroupNamesFromItemID(itemid)
+    {
+        var str = "{\"action\":\"{0}\",\"id\":{1}}".format("groupnamesfromitemid", itemid);
+        ServerApi.request.groupdetail(str,function(data,textStatus,jqXHR)
+        {
+            console.log(data);
+            var jsonRoot = JSON.parse(data);
+            if(jsonRoot["status"] !=1)
+            {
+                $(".suoshufenzuvalue").html("未知");
+                return;
+            }
+            var GroupNames = "";
+            g_selectGroupIds = "";
+            for(var i = 0; i < jsonRoot["groups"].length; ++i)
+            {
+                if(GroupNames.length == 0)
+                {
+                    GroupNames = jsonRoot["groups"][i].name;
+                    g_selectGroupIds = jsonRoot["groups"][i].id;
+                }
+                else
+                {
+                    GroupNames += "&";
+                    GroupNames += jsonRoot["groups"][i].name;
+                    g_selectGroupIds += "&";
+                    g_selectGroupIds += jsonRoot["groups"][i].id;
+                }
+            }
+            if(GroupNames.length == 0)
+            {
+                $(".suoshufenzuvalue").html("未分组");
+            }
+            else
+            {
+                $(".suoshufenzuvalue").html(GroupNames);
+            }
+        });
+    }
+    var g_PinchZoom;
+    function SetInfo(id, mediatype, url, thumb, width, height, paitime, location, dur, synctime,msize,favorite,cover,name)
+    {
+        RequestGroupNamesFromItemID(id);
+        $(".contentDiv").removeClass("hidden");
+
+        var iScreenWidth = $(document.body).width();
+        var scale = (iScreenWidth*1.0)/width;
+        var iMediaContentHeight = height*scale;
+        var iMaxHeight = $(document.body).height();
+        if(mediatype == 1)
+        {
+            //图片需要留点空隙 否则无法滚动看详情，与图片的缩放相冲突了
+            iMaxHeight -= $(".mediaitem").eq(0).height();
+        }
+        if(iMediaContentHeight > iMaxHeight)
+        {
+            iMediaContentHeight = iMaxHeight;
+        }
+        $(".mediacontent").css("width", iScreenWidth + "px");
+        $(".mediacontent").css("height", iMediaContentHeight + "px");
+        $(".mediacontent > .MediaItemImage").css("width", iScreenWidth + "px");
+        $(".mediacontent > .MediaItemImage").css("height", iMediaContentHeight + "px");
+       
+        $(".fenbianlv").html(width + " X " + height);
+        $(".favorite").attr("favorite", favorite);
+        if(favorite == "1")
+        {
+            $(".favorite").find('img').eq(0).attr("src", "./img/favorite.png");
+        }
+        else
+        {
+            $(".favorite").find('img').eq(0).attr("src", "./img/nofavorite.png");
+        }
+        $(".cover").attr("cover", cover);
+        if(cover == "1")
+        {
+            $(".cover").find('img').eq(0).attr("src", "./img/cover.png");
+        }
+        else
+        {
+            $(".cover").find('img').eq(0).attr("src", "./img/nocover.png");
+        }
+
+        $(".mediaitemdur").html(dur);
+
+        $(".paisheshijian").html(paitime);
+        $(".mediaitemsize").html(msize);
+        $(".mediaitemsynctime").html(synctime);
+        $(".mediaitemname").html(name);
+        if(location == "")
+        {
+            SetPlayAddr("未知");
+        }
+        else
+        {
+            SetPlayAddr(location);
+        }
+        
+        if(mediatype == 1)
+        {
+            $(".chixushijian").addClass("hidden");
+
+            $(".MediaItemImage").removeClass("hidden");
+            $(".MediaItemVideo").addClass("hidden");
+            $(".MediaItemImage > img").attr("src",  url);
+            if(null == g_PinchZoom)
+            {
+                let el = document.querySelector('#imgid');
+                g_PinchZoom = new PinchZoom(el, {
+                    draggableUnzoomed:false
+                });
+            }
+            
+        }
+        else
+        {
+            $(".chixushijian").removeClass("hidden");
+
+            $(".MediaItemVideo").removeClass("hidden");
+            $(".MediaItemImage").addClass("hidden");
+
+            $(".vjs-volume-menu-button").css("display", "none");
+            $(".vjs-fullscreen-control").css("display", "none");
+            
+            mPlayer = videojs("videoid",{},function onPlayerReady() {
+                // videojs.log("播放器已经准备好了!");
+                this.on("ended", function () {
+                    mPlayer.play();
+                })
+            }
+            );
+            mPlayer.width(iScreenWidth);
+            mPlayer.height(iMediaContentHeight);
+            mPlayer.poster(thumb);
+            //http://47.104.165.97:8080/media/2020/VID_20200428_162537_1.mp4
+            mPlayer.ready(function(){
+            mPlayer.src(url); /*动态设置video.js播放的地址。*/
+            mPlayer.play();
+            });
+        }
+    }
+  
+    function StopPlay()
+    {
+        if(null != mPlayer)
+        {
+            mPlayer.pause();
+        }
+    }
+
+    function SetPlayAddr(addr)
+    {
+        $(".paishedidian").html(addr);
+        $(".playaddr").click(function(){
+                            DeviceApi.device.gpsaddress();
+                        });
+    }
+
+    function SetFavorite(favorite, strTips)
+    {
+        $(".favorite").attr("favorite", favorite);
+        if(favorite == 1)
+        {
+            $(".favorite").find('img').eq(0).attr("src", "./img/favorite.png");
+        }
+        else
+        {
+            $(".favorite").find('img').eq(0).attr("src", "./img/nofavorite.png");
+        }
+        Toast(strTips);
+    }
+
+    function SetCover(Cover, strTips)
+    {
+        $(".cover").attr("cover", Cover);
+        if(Cover == 1)
+        {
+            $(".cover").find('img').eq(0).attr("src", "./img/cover.png");
+        }
+        else
+        {
+            $(".cover").find('img').eq(0).attr("src", "./img/nocover.png");
+        }
+        Toast(strTips);
+    }
+
+    function ChooseTimeClick(item)
+    {
+        DeviceApi.device.updatetime();
+    }
+    function UpdatePaiSheShiJian(paitime)
+    {
+        $(".paisheshijian").html(paitime);
+    }
+    function UpdatePaiSheDiDian(addr)
+    {
+        $(".paishedidian").html(addr);
+    }
+    function SuoShuFenZuTimeClick(item)
+    {
+        DeviceApi.device.updatefenzu("" + g_selectGroupIds);
+    }
+</script>
+<body>
+    <div class="contentDiv hidden">
+    
+        <div class="mediacontent" style="width: 100%; height: 100%;">
+            <div class="MediaItemImage hidden">
+                <img id="imgid" />
+            </div>
+            <div class="MediaItemVideo hidden">
+                <video id="videoid" webkit-playsinline="true" playsinline="true"  class="video-js vjs-default-skin" width="100" height="100" controls poster="../img/background.png"  data-setup="{}">
+                </video>
+            </div>
+        </div>
+        <div class="mediaitem">
+            <div style="position: absolute;">
+                <div class="mediaitemtitle" style="float: left;">分辨率:</div>
+                <div class="fenbianlv" style="float: left;"></div>
+            </div>
+            <div style="float: right; margin-right: 2.3vh; width: 3vh; height: 3vh; margin-top: 1.5vh; ">
+                <div class="favorite canclick" style="position: relative; width: 100%; height: 100%; ">
+                    <img src="../img/nofavorite.png" style="position:absolute;width: 100%; height: 100%;"/>
+                </div>
+            </div>
+        </div>
+        <div class="mediaitem">
+            <div style="position: absolute;">
+                <div class="mediaitemtitle" style="float: left;">媒体大小:</div>
+            <div class="mediaitemsize" style="float: left;">4.8M</div>
+            </div>
+            <div style="float: right; margin-right: 2.3vh; width: 3vh; height: 3vh; margin-top: 1.5vh; ">
+                <div class="cover canclick" style="position: relative; width: 100%; height: 100%; ">
+                    <img src="../img/nocover.png" style="position:absolute;width: 100%; height: 100%;"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="mediaitem chixushijian hidden">
+            <div class="mediaitemtitle" style="float: left;">持续时间:</div>
+            <div class="mediaitemdur" style="float: left;">4S</div>
+        </div>
+        
+        <div class="mediaitem shebeimingcheng">
+            <div class="mediaitemtitle" style="float: left;">设备名称:</div>
+            <div class="mediaitemname" style="float: left;">HM 2A</div>
+        </div>
+        <div class="mediaitem synctime">
+            <div class="mediaitemtitle" style="float: left;">同步时间:</div>
+            <div class="mediaitemsynctime" style="float: left;">2020-05-08 11:00:00</div>
+        </div>
+        <div class="mediaitem suoshufenzu canclick" onclick="SuoShuFenZuTimeClick(this)">
+            <div style="position: absolute;">
+                <div class="mediaitemtitle" style="float: left;">所属分组:</div>
+                <div class="suoshufenzuvalue" style="float: left;"></div>
+            </div>
+            <div style="float: right;margin-right: 3vh; width: 1.5vh; height: 2.5vh; margin-top: 1.8vh;">
+                <div class="suoshufenzudetail" style="position: relative; width: 100%; height: 100%; ">
+                    <img style="position:absolute;width:100%; height:100%;" src="../img/more.png" style="width: 100%; height: 100%;scale: fit;"/>
+                </div>
+            </div>
+        </div>
+        <div class="mediaitem canclick" onclick="ChooseTimeClick(this)">
+            <div style="position: absolute;">
+                <div class="mediaitemtitle" style="float: left;">拍摄时间:</div>
+                <div class="paisheshijian" style="float: left;"></div>
+            </div>
+            <div style="float: right;margin-right: 3vh; width: 1.5vh; height: 2.5vh; margin-top: 1.8vh;">
+                <div class="mediatimedetail" style="position: relative; width: 100%; height: 100%; ">
+                    <img style="position:absolute;width:100%; height:100%;" src="../img/more.png" style="width: 100%; height: 100%;scale: fit;"/>
+                </div>
+            </div>
+        </div>
+        <div class="mediaitem playaddr canclick" >
+            <div style="position: absolute;">
+                <div class="mediaitemtitle" style="float: left;">拍摄地点:</div>
+                <div class="paishedidian" style="float: left;">获取中...</div>
+            </div>
+            <div style="float: right;margin-right: 3vh; width: 1.5vh; height: 2.5vh; margin-top: 1.8vh;">
+                <div class="playaddrdetail" style="position: relative; width: 100%; height: 100%; ">
+                    <img style="position:absolute;width:100%; height:100%;" src="../img/more.png" style="width: 100%; height: 100%;scale: fit;"/>
+                </div>
+            </div>
+        </div>
+        <div style="width: 100%; height: 10vh;text-align: center; margin-top: 2vh;">
+            <div class="mediaitemdel canclick" style="width:20vh; height: 7vh; background-color:#d9534f; border: #d43f3a 1px solid; margin: 0 auto; border-radius: 4px; color:white; font-size: 2.5vh; text-align: center;line-height: 7vh;">删 除</div>
+
+        </div>
+    </div>
+</body>
+</html>

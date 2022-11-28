@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>服务器图片列表</title>
+</head>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/animate.css"/>
+<link rel="stylesheet" href="css/Common.css"/>
+<script src="js/Api.js?id=1"></script>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="./js/masonry.pkgd.min.js"></script>
+<script src="./js/imagesloaded.pkgd.min.js"></script>
+<script src="./js/Common.js?id=3"></script>
+<link rel="stylesheet" href="css/dialog.css"/>
+<script src="js/dialog.min.js"></script>
+<script src="js/Toast.js"></script>
+<script src="js/baidumap.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+
+
+<style type="text/css">
+.grid-itemmedia { 
+    float: left;
+    width: 33%; 
+}
+.mediaselect
+{
+    content:url(./img/picsel.png);
+}
+.mediaunselect
+{
+    content:url(./img/picunsel.png);
+}
+</style>
+<script>
+    //var ServerApi = new API("http://" + "47.104.165.97:8080");
+    var ServerApi = new API("http://" + window.location.host);
+    var DeviceApi = new API("");
+    function SetDefaultImg()
+    {
+        $("img").on("error", function () {
+            $(this).attr("src", "../img/background.png");
+        });
+    }
+    function RemoveItem(id)
+    {
+        var grid = $(".grid").masonry({
+                itemSelector:'.grid-itemmedia',
+                columnWidth: '.grid-itemmedia'
+            });
+            
+            grid.on( 'removeComplete', function(){
+                ShowFinishPage();
+            } );
+        grid.masonry('remove', $(".grid-item" + id) ).masonry('layout');
+    }
+    var year = GetUrlParam("year");
+    if(year == null)
+    {
+        year = "recentupload";
+    }
+    var month = GetUrlParam("month");
+    if(month == null)
+    {
+        month = 0;
+    }
+    var day = GetUrlParam("day");
+    if(day == null)
+    {
+        day = 0;
+    }
+    var addr = decodeURI(GetUrlParam("addr"));
+    if(addr == "null")
+    {
+        addr = "";
+    }
+    var gid = GetUrlParam("gid");
+    if(gid == null)
+    {
+        gid = 0;
+    }
+    
+    // console.log(addr);
+    var pageindex = 0;
+    var oldPageIndex = pageindex;
+    var pepage = 20;
+    var bFinish = false;
+
+    function NextPage()
+    {
+        if(bFinish)
+        {
+            return ;
+        }
+        if(year == "recentupload")
+        {
+            var str = "{\"action\":\"{0}\",\"page\":{1},\"limit\":{2},\"devnames\":\"{3}\",\"location\":\"{4}\"}".format("recentupload", pageindex, pepage, GetSelectDeviceString(), addr);
+            ServerApi.request.recentupload(str,function(data,textStatus,jqXHR)
+            {
+                var jsonRoot = JSON.parse(data);
+                AssembleItems2(jsonRoot);
+            },function(xhr,textStatus)
+            {
+                oldPageIndex = 0;
+            });
+        }
+        else if(year == "favorite")
+        {
+            var str = "{\"action\":\"{0}\",\"page\":{1},\"limit\":{2},\"devnames\":\"{3}\",\"location\":\"{4}\"}".format("favorite", pageindex, pepage, GetSelectDeviceString(), addr);
+            ServerApi.request.favorite(str,function(data,textStatus,jqXHR)
+            {
+                var jsonRoot = JSON.parse(data);
+                AssembleItems2(jsonRoot);
+            },function(xhr,textStatus)
+            {
+                oldPageIndex = 0;
+            });
+        }
+        else if(year == "groupitem")
+        {
+            var str = "{\"action\":\"{0}\",\"page\":{1},\"gid\":{2},\"limit\":{3},\"devnames\":\"{4}\"}".format("groupitemlist", pageindex, gid, pepage, GetSelectDeviceString());
+            ServerApi.request.groupitemlist(str,function(data,textStatus,jqXHR)
+            {
+                var jsonRoot = JSON.parse(data);
+                AssembleItems2(jsonRoot);
+            },function(xhr,textStatus)
+            {
+                oldPageIndex = 0;
+            });
+        }
+        else if(parseInt(year) != "NaN")
+        {
+            var str = "{\"action\":\"{0}\",\"year\":{1},\"page\":{2},\"limit\":{3},\"devnames\":\"{4}\",\"location\":\"{5}\",\"month\":\"{6}\",\"day\":\"{7}\"}".format("yearitemlist", year, pageindex, pepage, GetSelectDeviceString(), addr, month, day);
+            ServerApi.request.yearitemlist(str,function(data,textStatus,jqXHR)
+            {
+                var jsonRoot = JSON.parse(data);
+                AssembleItems2(jsonRoot);
+            },function(xhr,textStatus)
+            {
+                oldPageIndex = 0;
+            });
+        }
+    }
+
+    function AssembleItems2(jsonRoot)
+    {
+        var items =  jsonRoot["items"];
+        if(items.length == 0)
+        {
+            bFinish = true;
+            ShowFinishPage();
+            //DeviceApi.device.toast("已全部加载!");
+            return;
+        }
+        for(var i = 0; i < items.length; ++i)
+        {
+            var id = items[i]["id"];
+            var width = items[i]["w"];
+            var height = items[i]["h"];
+            var duration = items[i]["dur"];
+            var mediatype = items[i]["mtype"];
+            var mediasize = items[i]["msize"];
+            var mediaaddr = items[i]["maddr"];
+            var html = $(".template .grid-itemmedia").prop("outerHTML");
+            var itemdiv = $(html);
+            itemdiv.addClass("grid-item" + id);
+            itemdiv.attr("itemid", id);
+            itemdiv.attr("mediatype", mediatype);
+            itemdiv.find(".imgdiv").eq(0).css("height" , GetHeight(width, height) + "px");
+            //itemdiv.find(".picname").eq(0).html(mediaaddr);
+            itemdiv.find(".filesize").eq(0).html(SizeToString(mediasize));
+            itemdiv.find(".mediapic").eq(0).attr("src", GetPic(mediaaddr));
+            if(mediatype == "1")
+            {
+                //图片
+                itemdiv.find(".videoinfo").eq(0).addClass("hidden");
+            }
+            else
+            {
+                //视频
+                var time = SecToTime(duration);
+                itemdiv.find(".videoduration").eq(0).html(time);
+                itemdiv.find(".videoinfo").eq(0).removeClass("hidden");
+            }
+            // itemdiv.click(function(){
+            //     //alert($(this).attr("itemid"));
+            //     DeviceApi.device.itemdetail($(this).attr("itemid"));
+            //     //grid.masonry( 'remove', $(".grid-item" + $(this).attr("value")) ).masonry('layout');
+            // });
+            OptMouseTouch(itemdiv);
+            $(".grid").append(itemdiv).masonry("appended", itemdiv);
+            //$(".itemdiv").removeClass("grid-item" + id);
+        }
+        pageindex++;
+    }
+
+    function ShowFinishPage()
+    {
+        var gridHeight = $(".grid").height();
+        var windowHeight = $(this).height();
+        if(gridHeight > windowHeight)
+        {
+            $(".finishcontent").css("display", "table");
+            var iCount = $(".grid-itemmedia").length - 1;
+            $(".finishcontenttongji").html("总数量( " + iCount + " )");
+        }
+        else
+        {
+            $(".finishcontent").css("display", "none");
+        }
+    }
+
+    var MainContainer = null;
+    $(document).ready(function()
+    {
+        LoadBaiduMapScript(function(){
+            CheckGps();
+        });
+        var bodyHeight = $("body").height();
+        DisableContextMenu();
+        MainContainer = $('body').overlayScrollbars({ 
+            scrollbars:{autoHide:'scroll'},
+            callbacks:{
+                onScroll:function()
+                {
+                    let positionY = MainContainer.scroll().position.y ; 
+                    let maxY = MainContainer.scroll().max.y; 
+                    if (maxY - positionY < bodyHeight/3 && oldPageIndex != pageindex) 
+                    {
+                        oldPageIndex = pageindex;
+                        NextPage();
+                    }
+                }
+            }
+        }).overlayScrollbars();
+        if(year == "recentupload")
+        {
+            var str = "{\"action\":\"{0}\",\"page\":{1},\"limit\":{2},\"devnames\":\"{3}\"}".format("recentupload", pageindex, pepage, GetSelectDeviceString());
+            ServerApi.request.recentupload(str,function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                AssembleItems(jsonRoot);
+            
+            },function(xhr,textStatus)
+            {
+            });
+        }
+        else if(year == "favorite")
+        {
+            var str = "{\"action\":\"{0}\",\"page\":{1},\"limit\":{2},\"devnames\":\"{3}\"}".format("favorite", pageindex, pepage, GetSelectDeviceString());
+            ServerApi.request.favorite(str,function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                AssembleItems(jsonRoot);
+            
+            },function(xhr,textStatus)
+            {
+            });
+        }
+        else if(year == "groupitem")
+        {
+            var str = "{\"action\":\"{0}\",\"page\":{1},\"gid\":{2},\"limit\":{3},\"devnames\":\"{4}\"}".format("groupitemlist", pageindex, gid, pepage, GetSelectDeviceString());
+            ServerApi.request.groupitemlist(str,function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                AssembleItems(jsonRoot);
+            
+            },function(xhr,textStatus)
+            {
+            });
+        }
+        else if(parseInt(year) != "NaN")
+        {
+            var str = "{\"action\":\"{0}\",\"year\":{1},\"page\":{2},\"limit\":{3},\"devnames\":\"{4}\",\"location\":\"{5}\",\"month\":\"{6}\",\"day\":\"{7}\"}".format("yearitemlist", year, pageindex, pepage, GetSelectDeviceString(), addr, month, day);
+            ServerApi.request.yearitemlist(str,function(data,textStatus,jqXHR)
+            {
+                // console.log(data);
+                var jsonRoot = JSON.parse(data);
+                AssembleItems(jsonRoot);
+            
+            },function(xhr,textStatus)
+            {
+            });
+            return;
+        }
+        
+    });
+
+    function GetHeight(width, height)
+    {
+        var iItemWidth = $(window).width()/3.0;
+        // console.log("width:" +width+"iItemWidth:" + iItemWidth + "scale:" + iItemWidth/width*1.0);
+        return iItemWidth/width*1.0*height;
+
+    }
+    function AssembleItems(jsonRoot)
+    {
+        var items =  jsonRoot["items"];
+        if(items.length == 0)
+        {
+            bFinish = true;
+            //DeviceApi.device.toast("未查询到媒体数据!");
+            $(".nodatadiv").removeClass("hidden");
+            return;
+        }
+        for(var i = 0; i < items.length; ++i)
+        {
+            //"id": "9", "w": "2448", "h": "3264", "dur": "0", "mtype": "1", "msize": "11575152", "maddr": "2020\/IMG_2383.jpg" 
+            var id = items[i]["id"];
+            var width = items[i]["w"];
+            var height = items[i]["h"];
+            var duration = items[i]["dur"];
+            var mediatype = items[i]["mtype"];
+            var mediasize = items[i]["msize"];
+            var mediaaddr = items[i]["maddr"];
+
+            var html = $(".template .grid-itemmedia").prop("outerHTML");
+            //alert(html);
+            var itemdiv = $(html);
+            itemdiv.addClass("grid-item" + id);
+            itemdiv.attr("itemid", id);
+            itemdiv.attr("mediatype", mediatype);
+            itemdiv.find(".imgdiv").eq(0).css("height" , GetHeight(width, height) + "px");
+            if(mediatype == "1")
+            {
+                //图片
+                itemdiv.find(".videoinfo").eq(0).addClass("hidden");
+            }
+            else
+            {
+                //视频
+                var time = SecToTime(duration);
+                itemdiv.find(".videoduration").eq(0).html(time);
+                itemdiv.find(".videoinfo").eq(0).removeClass("hidden");
+            }
+            itemdiv.find(".filesize").eq(0).html(SizeToString(mediasize));
+
+            //itemdiv.find(".picname").eq(0).html(mediaaddr);
+            itemdiv.find(".mediapic").eq(0).attr("src", GetPic(mediaaddr));
+            // itemdiv.click(function(){
+            //     DeviceApi.device.itemdetail($(this).attr("itemid"));
+            //     //grid.masonry( 'remove', $(".grid-item" + $(this).attr("value")) ).masonry('layout');
+            // });
+            OptMouseTouch(itemdiv);
+            $(".grid").append(itemdiv);
+        }
+        
+        var grid = $(".grid").masonry({
+            initLayout: false,
+            itemSelector:'.grid-itemmedia',
+            columnWidth: '.grid-itemmedia'
+        });
+
+        grid.imagesLoaded().progress(function(){
+            grid.masonry('layout');
+        });
+
+        grid.on( 'removeComplete', function(){
+            var iCount = $(".grid-itemmedia").length - 1;
+            if(iCount == 0)
+            {
+                $(".nodatadiv").removeClass("hidden");
+            }
+        } );
+        pageindex++;
+    }
+    var g_OptMode = 0;
+    var g_startX = 0;
+    var g_startY = 0;
+    var g_SelectDiv = null;
+    function OptMouseTouch(itemdiv)
+    {
+        function DownOpt(itemdiv, event)
+        {
+            if(g_OptMode == 1)
+            {
+                console.log("g_OptMode 1");
+                return;
+            }
+            var timeid = setTimeout(function()
+            {
+                itemdiv.attr("timeid", 0);
+                EnterSelectMode();
+                
+                return ;
+            }, 600);
+            g_SelectDiv = itemdiv;
+            itemdiv.attr("timeid", timeid);
+        }
+        function UpOpt(itemdiv)
+        {
+            if(g_OptMode == 1)
+            {
+                if(itemdiv.find(".itemselectpic").eq(0).hasClass("mediaunselect"))
+                {
+                    itemdiv.find(".itemselectpic").eq(0).removeClass("mediaunselect");
+                    itemdiv.find(".itemselectpic").eq(0).addClass("mediaselect");
+                }
+                else
+                {
+                    itemdiv.find(".itemselectpic").eq(0).removeClass("mediaselect");
+                    itemdiv.find(".itemselectpic").eq(0).addClass("mediaunselect");
+                }
+                return;
+            }
+
+            if(0 == itemdiv.attr("timeid"))
+            {
+                return;
+            }
+            clearTimeout(itemdiv.attr("timeid"));
+            itemdiv.attr("timeid", 0);
+            DeviceApi.device.itemdetail(itemdiv.attr("itemid"));
+        }
+    
+        if ('ontouchstart' in document.documentElement) 
+        {
+            itemdiv.on("touchstart", function(event){
+                g_startX = event.originalEvent.changedTouches[0].clientX;
+                g_startY = event.originalEvent.changedTouches[0].clientY;
+                console.log("touchstart");
+                DownOpt(itemdiv, event);
+            });
+            itemdiv.on("touchmove", function(event){
+                console.log("touchmove");
+                var curX = event.originalEvent.changedTouches[0].clientX;
+                var curY = event.originalEvent.changedTouches[0].clientY;
+                if(Math.abs(curX-g_startX) > 5 || Math.abs(curY-g_startY) > 5)
+                {
+                    if(0 != itemdiv.attr("timeid"))
+                    {
+                        clearTimeout(itemdiv.attr("timeid"));
+                        itemdiv.attr("timeid", 0);
+                        g_SelectDiv = null;
+                    }
+                }
+            });
+            itemdiv.on("touchcancel", function(event){
+                console.log("touchcancel");
+                if(0 != itemdiv.attr("timeid"))
+                {
+                    clearTimeout(itemdiv.attr("timeid"));
+                    itemdiv.attr("timeid", 0);
+                    g_SelectDiv = null;
+                }
+            });
+            itemdiv.on("touchend", function(event){
+                console.log("touchend");
+                var curX = event.originalEvent.changedTouches[0].clientX;
+                var curY = event.originalEvent.changedTouches[0].clientY;
+                if(Math.abs(curX-g_startX) > 5 || Math.abs(curY-g_startY) > 5)
+                {
+                    if(0 != itemdiv.attr("timeid"))
+                    {
+                        clearTimeout(itemdiv.attr("timeid"));
+                        itemdiv.attr("timeid", 0);
+                        g_SelectDiv = null;
+                    }
+                }
+                else
+                {
+                    UpOpt(itemdiv);
+                }
+                return false;
+            });
+        }
+        else
+        {
+            itemdiv.on("mousedown", function(event){
+                g_startX = event.pageX;
+                g_startY = event.pageY;
+                DownOpt(itemdiv, event);
+            });
+            itemdiv.on("mouseup", function(event){
+                var curX = event.pageX;
+                var curY = event.pageY;
+                if(Math.abs(curX-g_startX) > 5 || Math.abs(curY-g_startY) > 5)
+                {
+                    if(0 != itemdiv.attr("timeid"))
+                    {
+                        clearTimeout(itemdiv.attr("timeid"));
+                        itemdiv.attr("timeid", 0);
+                        g_SelectDiv = null;
+                    }
+                }
+                else
+                {
+                    UpOpt(itemdiv);
+                }
+                
+                return false;
+            });
+            itemdiv.on("mousemove", function(event){
+                var curX = event.pageX;
+                var curY = event.pageY;
+                if(Math.abs(curX-g_startX) > 5 || Math.abs(curY-g_startY) > 5)
+                {
+                    if(0 != itemdiv.attr("timeid"))
+                    {
+                        clearTimeout(itemdiv.attr("timeid"));
+                        itemdiv.attr("timeid", 0);
+                        g_SelectDiv = null;
+                    }
+                }
+            });
+        }
+    }
+    function CancelSelectMode()
+    {
+        g_OptMode = 0;
+        $(".itemselect").css("display", "none");
+        $(".selectbottom").css("display", "none");
+        $(".itemselectpic").removeClass("mediaselect");
+        $(".itemselectpic").addClass("mediaunselect");
+        DeviceApi.device.enterselectmode(g_OptMode + "");
+    }
+    var g_enableSelectMode = true;
+    function EnterSelectMode()
+    {
+        if(false == g_enableSelectMode)
+        {
+            return;
+        }
+        g_OptMode = 1;
+        $(".itemselect").css("display", "");
+        $(".selectbottom").css("display", "");
+        DeviceApi.device.enterselectmode(g_OptMode + "");
+        g_SelectDiv = null;
+    }
+
+    function EnableSelectMode()
+    {
+        g_enableSelectMode = true;
+        if(null != g_SelectDiv)
+        {
+            if(0 != g_SelectDiv.attr("timeid"))
+            {
+                clearTimeout(g_SelectDiv.attr("timeid"));
+                g_SelectDiv.attr("timeid", 0);
+            }
+        }
+        
+    }
+    function DisableSelectMode()
+    {
+        g_enableSelectMode = false;
+        if(null != g_SelectDiv)
+        {
+            if(0 != g_SelectDiv.attr("timeid"))
+            {
+                clearTimeout(g_SelectDiv.attr("timeid"));
+                g_SelectDiv.attr("timeid", 0);
+            }
+        }
+    }
+
+    var g_removeitems = [];
+    var g_videocount = 0;
+    var g_piccount = 0;
+    function NotifyDevice()
+    {
+        var str = "{\"year\":\"{0}\",\"month\":{1},\"day\":{2},\"addr\":\"{3}\",\"gid\":{4},\"piccount\":{5},\"videocount\":{6}}".format(
+            year,month,day,addr,gid,g_piccount,g_videocount);
+            DeviceApi.device.removeitems(str);
+    }
+    function RequestRemoveItem()
+    {
+        if(g_removeitems.length == 0)
+        {
+            Toast("删除成功");
+            NotifyDevice();
+            CancelSelectMode();
+            return;
+        }
+        
+        var id = g_removeitems.pop();
+        var str = "{\"action\":\"{0}\",\"id\":{1}}".format("delmediaitem", id);
+        var item = $(".grid-item" + id);
+        var mediatype = item.attr("mediatype");
+
+        ServerApi.request.delmediaitem(str,function(data,textStatus,jqXHR)
+        {
+            var jsonRoot = JSON.parse(data);
+            if(jsonRoot["status"] == 1)
+            {
+                if(mediatype == "1")
+                {
+                    //图片
+                    g_piccount++;
+                }
+                else
+                {
+                    //视频
+                    g_videocount++;
+                }
+                SetToast("剩余:" + g_removeitems.length);
+                RemoveItem(id);
+                RequestRemoveItem();
+            }
+            else
+            {
+                Toast("删除失败");
+                NotifyDevice();
+            }
+        },function(xhr,textStatus)
+        {
+            Toast("删除失败");
+            NotifyDevice();
+        });
+    }
+
+    function RemoveSelectItem()
+    {
+        var iItemLen = $(".mediaselect").length;
+        if(0 == iItemLen)
+        {
+            return;
+        }
+        ShowConfirm("确认", "删除后将永远丢失该媒体的存储,请确认!", 1, "确定", function(){
+            g_removeitems = [];
+            g_videocount = 0;
+            g_piccount = 0;
+            for(var i = 0; i < iItemLen; ++i)
+            {
+                var id = $(".mediaselect").eq(i).parents(".grid-item").attr("itemid");
+                g_removeitems.push(id);
+                SetToast("剩余:" + g_removeitems.length);
+                console.log(g_removeitems);
+            }
+            RequestRemoveItem();
+        }, "取消", function(){
+        });
+    }
+</script>
+<body>
+    <div class="nodatadiv hidden" style="position:absolute;text-align: center;  width: 100%; height: 100%;display:flex;align-items:center; justify-content:center;">
+        <img src="./img/nodata.png" style="width: 10vh; height: 10vh;"/>
+    </div>
+    <div class="grid">
+        <div class="hidden grid-item"><img src=""/></div>
+    </div>
+    <div class="finishcontent" style="display:none; width: 100%; height: 4vh; ">
+        <div style="display:table-cell; vertical-align:middle; text-align: center; padding-left: 10px; padding-right: 10px;">
+            <div style="background:linear-gradient(to left,#efefef, #ddd,#efefef);height:1px;"></div>
+            <div class="finishcontenttongji" style="color: #ccc;">我是有底线的</div>
+        </div>
+    </div>
+    <div class="hidden template" style="margin-left: 100px;">
+        <div class="grid-itemmedia grid-item canclick" style="position: relative; padding: 0.3vh; overflow: hidden;">
+            <div class="itemselect" style="display:none;width: 20px; height: 20px; position: absolute; right: 0;margin-right: 5px;">
+                <img class="itemselectpic mediaunselect" style="width: 100%; height: 100%;" />
+            </div>
+            <div class="imgdiv" style="width: 100%; height: 300px;">
+                <img class="mediapic" style="width: 100%; height: 100%; " src="./img/background.png"/>
+            </div>
+            <div class="picinfo" style="width: 100%; height: 3vh; background-color: #ffffff; position: relative;">
+                <div class="videoinfo" style="width: 60%; height: 3vh; float: left;">
+                    <div style="width: 2vh; height: 2vh; line-height: 2.5vh; float: left;"><img src="./img/video.png" width="100%" height="100%"></div>
+                    <div class="videoduration" style="float: left; margin-left: 0.5vh; font-size: 1rem; line-height: 3.2vh; color: #6F87A8;">01:23:10</div>
+                </div>
+                <div class="filesize" style="float: right; width: 40%; height: 100%; font-size: 1rem; line-height: 3.2vh; color: #6F87A8; text-align: right;">100.42M</div>
+            </div>
+        </div>
+    </div>
+    <div onclick="RemoveSelectItem()" class="selectbottom" style="background-color:rgba(255, 255, 255, 0.9); display: none; width: 100%; height: 7vh;  bottom: 0; position:fixed; box-shadow: 0 -5px 15px  #d0d2d3;">
+        <div style="text-align: center;line-height: 7vh; width: 100%; height: 100%; float: left;">
+            <img src="./img/remove.png" style="display: inline-block; width: 4h; height: 4vh; margin-top: -1vh;"/>
+        </div>
+        <div onclick="CancelSelectMode()" style="text-align: center;line-height: 7vh; width: 7vh; height: 100%; float: left; position: absolute;">
+            <img src="./img/undo.png" style="display: inline-block; width: 5h; height: 4vh; margin-top: -1vh;"/>
+        </div>
+    </div>
+</body>
+</html>

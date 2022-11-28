@@ -1,0 +1,8 @@
+{
+    "server":{
+        "ip":"127.0.0.1",
+        "port":"8080",
+        "filedir":"/home/relech/share/lighttpd/www/media/.media_tmp"
+    }
+}
+

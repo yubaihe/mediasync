@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>媒体年份表</title>
+</head>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/animate.css"/>
+<link rel="stylesheet" href="css/Common.css"/>
+<script src="js/Api.js?id=1"></script>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="./js/masonry.pkgd.min.js"></script>
+<script src="./js/imagesloaded.pkgd.min.js"></script>
+<script src="./js/Common.js?id=3"></script>
+
+<link rel="stylesheet" href="./css/dialog.css"/>
+<script type="text/javascript" src="./js/dialog.min.js"></script>
+<script type="text/javascript" src="./js/Toast.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+<style type="text/css">
+    .folditem { 
+        width: 100%;
+        height: 12vh;
+        border-bottom: 1px solid #e9e8e8; 
+    }
+    .cover{
+        border-radius:1vh 1vh 1vh 1vh;
+        box-shadow: 3px 3px 3px #c3c3c3; 
+       
+    }
+    </style>
+    <script>
+    var ServerApi = new API("http://" + window.location.host);
+    var DeviceApi = new API("");
+    var year = GetUrlParam("year");
+    var month = GetUrlParam("month");
+    function DayDecreaseItems(iDay, decreasePic, decreaseVideo)
+    {
+        var picCount = $(".day_" + iDay).find(".daydetail").eq(0).attr("pic");
+        var videoCount = $(".day_" + iDay).find(".daydetail").eq(0).attr("video");
+        picCount -= decreasePic;
+        videoCount -= decreaseVideo;
+        if(videoCount == 0 && picCount == 0)
+        {
+            $(".day_" + iDay).remove();
+        }
+        else
+        {
+            $(".day_" + iDay).find(".daydetail").eq(0).attr("pic", picCount);
+            $(".day_" + iDay).find(".daydetail").eq(0).attr("video", videoCount);
+            $(".day_" + iDay).find(".daydetail").eq(0).html("图片数:{0} 视频数:{1}".format(picCount, videoCount));
+        }
+        if($(".divmain").children().length == 0)
+        {
+            $(".nodatadiv").removeClass("hidden");
+        }
+    }
+    function DayRemove(iDay, iType)
+    {
+        var picCount = $(".day_" + iDay).find(".daydetail").eq(0).attr("pic");
+        var videoCount = $(".day_" + iDay).find(".daydetail").eq(0).attr("video");
+        if(iType == 2)
+        {
+            videoCount--;
+        }
+        else
+        {
+            picCount--;
+        }
+        if(videoCount == 0 && picCount == 0)
+        {
+            $(".day_" + iDay).remove();
+        }
+        else
+        {
+            $(".day_" + iDay).find(".daydetail").eq(0).attr("pic", picCount);
+            $(".day_" + iDay).find(".daydetail").eq(0).attr("video", videoCount);
+            $(".day_" + iDay).find(".daydetail").eq(0).html("图片数:{0} 视频数:{1}".format(picCount, videoCount));
+        }
+        if($(".divmain").children().length == 0)
+        {
+            $(".nodatadiv").removeClass("hidden");
+        }
+    }
+    function Init()
+    {
+        var str = "{\"action\":\"daylist\",\"devnames\":\"{0}\",\"year\":{1},\"month\":{2}}".format(GetSelectDeviceString(), year, month);
+        ServerApi.request.daylist(str,function(data,textStatus,jqXHR)
+        {
+            var jsonRoot = JSON.parse(data);
+            if(jsonRoot["status"] != "1")
+            {
+                //DeviceApi.device.toast("未查询到媒体数据!");
+                $(".nodatadiv").removeClass("hidden");
+                return;
+            }
+            var days = jsonRoot["days"];
+            if(days.length == 0)
+            {
+                return;
+            }
+            for(var i = 0; i < days.length; ++i)
+            {
+                var html = $(".folditemtemplate").prop("outerHTML");
+                let itemDiv = $(html);
+                itemDiv.addClass("day_" + days[i].day);
+                itemDiv.removeClass("folditemtemplate");
+                itemDiv.removeClass("hidden");
+                itemDiv.find(".dayitem").eq(0).attr("day", days[i].day);
+                itemDiv.find(".dayitem").eq(0).click(function()
+                {
+                    //DeviceApi.device.monthsel($(this).attr("month"));
+                });
+                itemDiv.find(".day").eq(0).html(days[i].day + "号");
+                itemDiv.find(".day").eq(0).removeClass("hidden");
+                $(".divmain").append(itemDiv);
+                itemDiv.find(".dayitem").eq(0).click(function()
+                {
+                    DeviceApi.device.daysel($(this).attr("day"));
+                });
+                var str = "{\"action\":\"yearmonthdaycover\",\"year\":{0},\"month\":{1},\"day\":{2},\"devnames\":\"{3}\"}".format(year, month, days[i].day, GetSelectDeviceString());
+                ServerApi.request.yearmonthdaycover(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    var jsonRoot = JSON.parse(data);
+                    if(jsonRoot["status"] !=1)
+                    {
+                        return;
+                    }
+                   $(".day_" + jsonRoot.day).find(".cover").eq(0).attr("src", GetPic(jsonRoot.cover));
+                });
+
+                $(".day_" + days[i].day).find(".dayname").eq(0).html(days[i].day + "号");
+                $(".day_" + days[i].day).find(".daydetail").eq(0).attr("pic", days[i].piccount);
+                $(".day_" + days[i].day).find(".daydetail").eq(0).attr("video", days[i].videocount);
+                $(".day_" + days[i].day).find(".daydetail").eq(0).html("图片数:{0} 视频数:{1}".format(days[i].piccount, days[i].videocount));
+                $(".day_" + days[i].day).find(".daywithdetail").eq(0).removeClass("hidden");
+                $(".day_" + days[i].day).find(".daywithdetail").eq(0).removeClass("hidden");
+                $(".day_" + days[i].day).find(".day").eq(0).addClass("hidden");
+
+            }
+            
+           
+        },function(xhr,textStatus)
+        {
+        });
+    }
+   
+    function ReSet()
+    {
+        $(".divmain").html("");
+        Init();
+    }
+    $(document).ready(function()
+    {
+        DisableContextMenu();
+        //支持IOS的 active
+        $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
+        document.body.addEventListener('touchstart',function(){});
+        Init();
+    });
+</script>
+<body>
+    <div class="nodatadiv hidden" style="position:absolute;text-align: center;  width: 100%; height: 100%;display:flex;align-items:center; justify-content:center;">
+        <img src="./img/nodata.png" style="width: 10vh; height: 10vh;"/>
+    </div>
+    <div class="divmain" style="width: 100%;">
+
+    </div>
+        <div class="folditem folditemtemplate hidden canclick"  style=" position: relative;">
+            <div class="dayitem">
+                <div class="daywithdetail hidden" style="position: absolute; width: 100%; height: 11vh; padding-bottom: 1px; padding-left: 12vh;">
+                    <div class="dayname" style="font-size: 2.6vh; line-height: 8vh; height: 6vh;">2018</div>
+                        <div class="daydetail" style="font-size: 1.4vh; line-height: 4vh; height: 3vh; color: #cfcfcf;">图片数:40 视频数:20</div>
+                </div>
+                <div class="day" style="background-color: #ffffff;position: absolute; width: 100%; height: 11vh; padding-bottom: 1px; padding-left: 12vh;font-size: 2.6vh; line-height: 11vh;">
+                </div>
+                <div style="position: absolute; background-color: #ffffff; width: 10vh; height:10vh; margin-top: 0.7vh;margin-left: 0.5vh;">
+                    <img class="cover" src="./img/file_folder.png" width="100%" height="100%"/>
+                </div>
+            </div>
+        </div>
+        
+</body>
+</html>

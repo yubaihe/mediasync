@@ -1,0 +1,37 @@
+
+html,body{
+    margin:0;
+    height:100%;
+    width:100%;
+    margin: 0 auto;
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+}
+img
+{
+    pointer-events: none;
+}
+.show
+{
+    display: block !important;
+}
+.hidden
+{
+    display: none;
+}
+.canclick
+{
+    cursor:pointer
+}
+input
+{
+    outline:none;
+     -webkit-tap-highlight-color:
+    rgba(0, 0, 0, 0);
+}
+.anchorBL
+{
+    display:none
+}

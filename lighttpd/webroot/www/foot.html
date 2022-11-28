@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>MediaHead</title>
+</head>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/animate.css"/>
+<link rel="stylesheet" href="css/Common.css"/>
+<!-- <script src="js/Api.js"></script>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/Common.js"></script> -->
+<script>
+    $(document).ready(function()
+    {
+        DisableContextMenu();
+        UpdateFoot();
+    });
+    function UpdateFoot()
+    {
+        var str = "{\"action\":\"diskinfo\"}";
+        ServerApi.request.diskinfo(str, function(data,textStatus,jqXHR)
+        {
+            var jsonRoot = JSON.parse(data);
+            var total = jsonRoot["total"];
+            var used = jsonRoot["used"];
+            var deviceID = GetCookie("deviceid");
+            SetCookie(deviceID + "_totalspace", total);
+            SetCookie(deviceID + "_usedspace", used);
+            ChangePage();
+            
+        },function(xhr,textStatus)
+        {
+        });
+    }
+    function ChangePage()
+    {
+        var deviceid = GetCookie("deviceid");
+        var version = GetCookie(deviceid + "_devversion");
+        var total = GetCookie(deviceid + "_totalspace");
+        var used = GetCookie(deviceid + "_usedspace");
+        var process = used*100/total;
+        if(process > 70)
+        {
+            //黄色
+            $(".diskprocessused").css("background-color", "#FEDB60");//254 219 96
+        }
+        if(process > 90)
+        {
+            //红色
+            $(".diskprocessused").css("background-color", "#FC8462");
+        }
+        $(".diskprocessused").css("width", process + "%");
+        $(".diskprocessused").removeClass("hidden");
+        $(".version").html(version);
+        $(".version").addClass("hidden");
+
+        $(".diskinfo").html(SizeToStringkb(used) + "/" + SizeToStringkb(total));
+        $(".diskinfo").removeClass("hidden");
+    }
+</script>
+<body>
+    <div class="version hidden" style="position:absolute; top:90vh; width: 100%; text-align: center;text-shadow:0px 0px 1px #cccccc;color: #c3c3c3;">V1.0</div>
+    <div class="diskprocess" style="position:absolute; width: 100%; height: 2.5vh;line-height: 2.5vh; background-color: #f0ecec;filter:alpha(Opacity=50);">
+        <div class="diskprocessused hidden" style="position:absolute;width: 80%; height: 100%;background-color: #d7e0ec;filter:alpha(Opacity=50);">
+    
+        </div>
+        <div class="diskinfo hidden" style="position:absolute; width: 100%; height: 100%; text-align: center; font-size: 1.7vh; vertical-align: middle;text-shadow:0px 0px 1px #cccccc;color: white;">剩余:100G 总量:200G</div>
+    </div>
+</body>
+</html>

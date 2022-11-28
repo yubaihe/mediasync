@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<script src="js/Common.js"></script>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/Api.js?id=1"></script>
+<!-- 时间选择器样式表 -->
+<link href="./bootstrap-datetimepicker/bootstrap-datetimepicker.min.css" rel="stylesheet">
+<!-- 时间选择器前置脚本 -->
+<script src="./bootstrap-datetimepicker/moment-with-locales.min.js"></script>
+<!-- 时间选择器核心脚本 -->
+<script src="./bootstrap-datetimepicker//bootstrap-datetimepicker.min.js"></script>
+
+<script>
+    var ServerApi = new API("http://" + window.location.host);
+    var DeviceApi = new API("");
+
+     var time = GetUrlParam("time");
+     if(time == null)
+     {
+        time = new Date().getTime();
+     }
+     else
+     {
+        time = parseInt(time);
+     }
+    var date = new Date(time);
+    var dateTime = date.toLocaleString();  
+    $(document).ready(function(){
+        DisableContextMenu();
+        $('#ChangeTime').datetimepicker({
+                    inline: true,
+                    sideBySide: true,
+                    locale: 'zh-CN',
+                     maxDate: new Date(),
+                    format: 'YYYY-MM-DD HH:mm:ss',
+                    defaultDate:dateTime
+                }).bind('dp.change', function (e) {
+                    var newTime = new Date(e.date).getTime()/1000 + "";
+                    DeviceApi.device.timeupdate(newTime);
+                    //var d = new Date(e.date).format("yyyy-MM-dd HH:mm:ss");
+                    //console.log(d);
+                    // if(parseInt(new Date(e.date).getTime()/1000) != parseInt(time/1000))
+                    // {
+                    //     console.log("change:" + new Date(e.date).getTime()  + "/" + time);
+                    // }
+                    // else
+                    // {
+                    //     console.log("no change");
+                    // }
+                });
+    });
+</script>
+
+<body>
+    <div style="overflow:hidden;">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-8">
+                    <div id="ChangeTime"></div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</body>
+
+</html>
+
+
+

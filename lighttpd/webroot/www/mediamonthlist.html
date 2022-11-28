@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>媒体年份表</title>
+</head>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/animate.css"/>
+<link rel="stylesheet" href="css/Common.css"/>
+<script src="js/Api.js?id=1"></script>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="./js/masonry.pkgd.min.js"></script>
+<script src="./js/imagesloaded.pkgd.min.js"></script>
+<script src="./js/Common.js?id=3"></script>
+
+<link rel="stylesheet" href="./css/dialog.css"/>
+<script type="text/javascript" src="./js/dialog.min.js"></script>
+<script type="text/javascript" src="./js/Toast.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+<style type="text/css">
+    .folditem { 
+        width: 100%;
+        height: 12vh;
+        border-bottom: 1px solid #e9e8e8; 
+    }
+    .cover{
+        border-radius:1vh 1vh 1vh 1vh;
+        box-shadow: 3px 3px 3px #c3c3c3; 
+       
+    }
+    </style>
+    <script>
+    var ServerApi = new API("http://" + window.location.host);
+    var DeviceApi = new API("");
+    var year = GetUrlParam("year");
+    function MonthDecreaseItems(iMonth, decreasePic, decreaseVideo)
+    {
+        var picCount = $(".month_" + iMonth).find(".monthdetail").eq(0).attr("pic");
+        var videoCount = $(".month_" + iMonth).find(".monthdetail").eq(0).attr("video");
+        picCount -= decreasePic;
+        videoCount -= decreaseVideo;
+        if(videoCount == 0 && picCount == 0)
+        {
+            $(".month_" + iMonth).remove();
+        }
+        else
+        {
+            $(".month_" + iMonth).find(".monthdetail").eq(0).attr("pic", picCount);
+            $(".month_" + iMonth).find(".monthdetail").eq(0).attr("video", videoCount);
+            $(".month_" + iMonth).find(".monthdetail").eq(0).html("图片数:{0} 视频数:{1}".format(picCount, videoCount));
+        }
+        if($(".divmain").children().length == 0)
+        {
+            $(".nodatadiv").removeClass("hidden");
+        }
+    }
+    function MonthRemove(iMonth, iType)
+    {
+        var picCount = $(".month_" + iMonth).find(".monthdetail").eq(0).attr("pic");
+        var videoCount = $(".month_" + iMonth).find(".monthdetail").eq(0).attr("video");
+        if(iType == 2)
+        {
+            videoCount--;
+        }
+        else
+        {
+            picCount--;
+        }
+        if(videoCount == 0 && picCount == 0)
+        {
+            $(".month_" + iMonth).remove();
+        }
+        else
+        {
+            $(".month_" + iMonth).find(".monthdetail").eq(0).attr("pic", picCount);
+            $(".month_" + iMonth).find(".monthdetail").eq(0).attr("video", videoCount);
+            $(".month_" + iMonth).find(".monthdetail").eq(0).html("图片数:{0} 视频数:{1}".format(picCount, videoCount));
+        }
+        if($(".divmain").children().length == 0)
+        {
+            $(".nodatadiv").removeClass("hidden");
+        }
+    }
+
+    function Init()
+    {
+        var str = "{\"action\":\"monthlist\",\"year\":\"{0}\",\"devnames\":\"{1}\"}".format(year, GetSelectDeviceString());
+        console.log(str);
+        ServerApi.request.monthlist(str,function(data,textStatus,jqXHR)
+        {
+            var jsonRoot = JSON.parse(data);
+            if(jsonRoot["status"] != "1")
+            {
+                //DeviceApi.device.toast("未查询到媒体数据!");
+                $(".nodatadiv").removeClass("hidden");
+                return;
+            }
+            var months = jsonRoot["months"];
+            if(months.length == 0)
+            {
+                return;
+            }
+            for(var i = 0; i < months.length; ++i)
+            {
+                var html = $(".folditemtemplate").prop("outerHTML");
+                var itemDiv = $(html);
+                itemDiv.addClass("month_" + months[i].month);
+                itemDiv.removeClass("folditemtemplate");
+                itemDiv.removeClass("hidden");
+                itemDiv.find(".monthitem").eq(0).attr("month", months[i].month);
+                itemDiv.find(".monthitem").eq(0).click(function()
+                {
+                    DeviceApi.device.monthsel($(this).attr("month"));
+                });
+                itemDiv.find(".month").eq(0).html(months[i].month + "月");
+                itemDiv.find(".month").eq(0).removeClass("hidden");
+                $(".divmain").append(itemDiv);
+
+                var str = "{\"action\":\"yearmonthdaycover\",\"year\":{0},\"month\":{1},\"devnames\":\"{2}\"}".format(year, months[i].month, GetSelectDeviceString());
+                ServerApi.request.yearmonthdaycover(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    var jsonRoot = JSON.parse(data);
+                    if(jsonRoot["status"] !=1)
+                    {
+                        return;
+                    }
+                   $(".month_" + jsonRoot.month).find(".cover").eq(0).attr("src", GetPic(jsonRoot.cover));
+                });
+
+                $(".month_" + months[i].month).find(".monthname").eq(0).html(months[i].month + "月");
+                $(".month_" + months[i].month).find(".monthdetail").eq(0).attr("pic", months[i].piccount);
+                $(".month_" + months[i].month).find(".monthdetail").eq(0).attr("video", months[i].videocount);
+                $(".month_" + months[i].month).find(".monthdetail").eq(0).html("图片数:{0} 视频数:{1}".format(months[i].piccount, months[i].videocount));
+                $(".month_" + months[i].month).find(".monthwithdetail").eq(0).removeClass("hidden");
+                $(".month_" + months[i].month).find(".monthwithdetail").eq(0).removeClass("hidden");
+                $(".month_" + months[i].month).find(".month").eq(0).addClass("hidden");
+
+                $(".month_" + months[i].month).find(".moredays").eq(0).attr("month", months[i].month);
+
+            }
+           
+        },function(xhr,textStatus)
+        {
+        });
+    }
+    
+    function ReSet()
+    {
+        $(".divmain").html("");
+        Init();
+    }
+    $(document).ready(function()
+    {
+        DisableContextMenu();
+        //支持IOS的 active
+        $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
+        document.body.addEventListener('touchstart',function(){});
+        Init();
+        
+    });
+
+    function MonthDetail(item)
+    {
+        var e=window.event || arguments.callee.caller.arguments[0];
+        e.stopPropagation();
+        var month = $(item).attr("month");
+        DeviceApi.device.daysinfo(month);
+    }
+</script>
+<body>
+    <div class="nodatadiv hidden" style="position:absolute;text-align: center;  width: 100%; height: 100%;display:flex;align-items:center; justify-content:center;">
+        <img src="./img/nodata.png" style="width: 10vh; height: 10vh;"/>
+    </div>
+    <div class="divmain" style="width: 100%;">
+
+    </div>
+        <div class="folditem folditemtemplate hidden canclick"  style=" position: relative;">
+           <div class="moredays" onclick="MonthDetail(this)" style="width: 7vh; height: 100%; position: absolute; right: 0vh; z-index: 2;">
+                <div class="canclick moredays" style="float: right; width: 5vh; height: 100%;text-align: center;" >
+                    <div style="position: relative; width: 2.1vh; height: 3.1vh; margin-top: 4vh; ">
+                        <img style="position:absolute;" src="../img/more.png" width="12px" height="18px"/>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="monthitem">
+                <div class="monthwithdetail hidden" style="position: absolute; width: 100%; height: 11vh; padding-bottom: 1px; padding-left: 12vh;  ">
+                    <div class="monthname" style="font-size: 2.6vh; line-height: 8vh; height: 6vh;">2018</div>
+                        <div class="monthdetail" style="font-size: 1.4vh; line-height: 4vh; height: 3vh; color: #cfcfcf;">图片数:40 视频数:20</div>
+                </div>
+                <div class="month" style="background-color: #ffffff;position: absolute; width: 100%; height: 11vh; padding-bottom: 1px; padding-left: 12vh;font-size: 2.6vh; line-height: 11vh;">
+                </div>
+                <div style="position: absolute; background-color: #ffffff; width: 10vh; height:10vh; margin-top: 1vh;margin-left: 0.5vh;">
+                    <img class="cover"  src="./img/file_folder.png" width="100%" height="100%"/>
+                </div>
+            </div> 
+            
+        </div>
+        
+</body>
+</html>
