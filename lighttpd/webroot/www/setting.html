@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>Document</title>
+</head>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/animate.css"/>
+<link rel="stylesheet" href="css/Common.css"/>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/Common.js?id=2"></script>
+<script src="js/Api.js?id=3"></script>
+
+<link rel="stylesheet" href="css/bootstrap-slider.min.css"/>
+<script src="js/bootstrap-slider.min.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+
+<link rel="stylesheet" href="./css/dialog.css"/>
+<script type="text/javascript" src="./js/dialog.min.js"></script>
+<script src="js/Toast.js"></script>
+<script src="js/clearcache.js"></script>
+<style type="text/css">
+.resetuser:active
+{
+    color: #c3c3c3;
+}
+.aboutdevice:active
+{
+    color: #c3c3c3;
+}
+.netsetting:active
+{
+    color: #c3c3c3;
+}
+    .slider-selection 
+    {
+        background: #e9e8e8;
+    }
+    .slider-handle 
+    {
+        background: #9abcfa;
+    }
+    .slider.slider-horizontal
+    {
+        width: 100% !important;
+    }
+</style>
+<script>
+    var ServerApi = new API("http://" + window.location.host);
+    //var ServerApi = new API("http://" + "192.168.1.12");
+    var DeviceApi = new API("");
+    function ResizeCoverBar()
+    {
+        if($(".covermain").width() == 0)
+        {
+            setTimeout(function() {
+                ResizeCoverBar();
+            },10);
+        }
+        else
+        {
+            $(".coverbar").css("width", $(".covermain").width() - $(".covertitle").width() - 20);
+            $(".coverbar").removeClass("hidden");
+        }   
+    }
+    $(document).ready(function()
+    {
+        DisableContextMenu();
+        var iEthEnable = GetUrlParam("eth");
+        var iWlanEnable = GetUrlParam("wlan");
+        if(iEthEnable == 0 || iWlanEnable == 0)
+        {
+            $(".netsetting").addClass("hidden");
+        }
+        
+        ResizeCoverBar();
+
+        //支持IOS的 active
+        document.body.addEventListener('touchstart',function(){});
+        EnableScroll($('.scrollview'));
+        var deviceid = GetCookie("deviceid");
+        var deviceName = GetCookie(deviceid + "_devicename");
+        if(null != deviceName && deviceName.length != 0)
+        {
+            $(".changedevicename").val(deviceName);
+        }
+        var devBlue = GetCookie(deviceid + "_devblue");
+        
+        $(".blueslide").attr("data-slider-value", devBlue);
+
+        $(".headdiv").load("./head.html?id=1", function() {
+            $(".container").removeClass("hidden");
+        });
+
+        $(".foot").load("./foot.html?id=1", function() {
+            $(".container").removeClass("hidden");
+        });
+
+        $(".resetuser").click(function(e){
+            DeviceApi.device.resetuser();
+        });
+        $(".netsetting").click(function(e){
+            DeviceApi.device.netsetting();
+        });
+
+        $('.blueslide').slider(
+            {
+                tooltip: 'hide',
+                formatter: function (value) 
+                {
+                    return 'Current value: ' + value;
+                }
+            })
+            .on('slide', function (slideEvt) 
+            {
+                //当滚动时触发
+                //console.info(slideEvt);
+                //获取当前滚动的值，可能有重复
+                // console.info(slideEvt.value);
+                //filter: blur(15px);
+
+                /*-webkit-filter: blur(5px);
+                -moz-filter: blur(5px);
+                -o-filter: blur(5px);
+                -ms-filter: blur(5px);
+                filter: blur(5px); 
+                */
+                var value = slideEvt.value/100.0;
+                $(".devicepic").css("-webkit-filter", "blur(" + value + "px)");
+                $(".devicepic").css("-moz-filter", "blur(" + value + "px)");
+                $(".devicepic").css("-o-filter", "blur(" + value + "px)");
+                $(".devicepic").css("-ms-filter", "blur(" + value + "px)");
+                $(".devicepic").css("filter", "blur(" + value + "px)");
+                $(".devicepic").attr("value", value + "");
+                
+            })
+            .on('change', function (e) 
+            {
+            //当值发生改变的时候触发
+            //console.info(e);
+            //获取旧值和新值
+            console.info(e.value.oldValue + '--' + e.value.newValue);
+            var szBuffer = "{\"otype\":0,\"value\":\"{0}\"}".format(e.value.newValue);
+            DeviceApi.device.settingupdate(szBuffer);
+        });
+
+        $(".changedevicename").on("input propertychange", function(){
+            if($(this).val().length == 0)
+            {
+                var deviceid = GetCookie("deviceid");
+                var deviceName = GetCookie(deviceid + "_devicename");
+                $(".devicename").html(deviceid);
+            }
+            else
+            {
+                //$(this).val($(this).val());
+                $(".devicename").html($(this).val());
+            }
+            var jsonItem = {};
+            jsonItem["otype"] = 1;
+            jsonItem["value"] = $(this).val();
+            //var szBuffer = "{\"otype\":1,\"value\":\"{0}\"}".format();
+            DeviceApi.device.settingupdate(JSON.stringify(jsonItem));
+        });
+        
+        $(".howtouse").click(function(e){
+            
+            DeviceApi.device.howtouse();
+        });
+        $(".aboutdevice").click(function(e){
+            DeviceApi.device.aboutdevice();
+        });
+
+        $(".clearmemory").click(function(){
+            ShowConfirm("清理缓存", "该操作会重置设备的相关计数，中途请<span style='color:red'>不要断电</span>，否则请<span style='color:#1B9AF7'>重新执行</span>清理缓存操作!", 1, "确定", function(){
+                ClearCacheStart();
+            }, 
+            "取消", 
+            function()
+            {
+                UnSetToast();
+            });
+        });
+
+    });
+
+    
+
+</script>
+<body>
+    <div class="scrollview" style="width: 100%; height: 78vh;">
+        <div class="divmain">
+            <div class="headdiv" style="height: 30vh;"></div>
+            <div class="container hidden">
+                <div style="margin-left: 10%; margin-right: 10%;  width: 80%;">
+                    <div style="width: 100%; height: 8vh; line-height: 8vh; font-size: 1.5rem; border-bottom:1px solid #e9e8e8;">
+                        <div style="display: inline-block;">设备名称:</div>
+                        <div style="display: inline-block; width: 63%;margin-left: 5%;">
+                            <input class="changedevicename" type="text" placeholder="请输入设备名称" maxlength="10" style="caret-color:#d7e0ec;  border:none;width: 100%; height: 5.6vh; line-height: 3.9vh; color: #c3c3c3;outline:none; ">
+                        </div>
+                    </div>
+                    
+                    <div class="covermain" style="width: 100%; height: 8vh; line-height: 8vh; font-size: 1.5rem; border-bottom:1px solid #e9e8e8;">
+                        <div class="covertitle" style="display: inline-block; height: 100%; ">封面模糊度:</div>
+                        <div class="coverbar hidden" style="float: right;">
+                            <input  class="blueslide" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="15"/>
+                        </div>
+                    </div>
+                    <div class="clearmemory canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
+                        <span style="display: inline-block;">清理缓存</span>                      
+                    </div>
+                    <div class="resetuser canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
+                        <span style="display: inline-block;">重置用户</span>
+                        <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>                        
+                    </div>
+                    <div class="netsetting canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
+                        <span style="display: inline-block;">网络设置</span>
+                        <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>
+                    </div>
+                    <div class="howtouse canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
+                        <span style="display: inline-block;">使用说明</span>
+                        <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>
+                    </div>
+                    <div class="aboutdevice canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
+                        <span style="display: inline-block;">关于设备</span>
+                        <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+<div class="foot" style="position: absolute; bottom: 0; height: 2.5vh;width: 100%; overflow: hidden;">
+</div>
+</body>
+</html>

@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>Document</title>
+</head>
+<script src="js/Api.js?id=2"></script>
+<link rel="stylesheet" href="css/Common.css"/>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/buttons.css"/>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/Common.js?id=2"></script>
+<script src="js/Api.js?id=2"></script>
+
+<link rel="stylesheet" href="./css/dialog.css"/>
+<script type="text/javascript" src="./js/dialog.min.js"></script>
+<script src="js/Toast.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/bootstrap-toggle.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/bootstrap-toggle.min.js"></script>
+<style type="text/css">
+.wlanitem:active
+{
+    background-color:#e0e0e0 ;
+    border-radius: 3px;
+}
+
+.wlanstoreitem:active
+{
+    background-color:#e0e0e0 ;
+    border-radius: 3px;
+}
+
+.hotpotsetting:active
+{
+    color: #c3c3c3;
+}
+.form-control
+{
+    line-height: 1.42857143;
+    height: 7vh;
+    color: #464e60;
+    font-size: 1.5rem;
+    font-weight: 400;
+    padding: 18px 18px;
+    -webkit-appearance: none;
+    border: 1px solid #c3c6cf;
+    border-radius: 3px;
+    outline: 0!important;
+    box-shadow: none;
+    -webkit-transition: linear .5s;
+    -moz-transition: linear .5s;
+    -ms-transition: linear .5s;
+    -o-transition: linear .5s;
+    transition: linear .5s;
+
+}
+</style>
+<script>
+    var ServerApi = new API("http://" + window.location.host);
+    //var ServerApi = new API("http://" + "192.168.2.42");
+    var DeviceApi = new API("");
+    var jsonStoreWifi;
+    var jsonHotPot;
+    $(document).ready(function()
+    {
+        DisableContextMenu();
+        EnableScroll($('.scrollview'));
+        var iEthEnable = GetUrlParam("eth");
+       // var iWlanEnable = GetUrlParam("wlan");
+        if(0 == iEthEnable)
+        {
+            $(".eth").addClass("hidden");
+            $(".netswitch").css("height", $(".container").height() - $(".eth").height()) ;
+            $(".scrollview").css("height", $(".scrollview").height() + $(".eth").height()) ;
+        }
+        else
+        {
+            $(".eth").removeClass("hidden");
+        }
+        document.body.addEventListener('touchstart',function(){});
+        
+        $('.togglewlan1div').click(function() {
+                var wlan1 = $('#toggle-wlan1').prop('checked');
+                if(0 == wlan1)
+                {
+                    ShowConfirm("确认", "使用无线中继,<span style='color:red'>将不能通过热点访问到该设备</span>, 直到<span style='color:#1B9AF7'>设备重启</span>或者<span style='color:#1B9AF7'>接入有线网口</span>或者<span style='color:#1B9AF7'>中继方式改变</span>,请确认是否切换到无线中继?", 1, "确定", function(){
+                        var str = "{\"action\":\"{0}\",\"brtype\":\"{1}\"}".format("setbrtype", 2); 
+                        console.log(str);
+                       
+                        ServerApi.request.setbrtype(str,function(data,textStatus,jqXHR)
+                        {
+                            $('#toggle-wlan1').bootstrapToggle('toggle');
+                            var eth0 = $('#toggle-eth0').prop('checked');
+                            var wlan1 = $('#toggle-wlan1').prop('checked');
+                            if(eth0 && wlan1)
+                            {
+                                $('#toggle-eth0').bootstrapToggle('off'); 
+                            }
+                        },function(xhr,textStatus)
+                        {
+                            Toast("连接断开,请重新登入!");
+                        });
+                    }, "取消", function(){
+                        UnSetToast();
+                        return;
+                    });
+                }
+                else
+                {
+                    var str = "{\"action\":\"{0}\",\"brtype\":\"{1}\"}".format("setbrtype", 0); 
+                    ServerApi.request.setbrtype(str,function(data,textStatus,jqXHR)
+                    {
+                        $('#toggle-eth0').bootstrapToggle('off');
+                        $('#toggle-wlan1').bootstrapToggle('off'); 
+                    },function(xhr,textStatus)
+                    {
+                        Toast("连接断开,请重新登入!");
+                    });
+                }
+            });
+
+        $(".toggleeth0div").click(function(){
+
+                var eth0 = $('#toggle-eth0').prop('checked');
+                if(0 == eth0)
+                {
+                    ShowConfirm("确认", "使用有线中继,<span style='color:red'>将不能访问到该设备</span>, 直到<span style='color:#1B9AF7'>设备重启</span>或者<span style='color:#1B9AF7'>中继方式改变</span>,请确认是否切换到有线中继?", 1, "确定", function(){
+                        var str = "{\"action\":\"{0}\",\"brtype\":\"{1}\"}".format("setbrtype", 1); 
+                        console.log(str);
+                        
+                        ServerApi.request.setbrtype(str,function(data,textStatus,jqXHR)
+                        {
+                            $('#toggle-eth0').bootstrapToggle('toggle');
+                            var eth0 = $('#toggle-eth0').prop('checked');
+                            var wlan1 = $('#toggle-wlan1').prop('checked');
+                            if(eth0 && wlan1)
+                            {
+                                $('#toggle-wlan1').bootstrapToggle('off'); 
+                            }
+                        },function(xhr,textStatus)
+                        {
+                            Toast("连接断开,请重新登入!");
+                        });
+                    }, "取消", function(){
+                        UnSetToast();
+                        return;
+                    });
+                }
+                else
+                {
+                    var str = "{\"action\":\"{0}\",\"brtype\":\"{1}\"}".format("setbrtype", 0); 
+                    ServerApi.request.setbrtype(str,function(data,textStatus,jqXHR)
+                    {
+                        $('#toggle-eth0').bootstrapToggle('off');
+                        $('#toggle-wlan1').bootstrapToggle('off'); 
+                    },function(xhr,textStatus)
+                    {
+                        Toast("连接断开,请重新登入!");
+                    });
+                }
+            });
+
+
+        $("#loadwlanimg").click(function(){
+            $("#loadwlanimg > img").attr("src", "./img/refresh.gif");
+            var str = "{\"action\":\"{0}\"}".format("getwifiitems"); 
+            ServerApi.request.getwifiitems(str,function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                AssembleItems(JSON.parse(data).items);
+            },function(xhr,textStatus)
+            {
+                Toast("连接断开,请重新登入!");
+            });
+            setTimeout(function() {
+                $("#loadwlanimg > img").attr("src", "./img/refresh1.png");
+                var str = "{\"action\":\"{0}\"}".format("getwifiitems"); 
+                ServerApi.request.getwifiitems(str,function(data,textStatus,jqXHR)
+                {
+                    AssembleItems(JSON.parse(data).items);
+                },function(xhr,textStatus)
+                {
+                    Toast("连接断开,请重新登入!");
+                });
+            }, 4000);
+        });
+
+        InitStoreWifiItems();
+        InitHotPot();
+        InitZhongJi();
+
+        $(".wlanhotpot_cancel").click(function(){
+            $(".wlanhotpot").addClass("hidden");
+        });
+        $(".hotpotsetting").click(function(){
+            $(".wlanhotpot").removeClass("hidden");
+        });
+        $(".wlanhotpot_setting").click(function(){
+            var newssid = $(".wlanhotpot_ssid").val();
+            var newpasswd = $(".wlanhotpot_password").val();
+            if(newpasswd.trim().length < 8)
+            {
+                Toast("密码字段长度8~63位");
+                return;
+            }
+            if(newssid.trim().length == 0)
+            {
+                Toast("请输入热点名称");
+                return;
+            }
+            if(jsonHotPot.ssid == newssid && jsonHotPot.pwd == newpasswd)
+            {
+                $(".wlanhotpot").addClass("hidden");
+                return;
+            }
+            $(".wlanhotpot").addClass("hidden");
+            var str = "{\"action\":\"{0}\",\"ssid\":\"{1}\",\"passwd\":\"{2}\"}".format("sethotpot", "", "");
+            var jsonItem = JSON.parse(str);
+            jsonItem["ssid"] = newssid;
+            jsonItem["passwd"] = newpasswd;
+            str = JSON.stringify(jsonItem);
+            console.log(str); 
+            ServerApi.request.sethotpot(str,function(data,textStatus,jqXHR)
+            {
+                jsonHotPot.ssid = newssid;
+                jsonHotPot.pwd = newpasswd;
+                $(".hotpotssid").html(jsonHotPot.ssid);
+                Toast("设置成功!");
+            },function(xhr,textStatus)
+            {
+                Toast("连接断开,请重新登入!");
+            }
+            );
+        });
+
+        $(".wlanpanel").click(function(){
+            $(this).addClass("hidden");
+        });
+        $(".wlansetting_cancel").click(function(){
+            $(".wlansetting").addClass("hidden");
+        });
+
+        $(".wlansetting_connect").click(function(){
+            var ssid = $(".wlansetting").find(".wlansetting_ssid").eq(0).html();
+            var password = $(".wlansetting").find(".wlansetting_password").eq(0).val();
+            var hidssid = $(".wlansetting").attr("hidssid");
+            if(hidssid == undefined)
+            {
+                hidssid = 0;
+            }
+            else
+            {
+                $(".wlansetting").removeAttr("hidssid");
+            }
+            $(".wlansetting").addClass("hidden");
+            var str = "{\"action\":\"{0}\",\"ssid\":\"{1}\",\"passwd\":\"{2}\",\"hidssid\":\"{3}\"}".format("connectwifiitem", "", "", hidssid); 
+            var jsonItem = JSON.parse(str);
+            jsonItem["ssid"] = ssid;
+            jsonItem["passwd"] = password;
+            str = JSON.stringify(jsonItem);
+            console.log(str);
+            ServerApi.request.connectwifiitem(str,function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                var json = JSON.parse(data);
+                if(json.status != 1)
+                {
+                    if(json.info == "wlan1 br open")
+                    {
+                        Toast("请关闭无线中继模式后重新尝试!");
+                    }
+                    else
+                    {
+                        Toast("处理异常!");
+                    }
+                    return;
+                }
+                var networkid = json.networkid;
+                if(networkid < 0)
+                {
+                    Toast("连接错误!");
+                    return;
+                }
+                
+                jsonStoreWifi.items.push(JSON.parse('{ "bssid": "any", "ssid": "relech", "id": "'+ networkid +'", "flag": "0" }'));
+                var itemid = $(".wlansetting").attr("selectid");
+                var iSignal = $("#" + itemid).attr("signal");
+                var bCrypt = $("#" + itemid).attr("iscrypt");
+                if(itemid != undefined)
+                {
+                    $("#" + itemid).remove();
+                }
+                else
+                {
+                    iSignal = 100;
+                    if(password.length == 0)
+                    {
+                        bCrypt = 0;
+                    }
+                    else
+                    {
+                        bCrypt = 1;
+                    }
+                }
+                AddWlanStoreItem(-1, networkid,iSignal,ssid, 2, bCrypt);
+                ReSetWifiStore(networkid);
+                ConnectNetWorkIndexCheck();
+                var instances = $(".scrollview").overlayScrollbars();
+                instances.scroll({ x: 0, y: 0 });
+            },function(xhr,textStatus)
+            {
+                Toast("连接断开,请重新登入!");
+            }
+            );
+        });
+
+
+        $(".wlanstoresetting_cancel").click(function(){
+            $(".wlanstoresetting").addClass("hidden");
+        });
+        
+        $(".wlanstoresetting_changepwd").click(function(){
+            if($(".wlanstoresetting").find(".wlanstoresetting_connect").eq(0).html() == "断开")
+            {
+                return;
+            }
+            $(".wlanstoresetting_changepwd").addClass("hidden");
+            $(".wlanstoresetting_password").attr("placeholder", "密码");
+        });
+
+        $(".wlanstoresetting_delete").click(function(){
+            var html = $(".wlanstoresetting").find(".wlanstoresetting_delete").eq(0).html();
+            if(html == "取消")
+            {
+                $(".wlanstoresetting").addClass("hidden");
+            }
+            else if(html == "删除")
+            {
+                var networkid = $(".wlanstoresetting").attr("networkid");
+                var str = "{\"action\":\"{0}\",\"networkid\":\"{1}\"}".format("delstorewifiitem", networkid); 
+                console.log(str);
+                ServerApi.request.delstorewifiitem(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    if(JSON.parse(data).status != 1)
+                    {
+                        Toast("处理异常!");
+                        return;
+                    }
+                    $(".wlanstoresetting").addClass("hidden");
+                    InitStoreWifiItems();
+                },function(xhr,textStatus)
+                {
+                    Toast("连接断开,请重新登入!");
+                }
+                );
+            }
+        });
+        $(".wlanstoresetting_connect").click(function(){
+            var html = $(".wlanstoresetting").find(".wlanstoresetting_connect").eq(0).html();
+            var networkid = $(".wlanstoresetting").attr("networkid");
+            if(html == "连接")
+            {
+                var passwd = $(".wlanstoresetting").find(".wlanstoresetting_password").eq(0).val();
+                var str = "{\"action\":\"{0}\",\"networkid\":\"{1}\",\"passwd\":\"{2}\"}".format("connectwifiitem", networkid, ""); 
+                var jsonItem = JSON.parse(str);
+                jsonItem["passwd"] = passwd;
+                str = JSON.stringify(jsonItem);
+                console.log(str);
+                ServerApi.request.connectwifiitem(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    var json = JSON.parse(data);
+                    if(json.status != 1)
+                    {
+                        if(json.info == "wlan1 br open")
+                        {
+                            Toast("请关闭无线中继模式后重新尝试!");
+                        }
+                        else
+                        {
+                            Toast("处理异常!");
+                        }
+                        return;
+                    }
+                    if(networkid != json.networkid)
+                    {
+                        Toast("连接错误!");
+                        return;
+                    }
+                    ReSetWifiStore(networkid);
+                    $(".wlanstoresetting").addClass("hidden");
+                    ConnectNetWorkIndexCheck();
+                    $("#wlanstoreitem_" + networkid).find(".wlanstatus").eq(0).html("正在连接...");
+                    var instances = $(".scrollview").overlayScrollbars();
+                    instances.scroll({ x: 0, y: 0 });
+                },function(xhr,textStatus)
+                {
+                    Toast("连接断开,请重新登入!");
+                }
+                );
+            }
+            else
+            {
+                //断开
+                var str = "{\"action\":\"{0}\",\"networkid\":\"{1}\"}".format("unconnectwifiitem", networkid); 
+                console.log(str);
+                ServerApi.request.unconnectwifiitem(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    var json = JSON.parse(data);
+                    if(json.status != 1)
+                    {
+                        if(json.info == "wlan1 br open")
+                        {
+                            Toast("请关闭无线中继模式后重新尝试!");
+                        }
+                        else
+                        {
+                            Toast("处理异常!");
+                        }
+                        return;
+                    }
+                    $("#wlanstoreitem_" + networkid).find(".wlanstatus").eq(0).html("正在断开...");
+                    $(".wlanstoresetting").addClass("hidden");
+                    ConnectNetWorkIndexCheck();
+                },function(xhr,textStatus)
+                {
+                    Toast("连接断开,请重新登入!");
+                }
+                );
+            }
+        });
+
+        $(".wlannocryptsetting_delete").click(function(){
+            var html = $(".wlannocryptsetting").find(".wlannocryptsetting_delete").eq(0).html();
+            if(html == "取消")
+            {
+                $(".wlannocryptsetting").addClass("hidden");
+            }
+            else if(html == "删除")
+            {
+                var networkid = $(".wlannocryptsetting").attr("networkid");
+                var str = "{\"action\":\"{0}\",\"networkid\":\"{1}\"}".format("delstorewifiitem", networkid); 
+                console.log(str);
+                ServerApi.request.delstorewifiitem(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    if(JSON.parse(data).status != 1)
+                    {
+                        Toast("处理异常!");
+                        return;
+                    }
+                    $(".wlannocryptsetting").addClass("hidden");
+                    InitStoreWifiItems();
+                },function(xhr,textStatus)
+                {
+                    Toast("连接断开,请重新登入!");
+                }
+                );
+            }
+        });
+        $(".wlannocryptsetting_connect").click(function(){
+            var networkid = $(".wlannocryptsetting").attr("networkid");
+            if(networkid < 0)
+            {
+                $(".wlannocryptsetting").addClass("hidden");
+                var ssid = $(".wlannocryptsetting").find(".wlannocryptsetting_ssid").eq(0).html();
+                var str = "{\"action\":\"{0}\",\"ssid\":\"{1}\",\"passwd\":\"{2}\"}".format("connectwifiitem", "", ""); 
+                var jsonItem = JSON.parse(str);
+                jsonItem["ssid"] = ssid;
+                str = JSON.stringify(jsonItem);
+                console.log(str);
+                ServerApi.request.connectwifiitem(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    var json = JSON.parse(data);
+                    if(json.status != 1)
+                    {
+                        if(json.info == "wlan1 br open")
+                        {
+                            Toast("请关闭无线中继模式后重新尝试!");
+                        }
+                        else
+                        {
+                            Toast("处理异常!");
+                        }
+                        return;
+                    }
+                    if(networkid != json.networkid)
+                    {
+                        Toast("连接错误!");
+                        return;
+                    }
+                    
+                    jsonStoreWifi.items.push(JSON.parse('{ "bssid": "any", "ssid": "relech", "id": "'+ networkid +'", "flag": "0" }'));
+                    var itemid = $(".wlannocryptsetting").attr("selectid");
+                    var iSignal = $("#" + itemid).attr("signal");
+                    var bCrypt = $("#" + itemid).attr("iscrypt");
+                    $("#" + itemid).remove();
+                    AddWlanStoreItem(-1, networkid,iSignal,ssid, 2, bCrypt);
+                    ReSetWifiStore(networkid);
+                    ConnectNetWorkIndexCheck();
+                },function(xhr,textStatus)
+                {
+                    Toast("连接断开,请重新登入!");
+                }
+                );
+            }
+            else
+            {
+                var ssid = $(".wlannocryptsetting").find(".wlannocryptsetting_ssid").eq(0).html();
+                var str = "{\"action\":\"{0}\",\"ssid\":\"{1}\",\"passwd\":\"{2}\"}".format("connectwifiitem", ssid, ""); 
+                ServerApi.request.connectwifiitem(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    var json = JSON.parse(data);
+                    if(json.status != 1)
+                    {
+                        if(json.info == "wlan1 br open")
+                        {
+                            Toast("请关闭无线中继模式后重新尝试!");
+                        }
+                        else
+                        {
+                            Toast("处理异常!");
+                        }
+                        return;
+                    }
+                    if(networkid != json.networkid)
+                    {
+                        Toast("连接错误!");
+                        return;
+                    }
+                    ReSetWifiStore(networkid);
+                    $(".wlannocryptsetting").addClass("hidden");
+                    $("#wlanstoreitem_" + networkid).find(".wlanstatus").eq(0).html("正在连接...");
+                    ConnectNetWorkIndexCheck();
+                    
+                },function(xhr,textStatus)
+                {
+                    Toast("连接断开,请重新登入!");
+                }
+                );
+            }
+            
+        });
+
+        ReSetWifiStore();
+
+        $(".addnetwork_cancel").click(function(){
+            $(".addnetwork").addClass("hidden");
+        });
+        $(".addnetwork_setting").click(function(){
+            $(".wlansetting").find(".wlansetting_ssid").eq(0).html($(".addnetwork_ssid").val());
+            $(".wlansetting").find(".wlansetting_password").eq(0).val($(".addnetwork_password").val());
+            var ssid = $(".wlansetting").find(".wlansetting_ssid").eq(0).html();
+            var passwd = $(".wlansetting").find(".wlansetting_password").eq(0).val();
+            $(".wlansetting").attr("hidssid", 1);
+            $(".wlansetting_connect").click();
+            $(".addnetwork").addClass("hidden");
+            var instances = $(".scrollview").overlayScrollbars();
+            instances.scroll({ x: 0, y: 0 });
+        });
+
+        CheckWlan1Status();
+    });
+
+    function AddWlanItem(index, signal, name, crypt)
+    {
+        var itemDiv = $("#wlanitem_"+index);
+        if(itemDiv.length == 0)
+        {
+            var html = $(".wlanitemtemplate").prop("outerHTML");
+            itemDiv = $(html);
+            $(".divwififujin").append(itemDiv);
+            itemDiv.attr("id","wlanitem_" + index);
+            itemDiv.removeClass("template");
+            itemDiv.removeClass("hidden");
+            itemDiv.removeClass("wlanitemtemplate");
+        }
+        itemDiv.find(".wlansignal").eq(0).attr("src", "img/wifisignal" + GetSignalLevel(signal) + ".png");
+        itemDiv.attr("signal", signal);
+        if(crypt == "[ESS]")
+        {
+            itemDiv.attr("iscrypt", 0);
+            itemDiv.find(".imglock").eq(0).addClass("hidden");
+        }
+        else
+        {
+            itemDiv.attr("iscrypt", 1);
+            itemDiv.find(".imglock").eq(0).removeClass("hidden");
+        }
+        itemDiv.attr("crypt", crypt);
+        itemDiv.find(".wlanssid").eq(0).html(name);
+    }
+
+    function AddWlanStoreItem(storeItemCount, networkid, signal, name, ipaddr, status, iscrypt)
+    {
+        if(storeItemCount == -1)
+        {
+            var i = 0;
+            do
+            {
+                if($(".wlanstoreitem_" + i).length == 0)
+                {
+                    storeItemCount = i;
+                    break;
+                }
+                i++;
+            }
+            while(1);
+        }
+        if($("#wifistoretop").length == 0)
+        {
+            $(".divwifistore").append('<div id="wifistoretop"></div>');
+        }
+        var itemDiv = $("#wlanstoreitem_"+networkid);
+        if(itemDiv.length == 0)
+        {
+            var html = $(".wlanitemtemplate2").prop("outerHTML");
+            itemDiv = $(html);
+            $(".divwifistore").append(itemDiv);
+            itemDiv.attr("id","wlanstoreitem_" + networkid);
+            itemDiv.attr("networkid", networkid);
+            itemDiv.addClass("wlanstoreitem_" + storeItemCount);
+            itemDiv.removeClass("template");
+            itemDiv.removeClass("hidden");
+            itemDiv.removeClass("wlanitemtemplate2");
+        }
+        itemDiv.find(".wlansignal").eq(0).attr("src", "img/wifisignal" + GetSignalLevel(signal) + ".png");
+        itemDiv.find(".wlanssid").eq(0).html(name);
+        if(0 == iscrypt)
+        {
+            itemDiv.attr("iscrypt", 0);
+            itemDiv.find(".imglock").eq(0).addClass("hidden");
+        }
+        else
+        {
+            itemDiv.attr("iscrypt", 1);
+            itemDiv.find(".imglock").eq(0).removeClass("hidden");
+        }
+        UpdateStoreStatus(itemDiv, GetTagFromStatus(status, ipaddr));
+        if(ipaddr.length > 0)
+        {
+            $("#wlanstoreitem_" + networkid).attr("ipaddr", ipaddr);
+        }
+        $(".storehead").removeClass("hidden");
+    }
+
+    function AssembleItems(jsonItems)
+    {
+        var t = 0;
+        var bFind = false;
+        var storeItemCount = 0;
+        for(var i = 0; i < jsonItems.length; ++i)
+        {
+            bFind = false;
+            if(jsonItems[i].ssid.length > 0)
+            {
+                for(var m = 0; m < jsonStoreWifi.items.length; ++m)
+                {
+                    if(jsonStoreWifi.items[m].ssid == jsonItems[i].ssid)
+                    {
+                        bFind = true;
+                        console.log(jsonItems[i]);
+                        if(jsonItems[i].crypt=="[ESS]")
+                        {
+                            bCrypt = 0;
+                        }
+                        else
+                        {
+                            bCrypt = 1;
+                        }
+                        AddWlanStoreItem(storeItemCount++, jsonStoreWifi.items[m].id, jsonItems[i].signal, jsonItems[i].ssid, jsonStoreWifi.items[m].ipaddr, jsonStoreWifi.items[m].flag, bCrypt);
+                        break;
+                    }
+                }
+                if(false == bFind)
+                {
+                    AddWlanItem(t++, jsonItems[i].signal, jsonItems[i].ssid, jsonItems[i].crypt);
+                }
+            }
+        }
+        do
+        {
+            var itemDiv = $("#wlanitem_"+t++);
+            if(itemDiv.length == 0)
+            {
+                break;
+            }
+            itemDiv.remove();
+        }
+        while(1);
+        do
+        {
+            var itemDiv = $(".wlanstoreitem_"+storeItemCount++);
+            if(itemDiv.length == 0)
+            {
+                break;
+            }
+            itemDiv.remove();
+        }
+        while(1);
+        ConnectNetWorkIndexCheck();
+    }
+
+    function InitStoreWifiItems()
+    {
+        $(".storehead").addClass("hidden");
+        var str = "{\"action\":\"{0}\"}".format("getstorewifiitems"); 
+        ServerApi.request.getstorewifiitems(str,function(data,textStatus,jqXHR)
+        {
+            console.log(data);
+            $(".divwifistore").html("");
+
+            jsonStoreWifi = JSON.parse(data);
+            $("#loadwlanimg").click();
+        },function(xhr,textStatus)
+        {
+            Toast("连接断开,请重新登入!");
+        });
+    }
+
+    function InitHotPot()
+    {
+        var str = "{\"action\":\"{0}\"}".format("gethotpot"); 
+        ServerApi.request.gethotpot(str,function(data,textStatus,jqXHR)
+        {
+            console.log(data);
+            jsonHotPot = JSON.parse(data);
+            $(".hotpotssid").html(jsonHotPot.ssid);
+            $(".wlanhotpot_ssid").val(jsonHotPot.ssid);
+            $(".wlanhotpot_password").val(jsonHotPot.pwd);
+           
+        },function(xhr,textStatus)
+        {
+            Toast("连接断开,请重新登入!");
+        });
+    }
+
+    function InitZhongJi()
+    {
+        var str = "{\"action\":\"{0}\"}".format("getbrtype"); 
+        ServerApi.request.getbrtype(str,function(data,textStatus,jqXHR)
+        {
+            console.log(data);
+            var brType = JSON.parse(data).brtype;
+            if(brType == 0)
+            {
+                //none
+                $('#toggle-wlan1').bootstrapToggle('off'); 
+                $('#toggle-eth0').bootstrapToggle('off'); 
+            }
+            if(brType == 1)
+            {
+                //eth0
+                $('#toggle-wlan1').bootstrapToggle('off'); 
+                $('#toggle-eth0').bootstrapToggle('on'); 
+            }
+            if(brType == 2)
+            {
+                //wlan1
+                $('#toggle-wlan1').bootstrapToggle('on'); 
+                $('#toggle-eth0').bootstrapToggle('off'); 
+            }
+            //$(".hotpotssid").html(.ssid);
+           
+        },function(xhr,textStatus)
+        {
+            Toast("连接断开,请重新登入!");
+        });
+    }
+
+    function OnWlanItemClick(item)
+    {
+        var ssid = $(item).find(".wlanssid").eq(0).html();
+        if($(item).attr("iscrypt") == 0)
+        {
+            $(".wlannocryptsetting").attr("networkid", -1);
+            $(".wlannocryptsetting").removeClass("hidden");
+            $(".wlannocryptsetting").find(".wlannocryptsetting_ssid").eq(0).html(ssid);
+            $(".wlannocryptsetting").attr("selectid", $(item).attr("id"));
+        }
+        else
+        {
+            $(".wlansetting").removeClass("hidden");
+            $(".wlansetting").find(".wlansetting_ssid").eq(0).html(ssid);
+            $(".wlansetting").find(".wlansetting_password").eq(0).val("");
+            $(".wlansetting").attr("selectid", $(item).attr("id"));
+        }
+        
+    }
+
+    var iMaxCheckTimes = 30;
+    var iClickTime = 0;
+    var iCheckTimes = 0;
+    function ConnectNetWorkIndexCheck()
+    {
+        iClickTime = new Date().getTime();
+        iCheckTimes = 0;
+    }
+
+    function GetTagFromStatus(status, ipaddr)
+    {
+        switch(status)
+        {
+            case 0:
+            {
+                //WPASTATUS_INACTIVE
+                return 0;
+            }
+            case 1:
+            {
+                //WPASTATUS_SCANNING
+                return 2;
+            }
+            case 2:
+            case 3:
+            {
+                //WPASTATUS_ASSOCIATING
+                //WPASTATUS_ASSOCIATED
+                return 2;
+            }
+            case 4:
+            {
+                //WPASTATUS_COMPLETED
+                if(ipaddr.length > 0)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 3;
+                }
+            }
+            case 5:
+            {
+                //WPASTATUS_DISCONNECTED
+                return 0;
+            }
+            case 6:
+            {
+                //WPASTATUS_4WAY_HANDSHAKE
+                return 4;
+            }
+            default:
+            {
+                return 0;
+            }
+        }
+    }
+
+    function UpdateStoreStatus(itemDiv, status)
+    {
+        if(itemDiv.length == 0)
+        {
+            return;
+        }
+        if(status == 1)
+        {
+            if(itemDiv.find(".wlanstatus").eq(0).html() != "已连接")
+            {
+                itemDiv.find(".wlanstatus").eq(0).html("已连接");
+                itemDiv.prependTo($("#wifistoretop"));
+            }
+        }
+        else if(status == 2)
+        {
+            itemDiv.find(".wlanstatus").eq(0).html("正在连接...");
+            iCheckTimes = 0;
+        }
+        else if(status == 3)
+        {
+            itemDiv.find(".wlanstatus").eq(0).html("正在获取地址...");
+            iCheckTimes = 0;
+        }
+        else if(status == 4)
+        {
+            $(".wlanstoresetting").removeClass("hidden");
+            iCheckTimes = iMaxCheckTimes;
+        }
+        else
+        {
+            itemDiv.find(".wlanstatus").eq(0).html("已保存");
+        }
+    }
+    
+    var icount = 0;
+    function CheckWlan1Status()
+    {
+        setInterval(function()  {
+           
+            if(iCheckTimes < iMaxCheckTimes)
+            {
+                iCheckTimes++;
+            }
+            else
+            {
+                if(icount++ == 10)
+                {
+                    icount = 0;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            var str = "{\"action\":\"{0}\"}".format("getwifistatus"); 
+            ServerApi.request.getwifistatus(str, function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                var iStatus = jsonRoot.wlan1status;
+
+                if(new Date().getTime() - iClickTime < 1000)
+                {
+                    return;
+                }
+                if(jsonRoot.networkid == -1 && iStatus == 5)
+                {
+                    $(".wlanstatus").html("已保存");
+                    ReSetWifiStore(-1);
+                    return;
+                }
+                // if(new Date().getTime() - iClickTime > 15000 && (iStatus == 0 || iStatus == 1) && $("#wifistoretop").children(".wlanstoreitem").length > 0)
+                // {
+                //     //0=>WPASTATUS_INACTIVE  1=>WPASTATUS_SCANNING 5=>WPASTATUS_DISCONNECTED
+                //     //15S钟还没有连接上
+                //     var str = "{\"action\":\"{0}\"}".format("unconnectwifiitem"); 
+                //     console.log(str);
+                //     ServerApi.request.unconnectwifiitem(str,function(data,textStatus,jqXHR)
+                //     {
+                //         ReSetWifiStore(-1);
+                //         return;
+                //     });
+                // }
+                if(jsonRoot.networkid == -1 && iStatus == 0)
+                {
+                    $(".wlanstatus").html("已保存");
+                }
+                else 
+                {
+                    if($("#wifistoretop").children(".wlanstoreitem").length == 0)
+                    {
+                        ReSetWifiStore(jsonRoot.networkid);
+                    }
+                    console.log($("#wifistoretop").find(".wlanstatus").eq(0).html());
+                    if($("#wifistoretop").find(".wlanstatus").eq(0).html() == "正在断开..." && iStatus == 4)
+                    {
+                        return;
+                    }
+                    if($("#wifistoretop").find(".wlanstatus").eq(0).html() == "正在连接..." && iStatus == 0)
+                    {
+                        return;
+                    }
+                    if($("#wifistoretop").find(".wlanstatus").eq(0) == jsonRoot.networkid)
+                    {
+                        return;
+                    }
+                    if($("#wlanstoreitem_" + jsonRoot.networkid).find(".wlanssid").eq(0).html() == jsonRoot.ssid)
+                    {
+                        UpdateStoreStatus($("#wlanstoreitem_" + jsonRoot.networkid), GetTagFromStatus(iStatus, jsonRoot.ipaddr));
+                        switch(iStatus)
+                        {
+                            case 2:
+                            case 3:
+                            {
+                                //让他继续延迟一下
+                                iClickTime = new Date().getTime();
+                                //WPASTATUS_ASSOCIATING
+                                //WPASTATUS_ASSOCIATED
+                                //UpdateStoreStatus($("#wlanstoreitem_" + jsonRoot.networkid), 2);
+                                break;
+                            }
+                            case 4:
+                            {
+                                //WPASTATUS_COMPLETED
+                                if(jsonRoot.ipaddr.length > 0)
+                                {
+                                    $("#wlanstoreitem_" + jsonRoot.networkid).attr("ipaddr", jsonRoot.ipaddr);
+                                    iCheckTimes = iMaxCheckTimes;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+           
+        }, 400);
+    }
+
+    function OnWlanStoreItemClick(item)
+    {
+        var ssid = $(item).find(".wlanssid").eq(0).html();
+        var status = $(item).find(".wlanstatus").eq(0).html();
+        var networkID = $(item).attr("networkid");
+
+        if(0 == $(item).attr("iscrypt"))
+        {
+            if(status == "已保存")
+            {
+                $(".wlannocryptsetting").attr("networkid", networkID);
+                $(".wlannocryptsetting").find(".wlannocryptsetting_connect").eq(0).html("连接"); 
+                $(".wlannocryptsetting").find(".wlannocryptsetting_delete").eq(0).html("删除"); 
+                $(".wlannocryptsetting").find(".wlannocryptsetting_ssid").eq(0).html(ssid);
+                $(".wlannocryptsetting").removeClass("hidden");
+            }
+            else
+            {
+                $(".wlanstoresetting").attr("networkid", networkID);
+                $(".wlanstoresetting").find(".wlanstoresetting_connect").eq(0).html("断开"); 
+                $(".wlanstoresetting").find(".wlanstoresetting_delete").eq(0).html("取消"); 
+                $(".wlanstoresetting").find(".wlanstoresetting_changepwd").eq(0).html($(item).attr("ipaddr"));
+                $(".wlanstoresetting").removeClass("hidden");
+                $(".wlanstoresetting").find(".wlanstoresetting_ssid").eq(0).html(ssid);
+                $(".wlanstoresetting_changepwd").removeClass("hidden");
+                $(".wlanstoresetting_password").removeAttr("placeholder");
+            }
+        }
+        else
+        {
+            $(".wlanstoresetting").attr("networkid", networkID);
+            if(status == "已保存")
+            {
+                $(".wlanstoresetting").find(".wlanstoresetting_connect").eq(0).html("连接"); 
+                $(".wlanstoresetting").find(".wlanstoresetting_delete").eq(0).html("删除"); 
+                $(".wlanstoresetting").find(".wlanstoresetting_changepwd").eq(0).html("修改密码");
+            }
+            else
+            {
+                $(".wlanstoresetting").find(".wlanstoresetting_connect").eq(0).html("断开"); 
+                $(".wlanstoresetting").find(".wlanstoresetting_delete").eq(0).html("取消"); 
+           
+                if(typeof($(item).attr("ipaddr")) != "undefined")
+                {
+                    $(".wlanstoresetting").find(".wlanstoresetting_changepwd").eq(0).html($(item).attr("ipaddr"));
+                }
+                else
+                {
+                    $(".wlanstoresetting").find(".wlanstoresetting_changepwd").eq(0).html("");
+                }
+                
+            }
+            $(".wlanstoresetting").removeClass("hidden");
+            $(".wlanstoresetting").find(".wlanstoresetting_ssid").eq(0).html(ssid);
+            $(".wlanstoresetting").find(".wlanstoresetting_password").eq(0).val("");
+
+            $(".wlanstoresetting_changepwd").removeClass("hidden");
+            $(".wlanstoresetting_password").removeAttr("placeholder");
+        }
+    }
+
+    
+    function ReSetWifiStore(networkid)
+    {
+        var iChildLen = $("#wifistoretop").children().length;
+        for(var i = 0; i < iChildLen; ++i)
+        {
+            var item = $("#wifistoretop").children().eq(i);
+            item.find(".wlanstatus").eq(0).html("已保存");
+            item.removeAttr("ipaddr");
+            item.insertAfter("#wifistoretop");
+        }
+        if(networkid >= 0)
+        {
+            var itemDiv = $("#wlanstoreitem_"+networkid);
+            itemDiv.prependTo($("#wifistoretop"));
+        }
+    }
+    function AddNetWork()
+    {
+        $(".addnetwork").removeClass("hidden");
+    }
+
+    function GetSignalLevel(signal)
+    {
+        if(signal < 30)
+        {
+            return 0;
+        }
+        if(signal < 50)
+        {
+            return 1;
+        }
+        if(signal < 75)
+        {
+            return 2;
+        }
+        return 3;
+    }
+
+    function OnKeyBoardShow(keyboardHeight)
+    {
+        $(".wlanpanel").css("top", 0 - document.body.clientHeight*keyboardHeight);
+    }
+    function OnKeyBoardHide()
+    {
+        $(".wlanpanel").css("top", 0);
+    }
+    function OnKeyBack()
+    {
+        var iLen = $(".wlanpanel").length;
+        var hasWlanPanel = false;
+        for(var i = 0; i < iLen; ++i)
+        {
+            if(false == $(".wlanpanel").eq(i).hasClass("hidden"))
+            {
+                hasWlanPanel = true;
+                $(".wlanpanel").eq(i).addClass("hidden");
+                break;
+            }
+        }
+        if(false == hasWlanPanel)
+        {
+            DeviceApi.device.canback();
+        }
+    }
+</script>
+
+<body>
+    <div class="container netswitch" style="height: 28vh;">
+        <div>
+            <div class="eth canclick hidden" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.6rem;">
+                <span style="display: inline-block;">有线中继</span>
+                <div class="toggleeth0div" style="float: right;" onclick="event.stopPropagation();"> <input id="toggle-eth0" type="checkbox" data-toggle="toggle" data-size="small" data-onstyle="primary" data-on="开" data-off="关">  </div>
+            </div>
+            <div class="canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.6rem;">
+                <span style="display: inline-block;">无线中继</span>
+                <div class="togglewlan1div" style="float: right;" onclick="event.stopPropagation();"> <input id="toggle-wlan1" type="checkbox" data-toggle="toggle" data-size="small" data-onstyle="primary" data-on="开" data-off="关"></div>
+            </div>
+            <div class="hotpotsetting canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.6rem;">
+                <span style="display: inline-block;">热点设置</span>
+                <div style="float: right;"> <div class="hotpotssid" style="float: left; text-align:right; padding-right: 1vh; text-overflow:ellipsis;overflow: hidden; max-width: 30vh;">relech</div> <img src="./img/more.png" width="9px" height="14px"/>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    <div class="container scrollview " style="height: 70vh; ">
+        
+        <div class="divmain" style="padding-left: 15px; padding-right: 15px;">
+            <div class="storehead hidden" style="height: 5vh;">
+                <div style="float: left; line-height: 5vh; font-size: 3vh;">已存储</div>
+            </div>
+            <div class="divwifistore">
+            </div>
+            <div style="height: 5vh; ">
+                <div style="float: left; line-height: 5vh; font-size: 3vh;">设备附近WLAN</div>
+                <div class="canclick" id="loadwlanimg" style="float: right;"><img  src="./img/refresh1.png" width="30vh" height="30vh"/></div>
+            </div>
+            <div class="divwififujin" >
+
+            </div>
+            <div class="divaddwifi canclick" style="margin-top: 2vh;padding-bottom: 4vh;" onclick="AddNetWork()">
+                <span style="color: #6f87a9; font-weight: 400; font-size: 1.8rem;">添加网络</span> 
+            </div>
+        </div>
+    </div>
+    <div class="wlanitemtemplate hidden wlanitem " style="height: 9vh;" onclick="OnWlanItemClick(this)">
+        <div style="float: left; line-height: 9vh;">
+            <img class="wlansignal" src="./img/refresh1.png" width="30vh" height="30vh" />
+        </div>
+        <div class="wlanssid" style="float: left;line-height: 9vh;font-size: 1.6rem;text-overflow:ellipsis;overflow: hidden;width: 60%; height: 100%; margin-left: 1vh;">
+            111111111111111111111111111111111111111111
+        </div>
+        <div style="float: right; line-height: 9vh;"><img class="imglock" src="./img/lock.png" width="14px" height="14px"/> <img src="./img/more.png" width="9px" height="14px"/></div>
+        
+    </div>
+    <div class="wlanitemtemplate2  hidden wlanstoreitem " style="height: 11vh;" onclick="OnWlanStoreItemClick(this)">
+        <div style="float: left; width: 5vh; height: 100%; line-height: 11vh;">
+            <img class="wlansignal" src="./img/wifisignal1.png" width="30vh" height="30vh" />
+        </div>
+        <div style="float: left; width: 60%; ">
+            <div class="wlanssid" style="margin-top: 2.2vh; line-height:3vh;font-size: 1.9rem;text-overflow:ellipsis;overflow: hidden;">
+                        relech
+            </div>
+            <div class="wlanstatus" style="margin-top: 0.7vh;color:#999999;line-height:3vh;font-size: 1.3rem;text-overflow:ellipsis;overflow: hidden;">
+                已连接
+            </div>
+        </div>
+        
+        <div style="float: right; line-height: 9vh;"><img class="imglock" src="./img/lock.png" width="14px" height="14px"/> <img src="./img/more.png" width="9px" height="14px"/></div>
+    </div>
+
+    <div class="wlanpanel wlansetting hidden" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color:rgba(0, 0, 0, 0.027); z-index: 2;">
+        <div class="settingpassword " style="width: 100%; height: 30vh; background-color: #ffffff; border-radius: 2vh 2vh 0 0;bottom: 0; position:absolute;" onclick="event.stopPropagation();">
+            <div class="wlansetting_ssid" style="width: 100%; text-align: center;height: 9vh; line-height: 9vh; font-size: 1.9rem;text-overflow:ellipsis;overflow: hidden;">relech</div>
+            <div style="width: 80%; text-align: center;height: 5vh; line-height: 5vh; font-size: 1.9rem;margin-left: 10%;">
+                <input class="wlansetting_password form-control" name="wlansetting_password" maxlength="32" type="text"  placeholder="密码至少8位" />
+            </div>
+            <div style="width: 80%; text-align: center;height: 10vh; line-height: 10vh; font-size: 1.9rem;margin-left: 10%;margin-top: 5vh;">
+                <a href="#" class="wlansetting_connect button  button-rounded button-primary" style="float: left;width: 40%;">连接</a>
+                <a href="#" class="wlansetting_cancel button  button-rounded button-caution" style="float: right;width: 40%;">取消</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="wlanpanel wlannocryptsetting hidden" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color:rgba(0, 0, 0, 0.027); z-index: 2;">
+        <div class="settingpassword " style="width: 100%; height: 25vh; background-color: #ffffff; border-radius: 2vh 2vh 0 0;bottom: 0; position:absolute;" onclick="event.stopPropagation();">
+            <div class="wlannocryptsetting_ssid" style="width: 100%; text-align: center;height: 9vh; line-height: 15vh; font-size: 1.9rem;text-overflow:ellipsis;overflow: hidden;">relech</div>
+            <div style="width: 80%; text-align: center;height: 10vh; line-height: 10vh; font-size: 1.9rem;margin-left: 10%;margin-top: 5vh;">
+                <a href="#" class="wlannocryptsetting_connect button  button-rounded button-primary" style="float: left;width: 40%;">连接</a>
+                <a href="#" class="wlannocryptsetting_delete button  button-rounded button-caution" style="float: right;width: 40%;">取消</a>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="wlanpanel wlanstoresetting hidden" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color:rgba(0, 0, 0, 0.027); z-index: 2;">
+        <div class="settingpassword " style="width: 100%; height: 30vh; background-color: #ffffff; border-radius: 2vh 2vh 0 0;bottom: 0; position:absolute;" onclick="event.stopPropagation();">
+            <div class="wlanstoresetting_ssid" style="width: 100%; text-align: center;height: 9vh; line-height: 9vh; font-size: 1.9rem;text-overflow:ellipsis;overflow: hidden;">relech</div>
+            <div style="position: relative; text-align: center; height: 7vh;">
+                <div style="width: 80%; text-align: center;height: 7vh; line-height: 7vh; font-size: 1.9rem;margin-left: 10%;">
+                    <input class="wlanstoresetting_password form-control" name="wlanstoresetting_password" maxlength="32" type="text"  />
+                </div>
+                <div class="wlanstoresetting_changepwd" style="position: absolute;top: 0; width: 80%; text-align: center;height: 7vh; line-height: 7vh; font-size: 1.9rem;margin-left: 10%; color: #6f87a9; ">
+                    修改密码
+                </div>
+            </div>
+            <div style="width: 80%; text-align: center;height: 8vh; line-height: 8vh; font-size: 1.9rem;margin-left: 10%;margin-top: 5vh;">
+                <a href="#" class="wlanstoresetting_connect button  button-rounded button-primary" style="float: left;width: 40%;">连接</a>
+                <a href="#" class="wlanstoresetting_delete button  button-rounded button-caution" style="float: right;width: 40%;">删除</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="wlanpanel wlanhotpot hidden" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color:rgba(0, 0, 0, 0.027); z-index: 2;">
+        <div class="settinghotpot " style="width: 100%; height: 32vh; background-color: #ffffff; border-radius: 2vh 2vh 0 0;bottom: 0; position:absolute;" onclick="event.stopPropagation();">
+            <div style="width: 100%; text-align: center;height: 6.5vh; line-height: 6.5vh; font-size: 1.6rem;">热点设置</div>
+            <div style="width: 80%; text-align: center;height: 4vh; line-height: 4vh; font-size: 1.9rem;margin-left: 10%;">
+                <input class="wlanhotpot_ssid form-control" name="wlanhotpot_ssid" maxlength="32" type="text"  placeholder="热点名称" />
+            </div>
+            <div style="width: 80%; text-align: center;height: 4vh; line-height: 4vh; font-size: 1.9rem;margin-left: 10%; margin-top: 4vh;">
+                <input class="wlanhotpot_password form-control" name="wlanhotpot_password" maxlength="32" type="text"  placeholder="密码至少8位" />
+            </div>
+            <div style="width: 80%; text-align: center;height: 7vh; line-height: 7vh; font-size: 1.9rem;margin-left: 10%;margin-top: 5vh;">
+                <a href="#" class="wlanhotpot_setting button  button-rounded button-primary" style="float: left;width: 40%;">设置</a>
+                <a href="#" class="wlanhotpot_cancel button  button-rounded button-caution" style="float: right;width: 40%;">取消</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="wlanpanel addnetwork hidden" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-color:rgba(0, 0, 0, 0.027); z-index: 2;">
+        <div class="settinghotpot " style="width: 100%; height: 32vh; background-color: #ffffff; border-radius: 2vh 2vh 0 0;bottom: 0; position:absolute;" onclick="event.stopPropagation();">
+            <div style="width: 100%; text-align: center;height: 6.5vh; line-height: 6.5vh; font-size: 1.6rem;">添加网络</div>
+            <div style="width: 80%; text-align: center;height: 4vh; line-height: 4vh; font-size: 1.9rem;margin-left: 10%;">
+                <input class="addnetwork_ssid form-control" name="addnetwork_ssid" maxlength="32" type="text"  placeholder="网络名称" />
+            </div>
+            <div style="width: 80%; text-align: center;height: 4vh; line-height: 4vh; font-size: 1.9rem;margin-left: 10%; margin-top: 4vh;">
+                <input class="addnetwork_password form-control" name="addnetwork_password" maxlength="32" type="text"  placeholder="密码可为空或至少8位" />
+            </div>
+            <div style="width: 80%; text-align: center;height: 7vh; line-height: 7vh; font-size: 1.9rem;margin-left: 10%;margin-top: 5vh;">
+                <a href="#" class="addnetwork_setting button  button-rounded button-primary" style="float: left;width: 40%;">连接</a>
+                <a href="#" class="addnetwork_cancel button  button-rounded button-caution" style="float: right;width: 40%;">取消</a>
+            </div>
+        </div>
+    </div>
+    
+
+    
+</body>
+</html>

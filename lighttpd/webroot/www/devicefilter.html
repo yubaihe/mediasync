@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备过滤</title>
+</head>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/animate.css"/>
+<link rel="stylesheet" href="css/Common.css"/>
+<script src="js/Api.js?id=1"></script>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="./js/masonry.pkgd.min.js"></script>
+<script src="./js/imagesloaded.pkgd.min.js"></script>
+<script src="./js/Common.js?id=7"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+<style type="text/css">
+    .filteritem { 
+        width: 100%;
+        height: 10vh;
+        border-bottom: 1px solid #e9e8e8; 
+    }
+    </style>
+    <script>
+    $(document).ready(function()
+    {
+        DisableContextMenu();
+        //支持IOS的 active
+        document.body.addEventListener('touchstart',function(){});
+        $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
+        var ServerApi = new API("http://" + window.location.host);
+        var DeviceApi = new API("");
+        var str = "{\"action\":\"devnames\"}";
+        ServerApi.request.devnames(str,function(data,textStatus,jqXHR)
+        {
+            var jsonRoot = JSON.parse(data);
+            var namesArray = jsonRoot["devnames"];
+            if(namesArray.length == 0)
+            {
+                DeviceApi.device.toast("未查询到设备!");
+                return;
+            }
+            var selectDeviceMap = GetSelectDeviceMap();
+            for(var i = 0; i < namesArray.length; ++i)
+            {
+                var html = $(".filteritemtemplate").prop("outerHTML");
+                var itemDiv = $(html);
+                itemDiv.removeClass("filteritemtemplate");
+                itemDiv.removeClass("hidden");
+                itemDiv.attr("devname", namesArray[i].name);
+                itemDiv.click(function(){
+                    if($(this).find(".deviceselected").eq(0).hasClass("hidden"))
+                    {
+                        $(this).find(".deviceselected").eq(0).removeClass("hidden");
+                        CheckSelectAll();
+                    }
+                    else
+                    {
+                        $(this).find(".deviceselected").eq(0).addClass("hidden");
+                        CheckSelectAll();
+                    }
+                });
+                itemDiv.find(".devname").eq(0).html(namesArray[i].name);
+                
+                if(selectDeviceMap.size == 0 || selectDeviceMap.has(namesArray[i].name))
+                {
+                    itemDiv.find(".deviceselected").eq(0).removeClass("hidden");
+                }
+                else
+                {
+                   // itemDiv.find(".deviceselected").eq(0).addClass("hidden");
+                }
+                $(".divmain").append(itemDiv);
+            }
+            CheckSelectAll();
+        },function(xhr,textStatus)
+            {
+            });
+
+            function CheckSelectAll()
+            {
+                var itemLen = $(".divmain").children(".filteritem").length;
+                
+                var SelectCount = 0;
+                var unselectCount = 0;
+                var selectDevices = "";
+                for(var i = 0; i < itemLen; ++i)
+                {
+                    var item = $($(".divmain").children(".filteritem").eq(i));
+                    if(item.find(".deviceselected").eq(0).hasClass("hidden"))
+                    {
+                        unselectCount++;
+                    }
+                    else
+                    {
+                        SelectCount++;
+                        if(selectDevices.length == 0)
+                        {
+                            selectDevices = item.attr("devname");
+                        }
+                        else
+                        {
+                            selectDevices += "&";
+                            selectDevices += item.attr("devname");
+                        }
+                    }
+                }
+                console.log("SelectCount:" + SelectCount + "  unselectCount:" + unselectCount);
+                if(SelectCount == 0 || unselectCount == 0)
+                {
+                    //如果全选就删除cookie 后台就不用过滤了
+                    //如果全不选就默认全选 也要删除cookie 后台就不用过滤了
+                    var deviceid = GetCookie("deviceid");
+                    SetCookie(deviceid + "_selectdevice", "");
+                }
+                else
+                {
+                    var deviceid = GetCookie("deviceid");
+                    SetCookie(deviceid + "_selectdevice", selectDevices);
+                }
+                if(SelectCount == 0)
+                {
+                    for(var i = 0; i < itemLen; ++i)
+                    {
+                        $(".divmain").children(".filteritem").eq(i).find(".deviceselected").eq(0).removeClass("hidden");
+                    }
+                }
+                console.log("selectdevice:" + GetSelectDeviceString());
+                
+            }
+    });
+</script>
+<body>
+    <div class="divmain" style="width: 100%;">
+    </div>
+        <div class="filteritemtemplate filteritem hidden"  style=" position: relative;">
+            <div class="devname" style="background-color: #ffffff;position: absolute; width: 100%; height: 9vh; padding-bottom: 1px; padding-left: 2vh;font-size: 2.2rem; line-height: 9.5vh;">
+            111
+            </div>
+            <div class="deviceselected hidden" style="position: absolute; right: 0px; background-color: #ffffff; width: 7vh; height: 7vh; margin-top: 1vh; margin-right: 1vh;">
+                <img src="./img/selected.png" width="100%" height="100%"/>
+            </div>
+        </div>
+   
+</body>
+</html>

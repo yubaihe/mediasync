@@ -1,0 +1,2 @@
+gcc -o sqlite3.o -c sqlite3.c -lpthread -ldl　　//编译成目标文件
+ar -rcv libsqlite3.a sqlite3.o　　 //将列出的各个目标文件一起打包成一个静态库libsqlite3.a

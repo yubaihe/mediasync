@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年照片按照位置分类</title>
+</head>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/animate.css"/>
+<link rel="stylesheet" href="css/Common.css"/>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/Common.js?id=2"></script>
+<script src="js/Api.js?id=2"></script>
+<script src="js/jquery.md5.js"></script>
+<script src="js/baidumap.js"></script>
+<link rel="stylesheet" href="css/bootstrap-slider.min.css"/>
+<script src="js/bootstrap-slider.min.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+<style type="text/css">
+.itemselected
+{
+    color: #c3c3c3;
+}
+  
+.slider.slider-horizontal
+{
+    width: 100% !important;
+}
+.anchorBL{display:none}
+</style>
+<script>
+    var ServerApi = new API("http://" + window.location.host);
+    //var ServerApi = new API("http://" + "192.168.2.42");
+    var DeviceApi = new API("");
+    var iCount = 0;
+    var g_weizhidiv = null;
+    var g_jumpItem = null;
+    var year = GetUrlParam("year");
+    if(year == null)
+    {
+        year = "recentupload";
+    }
+    var month = GetUrlParam("month");
+    if(month == null)
+    {
+        month = 0;
+    }
+    var day = GetUrlParam("day");
+    if(day == null)
+    {
+        day = 0;
+    }
+    var g_bm = null;
+    function SetLocation(itemdiv, long, latuide, location, count)
+    {
+        var newClass = Math.ceil(Math.random()*100000) + "";
+        var translateCallback = function (data){
+            console.log(data);
+            if(data.status === 0) {
+            // if(null == g_bm)
+            // {
+            //     // g_bm = new BMap.Map("yeargroupmap");
+            //     // g_bm.centerAndZoom(data.points[0], 15);
+            //     // g_bm.setCenter(data.points[0]);
+            //     // g_bm.enableScrollWheelZoom();//启用滚轮
+            // }
+            console.log(data.points[0]);
+            itemdiv.attr("baiduaddr", data.points[0].lng + "&" + data.points[0].lat);
+            
+            if(itemdiv.hasClass("firstdiv"))
+            {
+                Locationitemclick(itemdiv.children().eq(0));
+            }
+
+            SetItem(itemdiv, data.points[0], location, newClass);
+            }
+        }
+        if(null != g_bm)
+        {
+            var ggPoint = new BMapGL.Point(long, latuide);
+            var convertor = new BMapGL.Convertor();
+            var pointArr = [];
+            pointArr.push(ggPoint);
+            convertor.translate(pointArr, 1, 5, translateCallback);
+        }
+        else
+        {
+            SetItem(itemdiv, null, location, newClass);
+        }
+    }
+    function SetBaiDuLocation(itemdiv, long, latuide, location, count)
+    {
+        itemdiv.attr("baiduaddr", long + "&" + latuide);
+        var bdPoint = null;
+        var newClass = Math.ceil(Math.random()*100000) + "";
+        if(null != g_bm)
+        {
+            var bdPoint = new BMapGL.Point(long, latuide);
+        
+            if(itemdiv.hasClass("firstdiv"))
+            {
+                Locationitemclick(itemdiv.children().eq(0));
+            }
+
+            
+        }
+        SetItem(itemdiv, bdPoint, location, newClass);
+    }
+    var g_markLabelMap = new Map();
+    function SetItem(itemdiv, bdPoint, location, newClass)
+    {
+        
+        setTimeout(function()  {
+            
+                    var str = "{\"action\":\"{0}\",\"location\":\"{1}\",\"devnames\":\"{2}\",\"year\":\"{3}\",\"month\":\"{4}\",\"day\":\"{5}\"}".format("yearlocationgrouptongji", location, GetSelectDeviceString(), year, month, day);
+                    ServerApi.request.yearlocationgrouptongji(str,function(data,textStatus,jqXHR)
+                    {
+                        console.log(data);
+                        var jsonRoot = JSON.parse(data);
+                        if(jsonRoot["status"] == 0)
+                        {
+                            return;
+                        }
+                        if(jsonRoot["items"].length == 0)
+                        {
+                            $("." + newClass).remove();
+                            $(itemdiv).remove();
+                            return;
+                        }
+
+                        var piccount = 0;
+                        var videocount = 0;
+                        for(var i = 0; i < jsonRoot["items"].length; ++i)
+                        {
+                            var type = jsonRoot["items"][i]["type"];
+                            var count = jsonRoot["items"][i]["count"];
+                            if(type == 1)
+                            {
+                                //图片
+                                piccount = count;
+                            }
+                            else if(type == 2)
+                            {
+                                //视频
+                                videocount = count;
+                            }
+                        }
+                        var item = "";
+                        if(piccount == 0)
+                        {
+                            item = "视频:{0}条".format(videocount);
+                        }
+                        else if(videocount == 0)
+                        {
+                            item = "图片:{0}张".format(piccount);
+                        }
+                        else 
+                        {
+                            item = "图片:{0}张  视频:{1}条".format(piccount, videocount);
+                        }
+                        
+                        if(null != bdPoint)
+                        {
+                            var html = $(".covertemplate").html();
+                            var labeldiv = $(html);
+                            labeldiv.addClass(newClass);
+                            itemdiv.attr("mapdivclass", newClass);
+
+                            var label = new BMapGL.Label(labeldiv.prop("outerHTML"), {offset:new BMapGL.Size(0, 0)});
+                            console.log(label);
+                           // label.setOffset(new BMap.Size(0, 0));
+                           
+                            if(undefined == g_markLabelMap.get(newClass))
+                            {
+                                g_markLabelMap.set(newClass, label);
+                            }
+                            var labelStyle = {
+                            backgroundColor: "0.05",
+                            border: "0",
+                            };
+                            label.setStyle(labelStyle);
+                            var marker = new BMapGL.Marker(bdPoint);
+                            marker.setLabel(label); //添加百度label
+                            g_bm.addOverlay(marker);
+                        }
+
+                        if(0 != $("."+newClass).length)
+                        {
+                            $("."+newClass).find(".info").eq(0).html(item);
+                            var infoWidth = $("." + newClass).find(".infomain").eq(0).width();
+                            var leftWidth = $("." + newClass).find(".left").eq(0).width();
+                            var rightWidth = $("." + newClass).find(".right").eq(0).width();
+                            var infoBackWidth = $("." + newClass).find(".infobk").eq(0).width();
+
+                            if(leftWidth + rightWidth > infoWidth)
+                            {
+                                $("." + newClass).find(".center").eq(0).width(0);
+                                $("." + newClass).find(".infobk").eq(0).width(leftWidth + rightWidth);
+                            }
+                            else
+                            {
+                                $("." + newClass).find(".center").eq(0).width(infoWidth - leftWidth - rightWidth);
+                                var centerWidth = $("." + newClass).find(".center").eq(0).width();
+                                $("." + newClass).find(".center").eq(0).width(centerWidth + rightWidth/2);
+                                $("." + newClass).find(".infobk").eq(0).width(leftWidth + centerWidth + rightWidth*2);
+                            }
+                            console.log(infoWidth + "~~" + leftWidth + "~~" + rightWidth);
+
+                            $("." + newClass).find(".infobk").eq(0).removeClass("hidden");
+                            $("." + newClass).find(".infomain").eq(0).removeClass("hidden");
+                            
+                            $("." + newClass).attr("location", location);
+                        }
+                        
+                        itemdiv.find(".locationinfo").eq(0).attr("location", location);
+                        itemdiv.find(".locationinfo").eq(0).html("{0}({1})".format(location, piccount  + videocount));
+                        var label = g_markLabelMap.get(newClass);
+                        if(undefined != label)
+                        {
+                            label.setOffset(new BMapGL.Size( 0 - leftWidth + 15, 0 - $("." + newClass).height()/2*3 - 15));
+                        }
+                    },function(xhr,textStatus)
+                    {
+                        //SetItem(itemdiv, null, location, newClass);
+                    });
+                }, 100);
+    }
+    function Request()
+    {
+        var str = "{\"action\":\"{0}\",\"start\":{1},\"limit\":{2},\"devnames\":\"{3}\",\"year\":\"{4}\",\"month\":\"{5}\",\"day\":\"{6}\"}".format("yearlocationgroup", iCount, 20, GetSelectDeviceString(), year, month, day);
+        ServerApi.request.yearlocationgroup(str,function(data,textStatus,jqXHR)
+        {
+            console.log(data);
+            var jsonRoot = JSON.parse(data);
+            if(jsonRoot["status"] == 0 || jsonRoot["items"].length == 0)
+            {
+                if(null != g_weizhidiv)
+                {
+                    $(".yeargroupmain").append(g_weizhidiv);
+                    var itemdiv = $(".yeargroupmain").children().eq($(".yeargroupmain").children().length - 1);
+                    SetItem(itemdiv, null, "未知", 0);
+                }
+                return;
+            }
+            
+            for(var i = 0; i < jsonRoot["items"].length; ++i)
+            {
+                var item = jsonRoot["items"][i];
+                var html = $(".template .groupitem").prop("outerHTML");
+                if(item.location == "未知")
+                {
+                    g_weizhidiv = html;
+                    continue;
+                }
+                else
+                {
+                    $(".yeargroupmain").append(html);
+                }
+                
+                var itemdiv = $(".yeargroupmain").children().eq($(".yeargroupmain").children().length - 1);
+                if($(".firstdiv").html() == undefined)
+                {
+                    itemdiv.addClass("firstdiv");
+                }
+                var array = item.weizhi.split("-");
+                if(array.length == 1)
+                {
+                    var gps = item.weizhi.split("&");
+                    SetLocation(itemdiv, gps[0], gps[1], item.location, item.count);
+                }
+                else
+                {
+                    var gps = array[1].split("&");
+                    SetBaiDuLocation(itemdiv, gps[0], gps[1], item.location, item.count);
+                }
+                
+            }
+            iCount += jsonRoot["items"].length;
+            Request();
+        
+        },function(xhr,textStatus)
+        {
+        });
+    }
+
+    function Locationitemclick(item)
+    {
+        $(".itemselected").removeClass("itemselected");
+        $(item).addClass("itemselected");
+
+        var point = $(item).parent().attr("baiduaddr");
+        if(undefined != point)
+        {
+            var gps = point.split("&");
+            var ggPoint = new BMapGL.Point(gps[0], gps[1]);
+            // g_bm.setCenter(ggPoint);
+            g_bm.centerAndZoom(ggPoint, 15);
+            // g_bm.panTo(ggPoint, {noAnimation: true});
+            g_bm.setCenter(ggPoint);
+        }
+        
+    }
+
+    function UpdateItem()
+    {
+        var mapLabelClass = $(g_jumpItem).parent().attr("mapdivclass");
+        if(undefined == mapLabelClass)
+        {
+            mapLabelClass = 0;
+        }
+        var location = $(g_jumpItem).parent().children(0).attr("location");
+        SetItem($(g_jumpItem).parent(), null, location, mapLabelClass);
+    }
+    function ShowFlow(item)
+    {
+        g_jumpItem = item;
+
+        var location = $(item).parent().children(0).attr("location");
+        DeviceApi.device.locationgroup(location);
+    }
+
+    function MarkItemClick(item)
+    {
+        var location = $(item).attr("location");
+        DeviceApi.device.locationgroup(location);
+    }
+
+    function Reload()
+    {
+        $(".yeargroupmain").html("");
+        g_bm.clearOverlays();
+        g_markLabelMap = new Map();
+        iCount = 0;
+        setTimeout(function() {
+            Request();
+        }, 10);
+    }
+    var g_InitReady = false;
+    
+    $(document).ready(function()
+    {
+        LoadBaiduMapWebGlScript(function(){
+            try 
+            {
+                DisableContextMenu();
+                EnableScroll($('.scrollview'));
+                g_bm = new BMapGL.Map("yeargroupmap");
+                g_bm.addEventListener('tilesloaded', function () {
+                    if(false == g_InitReady)
+                    {
+                        g_InitReady = true;
+                        Request();
+                        $('.anchorBL').remove();
+                    }
+                });
+                var point = new BMapGL.Point(0,0);
+                g_bm.centerAndZoom(point, 15);
+                g_bm.panTo(point, {noAnimation: true});
+                g_bm.setCenter(point);
+                // var point = new BMap.Point(118.957637,32.067149);
+                // g_bm.centerAndZoom(point, 15);
+            }
+            catch (error) 
+            {
+                $("body").html("");
+                $("body").load("errorpage.html", "type=nonet", function()
+                {
+                    SetNoNetIcon();
+                });
+            }
+        });
+    });
+
+
+</script>
+<body>
+    <div class="yeargroupmap" id="yeargroupmap" style="width: 100%; height: 40%;">
+
+    </div>
+    <div class="scrollview" style="width: 100%; height: 60%; overflow:scroll;">
+        <div class="yeargroupmain">
+    
+        </div>
+    </div>
+
+    <div class="hidden template" style="margin-left: 100px;">
+        <div class="groupitem canclick" style="position: relative; width: 100%; height: 10vh; line-height: 10vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;" >
+            <div class="locationinfo" style="float: left;  height: 100%;width: 100%;overflow: hidden;" onclick="Locationitemclick(this)"></div>
+            <div style="position: absolute; right: 0; top: 0;  width: 10vh; height: 10vh; line-height: 10vh;padding-left: 6vh;" onclick="ShowFlow(this)"><img src="./img/more.png" width="9px" height="14px"></div>
+        </div>
+    </div>
+  
+    <div class="hidden covertemplate" style="position: absolute; left: 100px; top: 100px;">
+        <div class="covermain canclick " style=" background-color: rosybrown;" onclick="MarkItemClick(this)">
+            <div class="infobk hidden" style="position:absolute;">
+                <div class="left" style="float: left; width: 12.5vh; height: 5.3vh;"><img src="./img/bg_location_01.png" width="100%" height="100%"/></div>
+                <div class="center" style=" float: left;height: 5.3vh; width: 0px;"><img src="./img/bg_location_02.png" width="100%" height="100%"/></div>
+                <div class="right" style="float: left;width: 3.8vh; height: 5.3vh;"><img src="./img/bg_location_03.png" width="100%" height="100%"/></div>
+            </div>
+            <div class="infomain" style="position: relative; font-size:2.2vh; font-weight: 400; line-height: 4.6vh; height: 4.6vh;display:inline-block; text-align: center;">
+                <div class="info" style="padding-left: 4vh;"></div>
+            </div>
+       </div>
+    </div>
+
+</body>
+</html>

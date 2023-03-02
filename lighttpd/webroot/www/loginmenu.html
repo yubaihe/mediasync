@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>Document</title>
+</head>
+<link rel="stylesheet" href="./css/bootstrap.min.css"/>
+<link rel="stylesheet" href="./css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="./css/animate.css"/>
+<link rel="stylesheet" href="./css/Common.css"/>
+
+<script src="./js/jquery-3.4.1.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+<script src="./js/Common.js?id=3"></script>
+<script src="./js/Api.js"></script>
+<script src="./js/jquery.md5.js"></script>
+<script src="./js/jquery.base64.js"></script>
+<link rel="stylesheet" href="./css/dialog.css"/>
+<script src="./js/dialog.min.js"></script>
+<script src="./js/Toast.js"></script>
+<script src="./js/clearcache.js"></script>
+<style type="text/css">
+input::-webkit-input-placeholder {
+/* placeholder颜色  */
+         color: #aab2bd;
+     }
+    .animated
+    {
+        display: block !important;
+    }
+    
+    .rememberPasswordSelected
+    {
+        background-image: url(./img/login/rempwd_selected.png);
+        background-repeat:no-repeat;
+        background-size:100% 100%;
+        -moz-background-size:100% 100%;
+        width: 2vh;
+        height: 2vh;
+        margin-top: 0.4vh;
+    }
+    .rememberPasswordunSelected
+    {
+        background-image: url(./img/login/rempwd_unselect.png);
+        background-repeat:no-repeat;
+        background-size:100% 100%;
+        -moz-background-size:100% 100%;
+        width: 2vh;
+        height: 2vh;
+        margin-top: 0.4vh;
+    }
+    .menuitem_main
+    {
+        width: 19vh; 
+        height: 19vh;
+        margin: 0 auto; 
+        margin-top: 3vh;
+    }
+
+    .menuitem
+    {
+        width: 19vh; 
+        height: 19vh;
+        background-color: #9abcfa;
+        filter:alpha(Opacity=80);
+        -moz-opacity:0.5;
+        opacity: 0.5;
+        margin: 0 auto; 
+        border-radius: 1vh;
+        box-shadow: 3px 3px 3px #c3c3c3; 
+        filter:glow(color=#010a1b strength=255)
+    }
+    .menuitem:active
+    {
+        width: 18vh; 
+        height: 18vh;
+    }
+    .menuitemcontent
+    {
+        position: relative;
+        padding-top: 3.5vh;
+    }
+    .loginbtn
+    {
+        cursor: pointer;
+    }
+    </style>
+<script>
+    //var ServerApi = new API("http://47.104.165.97:8080/");
+    var ServerApi = new API("http://" + window.location.host);
+    var DeviceApi = new API("");
+    var baiduAk = GetUrlParam("baiduak");
+    if(baiduAk.length > 0)
+    {
+        SetCookie("baiduak", baiduAk);
+    }
+    function InitDeviceFilter()
+    {
+        var str = "{\"action\":\"devnames\"}";
+        ServerApi.request.devnames(str,function(data,textStatus,jqXHR)
+        {
+            var jsonRoot = JSON.parse(data);
+            var namesArray = jsonRoot["devnames"];
+            if(namesArray.length == 0)
+            {
+                var deviceid = GetCookie("deviceid");
+                SetCookie(deviceid + "_selectdevice", "");
+                return;
+            }
+            var findDevices = false;
+           
+            var selectDeviceMap = GetSelectDeviceMap();
+            for(var i = 0; i < namesArray.length; ++i)
+            {
+                
+                if(selectDeviceMap.size == 0 || selectDeviceMap.has(namesArray[i].name))
+                {
+                    findDevices = true;
+                    break;
+                }
+                else
+                {
+                   
+                }
+            }
+            if(false == findDevices)
+            {
+                var deviceid = GetCookie("deviceid");
+                SetCookie(deviceid + "_selectdevice", "");
+            }
+        },function(xhr,textStatus)
+            {
+            });
+    }
+
+    function LoadHead()
+    {
+        $(".headdiv").load("./head.html", function() {
+        });
+    }
+
+    function LoadFoot()
+    {
+        $(".footdiv").load("./foot.html", function() {
+            });
+    }
+
+    function CheckLogin(login)
+    {
+        if(false == login)
+        {
+            $(".menudiv").removeClass("hidden");
+            $(".logindiv").addClass("hidden");
+            return;
+        }
+        var deviceid = GetCookie("deviceid");
+        var autologin = GetCookie(deviceid + "_autologin");
+        if(autologin == null)
+        {
+            autologin = 0;
+            SetCookie(deviceid + "_autologin", 0);
+        }
+        
+        var pwd = GetCookie(deviceid + "_pwd");
+        if(null == pwd)
+        {
+            pwd = "";
+        }
+        if(autologin == 1 && pwd.length > 0)
+        {
+            var str = "{\"action\":\"login\", \"pwd\":\"{0}\"}".format(pwd);
+            console.log(str);
+            ServerApi.request.login(str,function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                if(jsonRoot["status"] == 1)
+                {
+                    DeviceApi.device.loginsuccess();
+                    ShowPage("menu");
+                }
+                else
+                {
+                    ShowPage("login");
+                }
+            },function(xhr,textStatus)
+            {
+            });
+        }
+        else
+        {
+            SetCookie(deviceid + "_autologin", 0);
+            ShowPage("login");
+        }
+    }
+
+    function ShowPage(pagename)
+    {
+        if(pagename == "login")
+        {
+            
+            $(".pwdtipsdiv").addClass("hidden");
+            $(".menudiv").addClass("hidden");
+            $(".logindiv").removeClass("hidden");
+            var str = "{\"action\":\"pwdtip\"}";
+            ServerApi.request.pwdtip(str,function(data,textStatus,jqXHR)
+            {
+                var jsonRoot = JSON.parse(data);
+                if(jsonRoot["status"] == 1)
+                {
+                    $(".pwdtipsdiv").removeClass("hidden");
+                    $(".pwdtips").html(jsonRoot["pwdtip"]);
+                }
+                else
+                {
+                    
+                }
+            },function(xhr,textStatus)
+            {
+            });
+        }
+        else
+        {
+            $(".menudiv").removeClass("hidden");
+            $(".logindiv").addClass("hidden");
+        }
+    }
+    function InitLognBtn()
+    {
+        $(".loginbtn").click(function(e){
+            e.preventDefault();
+
+            var value = $(".passwordinput").val();
+            if(value.length == 0)
+            {
+                DeviceApi.device.toast("请输入密码!");
+                return;
+            }
+            if(1 == $(".loginbtn").attr("logining"))
+            {
+                return;
+            }
+            $(".loginbtn").attr("logining", 1);
+            console.log($.md5(value));
+            var password = $.base64.encode($.md5(value));
+            var str = "{\"action\":\"login\", \"pwd\":\"{0}\"}".format(password);
+            ServerApi.request.login(str,function(data,textStatus,jqXHR)
+            {
+                $(".loginbtn").attr("logining", 0);
+                var jsonRoot = JSON.parse(data);
+                if(jsonRoot["status"] == 1)
+                {
+                    $(".menudiv").removeClass("hidden");
+                    $(".logindiv").addClass('animated')
+                    $(".logindiv").addClass("bounceOutLeft");
+                    setTimeout(function(){
+                        $(".logindiv").removeClass('animated');
+                        $(".logindiv").removeClass('bounceOutLeft');
+                        $(".logindiv").addClass("hidden");
+                    },1000);
+                    
+                    if($(".rememberpwd").attr("rememberpwd") == "1")
+                    {
+                        var deviceid = GetCookie("deviceid");
+                        SetCookie(deviceid + "_autologin", 1);
+                        SetCookie(deviceid + "_pwd", password);
+                    }
+                    else
+                    {
+                        var deviceid = GetCookie("deviceid");
+                        SetCookie(deviceid + "_autologin", 0);
+                        SetCookie(deviceid + "_pwd", "");
+                    }
+                    DeviceApi.device.loginsuccess();
+                }
+                else
+                {
+                    $(".menudiv").addClass("hidden");
+                    $(".logindiv").removeClass("hidden");
+                    DeviceApi.device.toast("密码错误!");
+                
+                }
+            },function(xhr,textStatus)
+            {
+            });
+        });
+    }
+    
+
+    function Init()
+    {
+        //支持IOS的 active
+        document.body.addEventListener('touchstart',function(){});
+        var str = "{\"action\":\"deviceinfo\"}";
+        ServerApi.request.deviceinfo(str, function(data,textStatus,jqXHR)
+        {
+            console.log(data);
+           
+            var jsonRoot = JSON.parse(data);
+            if(jsonRoot["status"] == 0)
+            {
+               return;
+            }
+            
+            var deviceid = jsonRoot["devid"];
+            var devicename = jsonRoot["devname"];
+            var devversion = jsonRoot["devversion"];
+            var devblue = jsonRoot["devblue"];
+            var pic = jsonRoot["pic"];
+            SetCookie("deviceid", deviceid);
+            
+            SetCookie(deviceid + "_devicename", devicename.length == 0?deviceid:devicename);
+            SetCookie(deviceid + "_devversion", devversion);
+            SetCookie(deviceid + "_devblue", devblue);
+            SetCookie(deviceid + "_pic", pic);
+            LoadHead();
+            LoadFoot();
+            InitDeviceFilter();
+            CheckLogin(jsonRoot["login"]);
+        },function(xhr,textStatus)
+        {
+        });
+
+        $(".rememberpwd").click(function(e){
+            var rememberpwd = $(".rememberpwd").attr("rememberpwd");
+            if(rememberpwd == undefined || rememberpwd == "0")
+            {
+                $(".rememberpwd").attr("rememberpwd", "1");
+                $(".rememberpwdcheckbox").addClass("rememberPasswordSelected");
+                $(".rememberpwdcheckbox").removeClass("rememberPasswordunSelected");
+            }
+            else if(rememberpwd == "1")
+            {
+                    $(".rememberpwd").attr("rememberpwd", "0");
+                    $(".rememberpwdcheckbox").removeClass("rememberPasswordSelected");
+                    $(".rememberpwdcheckbox").addClass("rememberPasswordunSelected");
+            }
+        });
+        $(".mediasync").click(function(){
+            DeviceApi.device.mediasync();
+        });
+        $(".meitishezhi").click(function(){
+            DeviceApi.device.mediasetting();
+        });
+        $(".meitiliebiao").click(function(){
+            DeviceApi.device.medialist();
+        });
+        $(".mediafavorite").click(function(){
+            DeviceApi.device.mediafavorite();
+        });
+
+        InitLognBtn();
+        $(".passwordinput").keydown(function(e) {  
+            if (e.keyCode == 13) {  
+                $(".loginbtn").click();
+            }  
+        });  
+    }
+    $(document).ready(function()
+    {
+        DisableContextMenu();
+        console.log(document.cookie);
+        GetClearCacheStatusWithCallBack(function(precent){
+            SetToast("缓存清理:" + precent + "%");
+            GetClearCacheStatus();
+        });
+        
+        //更新时间
+        var curTime = parseInt(new Date().getTime()/1000);
+        var str = "{\"action\":\"updatetime\",\"time\":\"{0}\"}".format(curTime);
+        ServerApi.request.updatetime(str, function(data,textStatus,jqXHR)
+        {
+        },function(xhr,textStatus)
+        {
+        });
+        
+        setTimeout(function()
+        {
+            Init();
+        }, 10);
+ });
+</script>
+<body>
+    <div style="overflow: hidden; width: 100%; height: 100%;">
+        <div class="headdiv" style="height: 30vh;"></div>
+        <div style="width: 100%; height: 70vh; position: relative; overflow: hidden;">
+            <!--菜单界面-->
+            <div class="menudiv hidden" style="position: absolute; width: 100%; height: 100%; background-color: white;">
+                <div class="menumain" style="width: 98%; height: 55vh; margin: 0 auto;  margin-top: 5vh;">
+                   <div class="canclick" style="float: left; width: 50%; height: 25vh; ">
+                        <div class="menuitem_main mediasync">
+                            <div class=" menuitem" style="text-align: center;">
+                                <div class="menuitemcontent">
+                                    <div style="color: white; margin-top: 0.5vh; font-weight: 600; font-size: 3.2vh;">同步</div>
+                                    <span style="display: block; margin-top: 2vh;">未提交媒体文件</span>
+                                </div>
+                            </div>
+                        </div>
+                   </div>
+    
+                   <div class="canclick" style="float: right; width: 50%; height: 25vh;">
+                        <div class="menuitem_main meitiliebiao">
+                            <div class="menuitem " style="text-align: center; position: relative;">
+                                <div class="menuitemcontent">
+                                    <div style="color: white; margin-top: 0.5vh; font-weight: 600; font-size: 3.2vh;">列表</div>
+                                    <span style="display: block; margin-top: 2vh;">已同步媒体文件</span>
+                                </div>
+                            </div>   
+                        </div>
+                    </div>
+    
+                   <div class="canclick" style="float: left; width: 50%; height: 25vh;">
+                        <div class="menuitem_main mediafavorite">
+                            <div class="menuitem" style="text-align: center;">
+                                <div class="menuitemcontent">
+                                    <div style="color: white; margin-top: 0.5vh; font-weight: 600; font-size: 3.2vh;">收藏</div>
+                                    <span style="display: block; margin-top: 2vh;">喜爱的媒体文件</span>
+                                </div>
+                            </div> 
+                        </div>    
+                    </div>
+    
+                   <div class="canclick" style="float: right; width: 50%; height: 25vh; ">
+                        <div class="menuitem_main meitishezhi">
+                            <div class="menuitem " style="text-align: center;">
+                                <div class="menuitemcontent">
+                                    <div style="color: white; margin-top: 0.5vh; font-weight: 600; font-size: 3.2vh;">设置</div>
+                                    <span style="display: block; margin-top: 2vh;">访问密码等配置</span>
+                                </div>
+                            </div>   
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!--登录界面-->
+            <div class=" logindiv hidden" style="position: absolute; width: 100%; height: 100%; z-index: 10; ">
+                <div class="loginmain" style="width: 100%; height: 100%; background-color: #ffffff; margin: 0 auto; position: relative; padding-top: 10vh; padding-left: 2.5%; padding-right: 2.5%;">
+   
+                    
+                    <div style="position: relative; width: 100%; height: 7vh; background-color: #f0f2f7; border-radius: 3vh; margin: 0 auto; overflow: hidden; margin-top: 2vh;">
+                        <div style="position: absolute; display:table-cell;  left: 7vh; width: 70%; height: 7vh; font-size: 2.1vh; vertical-align:middle;">
+                            <input class="passwordinput" type="password" placeholder="请输入密码" maxlength="15" style=" caret-color:#6f87a8; background: #f0f2f7; border:none;width: 100%; height: 5vh; color: #c3c3c3;outline:none; margin-top: 1vh;">
+                        </div>
+                        <div style="display:table-cell; width: 7vh; height: 7vh; vertical-align: middle; text-align: center;">
+                            <span style="background: url(./img/login/password.png) no-repeat ;background-size:100% 100%;-moz-background-size:100% 100%; width: 2.5vh; height: 2.5vh; margin-top: 0.8vh; display: inline-block;" > </span>
+                        </div>
+                        
+                        
+                    </div>
+                    
+                    <div style="width: 100%; height: 7vh; overflow: hidden; margin-top: 4vh; ">
+                       <div class="rememberpwd" style="float: left; position: relative; width: 100%;vertical-align: middle;">
+                            <span class="rememberpwdcheckbox rememberPasswordunSelected" style=" float: left; display: block;"></span>
+                            <span style="margin-left: 0.6vh; float: left; display: block;color: #9abcda; line-height: 3vh; font-size: 2vh;">记住密码</span>
+                        </div>
+                    </div>
+                    
+                    <div class="loginbtn" style="display: table; width: 100%; height: 8vh; background-color: #9abcfa; border-radius: 3vh; margin: 0 auto; overflow: hidden; margin-top: 3vh; text-align: center; color: white; font-size: 3vh;">
+                        <div style="display: table-cell;vertical-align: middle;">登录</div>
+                    </div>
+    
+                    <div class="pwdtipsdiv" style="width: 100%; height: 5vh;margin: 0 auto; overflow: hidden; margin-top: 7vh; line-height: 5vh;text-align: left;font-size: 1.8vh;color: #9abcfa;">
+                       <span style="color:#9abcda;">密码提示:</span>
+                        <span class="pwdtips" style="color: rgb(241, 136, 136);text-shadow:1px 0px 0px #cccccc;">你好中国</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footdiv" style="position: absolute; bottom: 0; height: 2.5vh;width: 100%; overflow: hidden;"></div>
+    </div>
+     
+</body>
+</html>

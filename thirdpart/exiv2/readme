@@ -1,0 +1,131 @@
+root@myimx6ek140p:/home/relech/share/exiv2/bin#  ./exiv2json ./a.jpg 
+{
+        "Exif": {
+                "Image": {
+                        "ImageWidth": 4000,
+                        "Model": "M2007J17C",
+                        "ImageLength": 3000,
+                        "Orientation": 6,
+                        "DateTime": "2021:03:14 13:48:13",
+                        "YCbCrPositioning": 1,
+                        "ExifTag": 211,
+                        "ResolutionUnit": 2,
+                        "GPSTag": 3622,
+                        "XResolution": [
+                                72,
+                                1
+                        ],
+                        "YResolution": [
+                                72,
+                                1
+                        ],
+                        "Make": "Xiaomi"
+                },
+                "Photo": {
+                        "0x9aaa": 200,
+                        "ISOSpeedRatings": 105,
+                        "ExposureProgram": 2,
+                        "FNumber": [
+                                175,
+                                100
+                        ],
+                        "ExposureTime": [
+                                1,
+                                50
+                        ],
+                        "0x9999": "{\"mirror\":false,\"?sensor_type\":\"rear\",\"Hdr\":\"auto\",\"OpMode\":36869,\"AIScene\":0,\"FilterId\":66048,\"ZoomMultiple\":1}",
+                        "SensingMethod": 1,
+                        "0x8895": 0,
+                        "SubSecTimeDigitized": "835936",
+                        "SubSecTimeOriginal": "835936",
+                        "SubSecTime": "835936",
+                        "FocalLength": [
+                                5960,
+                                1000
+                        ],
+                        "Flash": 16,
+                        "0x8889": "HDR",
+                        "LightSource": 21,
+                        "MeteringMode": 2,
+                        "SceneCaptureType": 0,
+                        "InteroperabilityTag": 3592,
+                        "FocalLengthIn35mmFilm": 25,
+                        "MaxApertureValue": [
+                                161,
+                                100
+                        ],
+                        "DateTimeDigitized": "2021:03:14 13:48:13",
+                        "ExposureBiasValue": [
+                                0,
+                                6
+                        ],
+                        "PixelYDimension": 3000,
+                        "WhiteBalance": 0,
+                        "DateTimeOriginal": "2021:03:14 13:48:13",
+                        "BrightnessValue": [
+                                235,
+                                100
+                        ],
+                        "PixelXDimension": 4000,
+                        "ExposureMode": 0,
+                        "ApertureValue": [
+                                161,
+                                100
+                        ],
+                        "ComponentsConfiguration": "1 2 3 0",
+                        "ColorSpace": 1,
+                        "SceneType": 1,
+                        "ShutterSpeedValue": [
+                                5643,
+                                1000
+                        ],
+                        "ExifVersion": "48 50 50 48",
+                        "FlashpixVersion": "48 49 48 48",
+                        "0x9a00": "Redmi Note 9 Pro"
+                },
+                "Iop": {
+                        "InteroperabilityIndex": "R98",
+                        "InteroperabilityVersion": "48 49 48 48"
+                },
+                "GPSInfo": {
+                        "GPSLatitudeRef": "N",
+                        "GPSLatitude": [
+                                31,
+                                1
+                        ],
+                        "GPSLongitudeRef": "E",
+                        "GPSLongitude": [
+                                119,
+                                1
+                        ],
+                        "GPSAltitudeRef": 0,
+                        "GPSAltitude": [
+                                32118,
+                                1000
+                        ],
+                        "GPSTimeStamp": [
+                                5,
+                                1
+                        ],
+                        "GPSProcessingMethod": "charset=Ascii GPS",
+                        "GPSDateStamp": "2021:03:14"
+                },
+                "Thumbnail": {
+                        "JPEGInterchangeFormat": 3969,
+                        "Orientation": 6,
+                        "JPEGInterchangeFormatLength": 15829,
+                        "Compression": 6,
+                        "ResolutionUnit": 2,
+                        "XResolution": [
+                                72,
+                                1
+                        ],
+                        "YResolution": [
+                                72,
+                                1
+                        ],
+                        "0xa003": 240,
+                        "0xa002": 320
+                }
+        }
+}

@@ -1,0 +1,56 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="js/Common.js?id=1"></script>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script>
+function DownLoadFile(fileName)
+{
+    var xhr = new XMLHttpRequest();
+    xhr.open('post', "./cgi/down.cgi", true);
+    xhr.responseType = 'blob';
+    xhr.onload = function(){
+        if (this.status == 200) {
+        const blob = new Blob([this.response]);
+        var a = document.createElement('a');
+        var url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(a.href);
+        };
+    };
+    xhr.send("{\"token\":\"token123\",\"filename\":\"sdk.md\"}");
+}
+
+function UpLoadFile()
+{
+    var oMyFile = document.getElementById('myFile');
+    var xhr = new XMLHttpRequest();
+    xhr.open('post', "./upload.fcgi", true);
+    xhr.setRequestHeader('X-Request-With', 'XMLHttpRequest');
+    var oFormData = new FormData();
+    oFormData.append('file',oMyFile.files[0]);
+    oFormData.append("token", "token12345");
+
+    xhr.onload = function(){
+        console.log(this.responseText);    
+    }
+
+    xhr.send(oFormData);
+}
+</script>
+<body>
+    <input type="file" name="file" id="myFile"/>
+    <button type="button" onclick="UpLoadFile()">上传</button>
+    <button type="button" onclick="DownLoadFile('sdk.md')">下载</button>
+
+    
+</body>
+</html>

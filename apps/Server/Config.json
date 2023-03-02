@@ -1,0 +1,25 @@
+{
+    "dev":{
+        "devid":"09831",
+        "devname":"",
+        "devversion":"V1.0",
+        "devblue":"0"
+    },
+    "port":
+    {
+        "server":8080,
+        "broadcast":9082
+    },
+    "store":
+    {
+        "mount":"/dev/sda1",
+        "taddr":"/home/relech/share/lighttpd/www/media"
+    },
+    "others":
+    {
+        "samba":1,
+        "eth":1,
+        "wlan":0
+    }
+}
+
