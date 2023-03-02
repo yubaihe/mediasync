@@ -34,5 +34,5 @@ $ROOTDIR/stop.sh
 
 
 
-[超链接名](./config.png "超链接title")
+[超链接名](./Release/MediaSyncSetup.exe "超链接title")
 
