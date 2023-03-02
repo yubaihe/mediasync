@@ -32,7 +32,7 @@ $ROOTDIR/start.sh
 $ROOTDIR/stop.sh
 ```
 
+# 5.发行
 
-
-[超链接名](./Release/MediaSyncSetup.exe "超链接title")
+[Windows版本](./Release/MediaSyncSetup.exe "点击下载windows安装程序")
 
