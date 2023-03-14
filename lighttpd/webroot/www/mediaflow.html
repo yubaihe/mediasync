@@ -311,6 +311,7 @@
             bFinish = true;
             //DeviceApi.device.toast("未查询到媒体数据!");
             $(".nodatadiv").removeClass("hidden");
+            DeviceApi.device.dataempty();
             return;
         }
         for(var i = 0; i < items.length; ++i)
@@ -370,6 +371,7 @@
             if(iCount == 0)
             {
                 $(".nodatadiv").removeClass("hidden");
+                DeviceApi.device.dataempty();
             }
         } );
         pageindex++;

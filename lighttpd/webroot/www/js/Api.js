@@ -483,7 +483,8 @@ function API(baseurl)
         mediaitemgroupchange:api.Post("/mediaitemgroupchange"),
         updatefenzu:api.Post("/updatefenzu"),
         removeitems:api.Post("/removeitems"),
-        enterselectmode:api.Post("/enterselectmode")
+        enterselectmode:api.Post("/enterselectmode"),
+        dataempty:api.Post("/dataempty")
     };
 
     api.request={
