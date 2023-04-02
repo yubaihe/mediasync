@@ -88,6 +88,7 @@
     var g_itemid = "";
     var g_mediaType = ""; 
     var g_devName = "";
+    var g_ItemIds = "";
     function Init()
     {
         ServerApi.request.groupinfo("{\"action\":\"groupinfo\"}",function(data,textStatus,jqXHR)
@@ -124,25 +125,34 @@
 
                 itemDiv.find(".groupname").eq(0).html(items[i].name);
                 itemDiv.find(".groupname").eq(0).removeClass("hidden");
-                if(items[i].cover == g_mediaAddr)
+                if(g_ItemIds.length == 0)
                 {
-                    itemDiv.find(".coverimageset").eq(0).attr("coverselected", "1");
-                    itemDiv.find(".coverimageset").eq(0).attr("src", "./img/cover.png");
+                    if(items[i].cover == g_mediaAddr)
+                    {
+                        itemDiv.find(".coverimageset").eq(0).attr("coverselected", "1");
+                        itemDiv.find(".coverimageset").eq(0).attr("src", "./img/cover.png");
+                    }
+                    else
+                    {
+                        itemDiv.find(".coverimageset").eq(0).attr("coverselected", "0");
+                        itemDiv.find(".coverimageset").eq(0).attr("src", "./img/nocover.png");
+                    }
+                    for(var t = 0; t < g_groupids.length; ++t)
+                    {
+                        if(items[i].id == g_groupids[t])
+                        {
+                        itemDiv.find(".groupitemright").eq(0).removeClass("hidden"); 
+                        itemDiv.addClass("groupselected");
+                        break;
+                        }
+                    }
                 }
                 else
                 {
-                    itemDiv.find(".coverimageset").eq(0).attr("coverselected", "0");
-                    itemDiv.find(".coverimageset").eq(0).attr("src", "./img/nocover.png");
+                    itemDiv.find(".coverimageset").eq(0).attr("coverselected", "1");
+                    itemDiv.find(".coverimageset").eq(0).addClass("hidden");
                 }
-                for(var t = 0; t < g_groupids.length; ++t)
-                {
-                    if(items[i].id == g_groupids[t])
-                    {
-                      itemDiv.find(".groupitemright").eq(0).removeClass("hidden"); 
-                      itemDiv.addClass("groupselected");
-                      break;
-                    }
-                }
+                
                 itemDiv.click(function()
                 {
                     var selectedLen = $(".groupselected").length;
@@ -208,22 +218,42 @@
                     groupids += $(".groupselected").eq(i).attr("groupid");
                 }
             }
-            var str = "{\"action\":\"mediaitemgroupsetting\",\"itemid\":{0},\"devname\":\"{1}\",\"mediatype\":{2},\"mediaaddr\":\"{3}\",\"groups\":[{4}]}".format(g_itemid, 
+            if(g_ItemIds.length == 0)
+            {
+                var str = "{\"action\":\"mediaitemgroupsetting\",\"itemid\":{0},\"devname\":\"{1}\",\"mediatype\":{2},\"mediaaddr\":\"{3}\",\"groups\":[{4}]}".format(g_itemid, 
                 g_devName, g_mediaType, g_mediaAddr, selectItems);
                 console.log(str);
-            ServerApi.request.mediaitemgroupsetting(str,function(data,textStatus,jqXHR)
-            {
-                console.log(data);
-                var jsonRoot = JSON.parse(data);
-                if(jsonRoot["status"] !=1)
+                ServerApi.request.mediaitemgroupsetting(str,function(data,textStatus,jqXHR)
                 {
-                    Toast("更新分组信息失败!");
-                    return;
-                }
-                Toast("更新分组信息成功!");
-                DeviceApi.device.mediaitemgroupchange(groupids);
-            });
-           
+                    console.log(data);
+                    var jsonRoot = JSON.parse(data);
+                    if(jsonRoot["status"] !=1)
+                    {
+                        Toast("更新分组信息失败!");
+                        return;
+                    }
+                    Toast("更新分组信息成功!");
+                    DeviceApi.device.mediaitemgroupchange(groupids);
+                });
+            }
+            else
+            {
+                var str = "{\"action\":\"mediaitemsgroupadd\",\"itemids\":\"{0}\",\"groupids\":\"{1}\"}".format(g_ItemIds, groupids);
+                console.log(str);
+                ServerApi.request.mediaitemsgroupadd(str,function(data,textStatus,jqXHR)
+                {
+                    console.log(data);
+                    var jsonRoot = JSON.parse(data);
+                    if(jsonRoot["status"] !=1)
+                    {
+                        Toast("添加分组信息失败!");
+                        return;
+                    }
+                    Toast("添加分组信息成功!");
+                    var strNotify = "{\"itemids\":\"{0}\",\"groupids\":\"{1}\"}".format(g_ItemIds, groupids);
+                    DeviceApi.device.mediaitemsgroupadd(strNotify);
+                });
+            }
         });
         //SetItemInfo("1", "aa", 1, "devname", "test1");
     });
@@ -252,6 +282,11 @@
         g_mediaType = mediaType;
         g_devName = devName;
         g_groupids = groupids.split("&");
+        Init();
+    }
+    function SetItemIds(itemids)
+    {
+        g_ItemIds = itemids;
         Init();
     }
 </script>

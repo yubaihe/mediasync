@@ -44,8 +44,6 @@ BOOL DataBaseGroupItems_AddItem(DataBaseGroupItem* pItem)
         pFindItem = NULL;
         return TRUE;
     }
-    DataBaseGroupItems_ReleaseItem(pFindItem);
-    pFindItem = NULL;
 
     DataBaseDriver* pDataBaseDriver = DataBaseDriver_GetMediaDataBaseConn();
     if(NULL == pDataBaseDriver)

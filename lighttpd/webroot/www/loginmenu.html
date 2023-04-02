@@ -360,6 +360,20 @@ input::-webkit-input-placeholder {
     }
     $(document).ready(function()
     {
+        //load custom page
+        $(".logocontainer").load("./custom/index.html", function(response, status, xhr) {
+            if(status != "success")
+            {
+                return;
+            }
+            $(".logocontainer").css("display", "");
+            setTimeout(() => {
+                $(".logocontainer").fadeOut(500, function(){
+                    $(".logocontainer").css("display", "none");
+                });
+            }, 1500);
+        });
+
         DisableContextMenu();
         console.log(document.cookie);
         GetClearCacheStatusWithCallBack(function(precent){
@@ -383,6 +397,8 @@ input::-webkit-input-placeholder {
  });
 </script>
 <body>
+    <div class="logocontainer" style="display: none; position: absolute;left: 0; top: 0; right: 0; bottom: 0; background-color: #ffffff; z-index: 100;"></div>
+    
     <div style="overflow: hidden; width: 100%; height: 100%;">
         <div class="headdiv" style="height: 30vh;"></div>
         <div style="width: 100%; height: 70vh; position: relative; overflow: hidden;">

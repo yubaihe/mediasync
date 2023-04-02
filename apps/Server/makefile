@@ -5,7 +5,7 @@ TARGET = Server
 
 LDFLAGS = -lm
 
-CFLAGS  += -g -Wall  -MD -fPIE -fno-stack-protector\
+CFLAGS  += -g -Wall  -MD -fPIE -fno-stack-protector -Wno-format-overflow\
 		-I$(ROOTDIR)/include/sqlite3 \
 		-I$(ROOTDIR)/include/json-c/ \
 

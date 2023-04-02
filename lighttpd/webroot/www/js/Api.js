@@ -484,7 +484,9 @@ function API(baseurl)
         updatefenzu:api.Post("/updatefenzu"),
         removeitems:api.Post("/removeitems"),
         enterselectmode:api.Post("/enterselectmode"),
-        dataempty:api.Post("/dataempty")
+        dataempty:api.Post("/dataempty"),
+        setitemsgroup:api.Post("/setitemsgroup"),
+        mediaitemsgroupadd:api.Post("/mediaitemsgroupadd")
     };
 
     api.request={
@@ -528,7 +530,8 @@ function API(baseurl)
         mediaitemgroupsetting:api.Post("/server.fcgi"),
         groupitemlist:api.Post("/server.fcgi"),
         delmediaitem:api.Post("/server.fcgi"),
-        groupnamesfromitemid:api.Post("/server.fcgi")
+        groupnamesfromitemid:api.Post("/server.fcgi"),
+        mediaitemsgroupadd:api.Post("/server.fcgi")
     };
     api.file={
         upload:api.UploadFile("/upload.fcgi")

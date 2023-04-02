@@ -363,6 +363,14 @@ char* OnGroupNameFromItemID(json_object* pJsonRoot)
     return SocketClient_SendMessage(SERVERIP, SERVERPORT, pJsonTmpBuffer);
 }
 
+char* OnMediaItemsGroupAdd(json_object* pJsonRoot)
+{
+    json_object_object_del(pJsonRoot, "action");
+    json_object_object_add(pJsonRoot, "otype", json_object_new_int(MESSAGETYPECMD_MEDIAITEMSGROUPADD));
+    const char* pJsonTmpBuffer = json_object_to_json_string(pJsonRoot);
+    return SocketClient_SendMessage(SERVERIP, SERVERPORT, pJsonTmpBuffer);
+}
+
 void OnMessage(RelechMap* pRelechMap, char* pMsg, char** pRet)
 {
     json_object* pJsonRoot = json_tokener_parse(pMsg);
@@ -450,7 +458,7 @@ MessageHandler* MessageHandler_Init()
     MessageHandler_AddController(pMessageHandler->pHanlerMap, "groupitemlist", OnMediaGroupItemList);
     MessageHandler_AddController(pMessageHandler->pHanlerMap, "delmediaitem", OnDelMediaItem);
     MessageHandler_AddController(pMessageHandler->pHanlerMap, "groupnamesfromitemid", OnGroupNameFromItemID);
-
+    MessageHandler_AddController(pMessageHandler->pHanlerMap, "mediaitemsgroupadd", OnMediaItemsGroupAdd);
     return pMessageHandler;
 }
 

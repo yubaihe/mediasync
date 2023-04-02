@@ -1714,6 +1714,46 @@ void ComputerServerMessage_GroupNameFromID(struct ConnectServer* pServer, SOCKET
 	pszName = NULL;
 }
 
+void ComputerServerMessage_MediaItemsGroupAdd(struct ConnectServer* pServer, SOCKET iSocket, json_object* pJsonRoot)
+{
+	const char* pItemIds = json_object_get_string(json_object_object_get(pJsonRoot, "itemids"));
+	const char* pGroupIds = json_object_get_string(json_object_object_get(pJsonRoot, "groupids"));
+	char* pItemIdsTemp = NULL;
+	char* pszItemIds = (char*)pItemIds;
+	char* pszItemId = (char*)strtok_r(pszItemIds, "&", &pItemIdsTemp);
+	while (NULL != pszItemId)
+	{
+		char* pGroupIdsTemp = NULL;
+		char* pszGroupIds = (char*)pGroupIds;
+		char* pszGroupId = (char*)strtok_r(pszGroupIds, "&", &pGroupIdsTemp);
+		while (NULL != pszGroupId)
+		{
+			uint32_t iGID = atol(pszGroupId);
+			uint32_t iItemID = atol(pszItemId);
+			
+			MediaItem* pMediaItem = DataBaseMedia_GetItemByID(iItemID);
+			int iBufferLen = sizeof(DataBaseGroupItem);
+			char* pszBuffer = malloc(iBufferLen);
+			memset(pszBuffer, 0, iBufferLen);
+			DataBaseGroupItem* pItem = (DataBaseGroupItem*)pszBuffer;
+
+			pItem->iItemID = iItemID;
+			pItem->iItemType = pMediaItem->iMediaType;
+			pItem->pszDeviceIdentify = (char*)pMediaItem->pszDeviceIdentify;
+			pItem->iGID = iGID;
+			DataBaseGroupItems_AddItem(pItem);
+			free(pszBuffer);
+			pszBuffer = NULL;
+			DataBaseMedia_ReleaseItem(pMediaItem);
+			
+			pszGroupId = strtok_r(NULL, "&", &pGroupIdsTemp);
+		}
+		pszItemId = strtok_r(NULL, "&", &pItemIdsTemp);
+	}
+	char szRet[200] = {0};
+	sprintf(szRet, "{\"otype\":\"%d\",\"status\":%d}", MESSAGETYPECMD_MEDIAITEMSGROUPADD_ACK, 1);
+	ComputerServerMessage_SendCmdMessage(pServer, iSocket, szRet);
+}
 void ComputerServerMessage_OnComputerServerCmd(struct ConnectServer* pServer, SOCKET iSocket, char* pszBuffer)
 {
 	printf("%s\n", pszBuffer);
@@ -2003,7 +2043,12 @@ void ComputerServerMessage_OnComputerServerCmd(struct ConnectServer* pServer, SO
 			ComputerServerMessage_GroupNameFromID(pServer, iSocket, pJsonRoot);
 			break;
 		}
-		
+		case MESSAGETYPECMD_MEDIAITEMSGROUPADD:
+		{
+			//给照片和视频批量添加分组
+			ComputerServerMessage_MediaItemsGroupAdd(pServer, iSocket, pJsonRoot);
+			break;
+		}
 		case 999:
 		{
 			ComputerServerMessage_OnTest(pServer, iSocket, pJsonRoot);

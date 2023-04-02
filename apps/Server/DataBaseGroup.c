@@ -301,6 +301,10 @@ BOOL DataBaseGroup_RemoveItemFromName(char* pszName)
 
 BOOL DataBaseGroup_SetCover(uint32_t iID, const char* pszCover)
 {
+    if(NULL == pszCover)
+    {
+        return FALSE;
+    }
     char szSQL[300] = {0};
     sprintf(szSQL, "update tbl_mediagroup set coverpic='%s' where id='%d'", pszCover, iID);
     DataBaseDriver* pDataBaseDriver = DataBaseDriver_GetMediaDataBaseConn();
@@ -315,6 +319,10 @@ BOOL DataBaseGroup_SetCover(uint32_t iID, const char* pszCover)
 
 BOOL DataBaseGroup_SetCoverEmpty(const char* pszCover)
 {
+    if(NULL == pszCover || strlen(pszCover) == 0)
+    {
+        return FALSE;
+    }
     char szSQL[300] = {0};
     sprintf(szSQL, "update tbl_mediagroup set coverpic='' where coverpic='%s'", pszCover);
     DataBaseDriver* pDataBaseDriver = DataBaseDriver_GetMediaDataBaseConn();

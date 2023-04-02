@@ -535,7 +535,7 @@
         }
         g_OptMode = 1;
         $(".itemselect").css("display", "");
-        $(".selectbottom").css("display", "");
+        $(".selectbottom").css("display", "flex");
         DeviceApi.device.enterselectmode(g_OptMode + "");
         g_SelectDiv = null;
     }
@@ -643,6 +643,27 @@
         }, "取消", function(){
         });
     }
+
+    function ChooseGroup()
+    {
+        var iItemLen = $(".mediaselect").length;
+        if(0 == iItemLen)
+        {
+            return;
+        }
+        let chooseGroupItemIds = "";
+        for(var i = 0; i < iItemLen; ++i)
+        {
+            var id = $(".mediaselect").eq(i).parents(".grid-item").attr("itemid");
+            chooseGroupItemIds += id;
+            chooseGroupItemIds += "&";
+        }
+        if(chooseGroupItemIds.length > 0)
+        {
+            chooseGroupItemIds = chooseGroupItemIds.substring(0, chooseGroupItemIds.length - 1);
+        }
+        DeviceApi.device.setitemsgroup(chooseGroupItemIds);
+    }
 </script>
 <body>
     <div class="nodatadiv hidden" style="position:absolute;text-align: center;  width: 100%; height: 100%;display:flex;align-items:center; justify-content:center;">
@@ -674,12 +695,22 @@
             </div>
         </div>
     </div>
-    <div onclick="RemoveSelectItem()" class="selectbottom" style="background-color:rgba(255, 255, 255, 0.9); display: none; width: 100%; height: 7vh;  bottom: 0; position:fixed; box-shadow: 0 -5px 15px  #d0d2d3;">
-        <div style="text-align: center;line-height: 7vh; width: 100%; height: 100%; float: left;">
-            <img src="./img/remove.png" style="display: inline-block; width: 4h; height: 4vh; margin-top: -1vh;"/>
+    <div  class="selectbottom" style="display: none; background-color:rgba(255, 255, 255, 0.9);  width: 100%; height: 7vh;  bottom: 0; position:fixed; box-shadow: 0 -5px 15px  #d0d2d3;">
+        <div style="width: 30%; height: 100%; display: flex; align-items: center;">
+            <div onclick="CancelSelectMode()" style="display: block; width: 5vh; height: 4vh;cursor: pointer;">
+                <img src="./img/undo.png" width="100%" height="100%"/>
+            </div>
+            
         </div>
-        <div onclick="CancelSelectMode()" style="text-align: center;line-height: 7vh; width: 7vh; height: 100%; float: left; position: absolute;">
-            <img src="./img/undo.png" style="display: inline-block; width: 5h; height: 4vh; margin-top: -1vh;"/>
+        <div  style="width: 40%; height: 100%; display: flex; align-items: center;">
+            <div onclick="RemoveSelectItem()" style="display: block; width: 5vh; height: 4vh;margin: 0 auto;cursor: pointer;">
+                <img  src="./img/remove.png" width="100%" height="100%"/>
+            </div>
+        </div>
+        <div  style="width: 30%;height: 100%; display: flex; align-items: center;justify-content: flex-end;">
+            <div onclick="ChooseGroup()" style="display: block; width: 4vh; height: 4vh;margin-right: 1vh;cursor: pointer;">
+                <img src="./img/group.png" width="100%" height="100%"/>
+            </div>
         </div>
     </div>
 </body>
