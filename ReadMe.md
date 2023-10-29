@@ -9,9 +9,19 @@ sudo apt-get install g++
 sudo apt-get install yasm 
 ```
 
-# 2.编译
+# 2.拉代码
+
+```shell
+#gitee
+git clone git@gitee.com:relech/mediasync.git
+#github
+git clone git@github.com:yubaihe/mediasync.git
+```
+
+# 3.编译
 
 ```
+cd mediasync
 source ./initenv.sh LINUX /home/relech/syncmedia/
 make
 ```

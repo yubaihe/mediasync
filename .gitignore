@@ -5,3 +5,7 @@ lighttpd/fcgi/Upload/obj.**
 lighttpd/fcgi/Upload/upload.fcgi
 lighttpd/lighttpd/lighttpd-1.4.66
 package/install
+apps/Server/obj.**
+apps/Server/Server
+apps/MetaParse/obj.**
+apps/MetaParse/MetaParse
