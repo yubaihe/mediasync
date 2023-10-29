@@ -17,7 +17,7 @@
     },
     "others":
     {
-        "samba":1,
+        "samba":0,
         "eth":1,
         "wlan":0
     }

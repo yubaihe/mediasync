@@ -13,8 +13,9 @@
 
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
-<script src="js/Common.js?id=2"></script>
-<script src="js/Api.js?id=3"></script>
+<script src="js/Common.js"></script>
+<script src="js/Api.js"></script>
+<script src="js/LanguageOpt.js"></script>
 
 <link rel="stylesheet" href="css/bootstrap-slider.min.css"/>
 <script src="js/bootstrap-slider.min.js"></script>
@@ -73,6 +74,7 @@
     }
     $(document).ready(function()
     {
+        InitLanguage();
         DisableContextMenu();
         var iEthEnable = GetUrlParam("eth");
         var iWlanEnable = GetUrlParam("wlan");
@@ -109,6 +111,9 @@
         });
         $(".netsetting").click(function(e){
             DeviceApi.device.netsetting();
+        });
+        $(".languageset").click(function(e){
+            DeviceApi.device.languageset();
         });
 
         $('.blueslide').slider(
@@ -180,10 +185,13 @@
         });
 
         $(".clearmemory").click(function(){
-            ShowConfirm("清理缓存", "该操作会重置设备的相关计数，中途请<span style='color:red'>不要断电</span>，否则请<span style='color:#1B9AF7'>重新执行</span>清理缓存操作!", 1, "确定", function(){
+            var tipContent = LanguageText("该操作会重置设备的相关计数，中途请<span style='color:red'>不要断电</span>，否则请<span style='color:#1B9AF7'>重新执行</span>清理缓存操作!");
+            ShowConfirm(LanguageText("清理缓存"), tipContent, 1,
+            LanguageText("按钮确定"), 
+            function(){
                 ClearCacheStart();
             }, 
-            "取消", 
+            LanguageText("按钮取消"), 
             function()
             {
                 UnSetToast();
@@ -191,9 +199,29 @@
         });
 
     });
-
-    
-
+    function InitLanguage()
+    {
+        console.log("seeting init language===================================================" + mLanguageIndex);
+        $(".changedevicename").attr("placeholder", LanguageText("请输入设备名称"));
+        // let count = $(".settinglabel").length;
+        // for(let i = 0; i < count; ++i)
+        // {
+        //     $(".settinglabel").eq(i).html(LanguageText($(".settinglabel").eq(i).html()));
+        // }
+        $(".namelabel").html(LanguageText("设备名称:"));
+        $(".covertitlelabel").html(LanguageText("封面模糊度:"));
+        $(".clearmemorylabel").html(LanguageText("清理缓存"));
+        $(".languagesetlabel").html(LanguageText("语言设置"));
+        $(".resetuserlabel").html(LanguageText("重置用户"));
+        $(".netsettinglabel").html(LanguageText("网络设置"));
+        $(".howtouselabel").html(LanguageText("使用说明"));
+        $(".aboutdevicelabel").html(LanguageText("关于设备"));
+    }
+    function ChangeLanguage(languageid)
+    {
+        SwitchLanguage(languageid);
+        InitLanguage();
+    }
 </script>
 <body>
     <div class="scrollview" style="width: 100%; height: 78vh;">
@@ -201,36 +229,41 @@
             <div class="headdiv" style="height: 30vh;"></div>
             <div class="container hidden">
                 <div style="margin-left: 10%; margin-right: 10%;  width: 80%;">
-                    <div style="width: 100%; height: 8vh; line-height: 8vh; font-size: 1.5rem; border-bottom:1px solid #e9e8e8;">
-                        <div style="display: inline-block;">设备名称:</div>
-                        <div style="display: inline-block; width: 63%;margin-left: 5%;">
+                    <div style="display: flex; width: 100%; height: 8vh; line-height: 8vh; font-size: 1.5rem; border-bottom:1px solid #e9e8e8;">
+                        <div class="settinglabel namelabel" style="display: inline-block;height: 100%;margin-right: 5%;">设备名称:</div>
+                        <div style="float: right;">
                             <input class="changedevicename" type="text" placeholder="请输入设备名称" maxlength="10" style="caret-color:#d7e0ec;  border:none;width: 100%; height: 5.6vh; line-height: 3.9vh; color: #c3c3c3;outline:none; ">
                         </div>
                     </div>
                     
                     <div class="covermain" style="width: 100%; height: 8vh; line-height: 8vh; font-size: 1.5rem; border-bottom:1px solid #e9e8e8;">
-                        <div class="covertitle" style="display: inline-block; height: 100%; ">封面模糊度:</div>
+                        <div class="settinglabel covertitle covertitlelabel" style="display: inline-block; height: 100%; ">封面模糊度:</div>
                         <div class="coverbar hidden" style="float: right;">
                             <input  class="blueslide" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="15"/>
                         </div>
                     </div>
                     <div class="clearmemory canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
-                        <span style="display: inline-block;">清理缓存</span>                      
+                        <span class="settinglabel clearmemorylabel" style="display: inline-block;">清理缓存</span>                      
+                    </div>
+                    <div class="languageset canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
+                        <span class="settinglabel languagesetlabel" style="display: inline-block;">语言设置</span>
+                        <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>                        
                     </div>
                     <div class="resetuser canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
-                        <span style="display: inline-block;">重置用户</span>
+                        <span class="settinglabel resetuserlabel" style="display: inline-block;">重置用户</span>
                         <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>                        
                     </div>
                     <div class="netsetting canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
-                        <span style="display: inline-block;">网络设置</span>
+                        <span class="settinglabel netsettinglabel" style="display: inline-block;">网络设置</span>
                         <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>
                     </div>
+                    
                     <div class="howtouse canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
-                        <span style="display: inline-block;">使用说明</span>
+                        <span class="settinglabel howtouselabel" style="display: inline-block;">使用说明</span>
                         <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>
                     </div>
                     <div class="aboutdevice canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
-                        <span style="display: inline-block;">关于设备</span>
+                        <span class="settinglabel aboutdevicelabel" style="display: inline-block;">关于设备</span>
                         <div style="float: right;"><img src="./img/more.png" width="9px" height="14px"></div>
                     </div>
                     

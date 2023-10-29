@@ -1,0 +1,7 @@
+thirdpart
+lighttpd/fcgi/Server/obj.**
+lighttpd/fcgi/Server/server.fcgi
+lighttpd/fcgi/Upload/obj.**
+lighttpd/fcgi/Upload/upload.fcgi
+lighttpd/lighttpd/lighttpd-1.4.66
+package/install

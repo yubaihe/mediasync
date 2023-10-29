@@ -309,16 +309,10 @@ void ComputerServerMessage_OnComputerServerDeviceInfo(struct ConnectServer* pSer
 	{
 		char szBuffer[255] = {0};
 		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_DEVICEINFO_ACK, "inner error");
+		printf("%s\n", szBuffer);
 		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
 		return;
 	}
-	// char* pDevVersion = pItem->pszDevVersion;//设备版本号
-	// char* pDevName = pItem->pszDevName;//设备ID
-	// if(NULL == pItem->pszDevName)
-	// {
-	// 	pDevName = "";
-	// }
-	//取照片总数量
 	int iRecordCount = 0;
 	BOOL bRet = DataBaseMedia_GetRecordCount(&iRecordCount);
 	if(FALSE == bRet)
@@ -327,6 +321,7 @@ void ComputerServerMessage_OnComputerServerDeviceInfo(struct ConnectServer* pSer
 
 		char szBuffer[255] = {0};
 		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_DEVICEINFO_ACK, "inner error 1");
+		printf("%s\n", szBuffer);
 		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
 		return;
 	}
@@ -339,65 +334,29 @@ void ComputerServerMessage_OnComputerServerDeviceInfo(struct ConnectServer* pSer
 
 		char szBuffer[255] = {0};
 		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_DEVICEINFO_ACK, "inner error 2");
+		printf("%s\n", szBuffer);
 		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
 		return;
 	}
-	if(iRecordCount == 0)
-	{
-		char szRet[400] = {0};
-		sprintf(szRet, "{\"otype\":\"%d\",\"status\":1,\"devid\":\"%s\",\"devname\":\"%s\",\"devversion\":\"%s\",\"devblue\":\"%s\",\"mediacount\":\"%d\",\"lastupdatetime\":\"%u\",\"login\":\"%d\",\"pic\":\"\",\"pic2\":\"\",\"eth\":%d,\"wlan\":%d}", 
-			MESSAGETYPECMD_DEVICEINFO_ACK, pItem->pszDevID, "", pItem->pszDevVersion, pItem->pszDevBlue, iRecordCount, 0, iUserCount > 0?1:0, g_bEth, g_bWlan);
-		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szRet);
-
-		json_object* pJsonItem = NULL;
-		const char* pszJson = NULL;
-		if(NULL != pItem->pszDevName)
-		{
-			pJsonItem = json_tokener_parse(szRet);
-			json_object_object_del(pJsonItem, "devname"); 
-			json_object_object_add(pJsonItem, "devname", json_object_new_string(pItem->pszDevName)); 
-			pszJson = json_object_to_json_string(pJsonItem);
-		}
-		if(NULL == pJsonItem)
-		{
-			ComputerServerMessage_SendCmdMessage(pServer, iSocket, szRet);
-		}
-		else
-		{
-			ComputerServerMessage_SendCmdMessage(pServer, iSocket, pszJson);
-			json_object_put(pJsonItem);
-		}
-		
-		DataBaseDevice_ReleaseItem(pItem);	
-		return;
-	}
-	//最后更新时间
+	//最后更新时间 这个指针有可能是空的 用的时候需要做好判断
 	MediaItem* pMediaItem = DataBaseMedia_GetLatestItem();
-	if(NULL == pMediaItem)
-	{
-		char szBuffer[255] = {0};
-		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_DEVICEINFO_ACK, "inner error 3");
-		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
-
-		DataBaseDevice_ReleaseItem(pItem);
-		return;
-	}
+	
+	//读取封面
 	char* pszCover = DataBaseCover_GetHomeCover();
 	char szCoverFile[MAX_PATH] = {0};
 	if(strlen(pszCover) == 0)
 	{
-		strcpy(szCoverFile, pMediaItem->pszAddr);
+		strcpy(szCoverFile, NULL == pMediaItem?"":pMediaItem->pszAddr);
 	}
 	else
 	{
-		
 		sprintf(szCoverFile, "%s/%s", FOLD_PREFIX, pszCover);
 		BOOL bCover = FileUtil_CheckFileExist(szCoverFile);
 		if(FALSE == bCover)
 		{
 			//文件不存在
 			DataBaseCover_RemoveHomeCover();
-			strcpy(szCoverFile, pMediaItem->pszAddr);
+			strcpy(szCoverFile, NULL == pMediaItem?"":pMediaItem->pszAddr);
 		}
 		else
 		{
@@ -408,34 +367,41 @@ void ComputerServerMessage_OnComputerServerDeviceInfo(struct ConnectServer* pSer
 
 	free(pszCover);
 	pszCover = NULL;
-	
-	char szRet[400] = {0};
-	sprintf(szRet, "{\"otype\":\"%d\",\"status\":1,\"devid\":\"%s\",\"devname\":\"%s\",\"devversion\":\"%s\",\"devblue\":\"%s\",\"mediacount\":\"%d\",\"lastupdatetime\":\"%d\",\"login\":\"%d\",\"pic\":\"%s\",\"pic2\":\"%s\",\"eth\":%d,\"wlan\":%d}", 
-			MESSAGETYPECMD_DEVICEINFO_ACK, pItem->pszDevID, "", pItem->pszDevVersion, pItem->pszDevBlue, iRecordCount, pMediaItem->iAddTime, iUserCount > 0?1:0, szCoverFile, pMediaItem->pszAddr, g_bEth, g_bWlan);
-	
-	json_object* pJsonItem = NULL;
-	const char* pszJson = NULL;
-	if(NULL != pItem->pszDevName)
-	{
-		printf("=====>%s\n", szRet);
-		pJsonItem = json_tokener_parse(szRet);
-		json_object_object_del(pJsonItem, "devname"); 
-		json_object_object_add(pJsonItem, "devname", json_object_new_string(pItem->pszDevName)); 
-		pszJson = json_object_to_json_string(pJsonItem);
-	}
-	if(NULL == pJsonItem)
-	{
-		printf("%s\n", szRet);
-		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szRet);
-	}
-	else
-	{
-		printf("%s\n", pszJson);
-		ComputerServerMessage_SendCmdMessage(pServer, iSocket, pszJson);
-		json_object_put(pJsonItem);
-	}
+
+	char* pszMac = Tools_GetMacAddr();
+	char* pszLicence = FileUtil_GetLicence();
+
+	json_object* pJsonRet = json_object_new_object();
+	json_object_object_add(pJsonRet, "otype", json_object_new_int(MESSAGETYPECMD_DEVICEINFO_ACK));
+	json_object_object_add(pJsonRet, "status", json_object_new_int(1));
+	json_object_object_add(pJsonRet, "devid", json_object_new_string(pItem->pszDevID));
+	json_object_object_add(pJsonRet, "devname", json_object_new_string(NULL == pItem->pszDevName ? "":pItem->pszDevName));
+	json_object_object_add(pJsonRet, "devversion", json_object_new_string(pItem->pszDevVersion));
+	json_object_object_add(pJsonRet, "devblue", json_object_new_string(pItem->pszDevBlue));
+	json_object_object_add(pJsonRet, "mediacount", json_object_new_int(iRecordCount));
+	json_object_object_add(pJsonRet, "lastupdatetime", json_object_new_int64(NULL == pMediaItem?0:pMediaItem->iAddTime));
+	json_object_object_add(pJsonRet, "login", json_object_new_int(iUserCount > 0?1:0));
+	json_object_object_add(pJsonRet, "pic", json_object_new_string(szCoverFile));
+	json_object_object_add(pJsonRet, "pic2", json_object_new_string(NULL == pMediaItem?"":pMediaItem->pszAddr));
+	json_object_object_add(pJsonRet, "eth", json_object_new_int(g_bEth));
+	json_object_object_add(pJsonRet, "wlan", json_object_new_int(g_bWlan));
+	json_object_object_add(pJsonRet, "mac", json_object_new_string(pszMac));
+	json_object_object_add(pJsonRet, "licence", json_object_new_string(pszLicence));
+
+	free(pszMac);
+	pszMac = NULL;
+	free(pszLicence);
+	pszLicence = NULL;
+
+	const char* pszJson = json_object_to_json_string(pJsonRet);
+	ComputerServerMessage_SendCmdMessage(pServer, iSocket, pszJson);
+	printf("%s\n", pszJson);
+	json_object_put(pJsonRet);
 	DataBaseDevice_ReleaseItem(pItem);
-	DataBaseMedia_ReleaseItem(pMediaItem);
+	if(NULL != pMediaItem)
+	{
+		DataBaseMedia_ReleaseItem(pMediaItem);
+	}
 }
 
 void ComputerServerMessage_OnComputerServerDiskInfo(struct ConnectServer* pServer, SOCKET iSocket, json_object* pJsonRoot)

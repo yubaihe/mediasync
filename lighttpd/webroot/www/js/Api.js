@@ -1,26 +1,28 @@
 //var ServerApi = new API("http://" + window.location.host );
 //////////////////////////////低版本浏览器不支持Map////////////////////////////////////////
-function Map() {
+if (typeof Map == "undefined")
+{
+    function Map() {
 
-    this.keys = new Array();
-    this.data = new Object();
+        this.keys = new Array();
+        this.data = new Object();
 
-    this.set = function(key, value) {
-        if (this.data[key] == null) {
-            if (this.keys.indexOf(key) == -1) {
-                this.keys.push(key);
+        this.set = function(key, value) {
+            if (this.data[key] == null) {
+                if (this.keys.indexOf(key) == -1) {
+                    this.keys.push(key);
+                }
             }
+            this.data[key] = value;
         }
-        this.data[key] = value;
-    }
 
-    this.get = function(key) {
-        return this.data[key];
-    }
-    this.has = function(key)
-    {
-        var ret = this.data[key] == undefined?false:true;
-        return ret;
+        this.get = function(key) {
+            return this.data[key];
+        }
+        this.has = function(key)
+        {
+            return this.data[key] == undefined?false:true;
+        }
     }
 }
 ///////////////////////////////这里是为IOS准备的//////////////////////////////////////////
@@ -459,6 +461,7 @@ function API(baseurl)
         settingupdate:api.Post("/settingupdate"),
         resetuser:api.Post("/resetuser"),
         netsetting:api.Post("/netsetting"),
+        languageset:api.Post("/languageset"),
         howtouse:api.Post("/howtouse"),
         aboutdevice:api.Post("/aboutdevice"),
         inputchange:api.Post("/inputchange"), //输入框改变
@@ -486,7 +489,9 @@ function API(baseurl)
         enterselectmode:api.Post("/enterselectmode"),
         dataempty:api.Post("/dataempty"),
         setitemsgroup:api.Post("/setitemsgroup"),
-        mediaitemsgroupadd:api.Post("/mediaitemsgroupadd")
+        mediaitemsgroupadd:api.Post("/mediaitemsgroupadd"),
+        languageset:api.Post("/languageset"),
+        languagesetsure:api.Post("/languagesetsure")
     };
 
     api.request={

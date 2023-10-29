@@ -19,6 +19,7 @@
 <script src="js/dialog.min.js"></script>
 <script src="js/Toast.js"></script>
 <script src="js/baidumap.js"></script>
+<script src="js/LanguageOpt.js"></script>
 <!-- Plugin CSS -->
 <link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
 <!-- Plugin JS -->
@@ -209,7 +210,7 @@
         {
             $(".finishcontent").css("display", "table");
             var iCount = $(".grid-itemmedia").length - 1;
-            $(".finishcontenttongji").html("总数量( " + iCount + " )");
+            $(".finishcontenttongji").html(LanguageText("总数量")+"( " + iCount + " )");
         }
         else
         {
@@ -579,7 +580,7 @@
     {
         if(g_removeitems.length == 0)
         {
-            Toast("删除成功");
+            Toast(LanguageText("删除成功"));
             NotifyDevice();
             CancelSelectMode();
             return;
@@ -605,18 +606,18 @@
                     //视频
                     g_videocount++;
                 }
-                SetToast("剩余:" + g_removeitems.length);
+                SetToast(LanguageText("剩余:") + g_removeitems.length);
                 RemoveItem(id);
                 RequestRemoveItem();
             }
             else
             {
-                Toast("删除失败");
+                Toast(LanguageText("删除失败"));
                 NotifyDevice();
             }
         },function(xhr,textStatus)
         {
-            Toast("删除失败");
+            Toast(LanguageText("删除失败"));
             NotifyDevice();
         });
     }
@@ -628,7 +629,7 @@
         {
             return;
         }
-        ShowConfirm("确认", "删除后将永远丢失该媒体的存储,请确认!", 1, "确定", function(){
+        ShowConfirm(LanguageText("确认"), LanguageText("删除后将永远丢失该媒体的存储,请确认!"), 1, LanguageText("按钮确定"), function(){
             g_removeitems = [];
             g_videocount = 0;
             g_piccount = 0;
@@ -636,11 +637,11 @@
             {
                 var id = $(".mediaselect").eq(i).parents(".grid-item").attr("itemid");
                 g_removeitems.push(id);
-                SetToast("剩余:" + g_removeitems.length);
+                SetToast(LanguageText("剩余:") + g_removeitems.length);
                 console.log(g_removeitems);
             }
             RequestRemoveItem();
-        }, "取消", function(){
+        }, LanguageText("按钮取消"), function(){
         });
     }
 

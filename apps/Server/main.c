@@ -121,14 +121,7 @@ void InitParam_SetDevInfo(json_object* pJsonRoot)
     item.pszDevName = (char*)json_object_get_string(json_object_object_get(pDevObj, "devname"));
     item.pszDevVersion = (char*)json_object_get_string(json_object_object_get(pDevObj, "devversion"));
     item.pszDevBlue = (char*)json_object_get_string(json_object_object_get(pDevObj, "devblue"));
-    if(0 == strcmp(item.pszDevID, "09831"))
-    {
-        printf("Unauthorized device\n");
-#ifdef ARM
-        exit(0);
-#endif
-    }
-
+   
     DevItem* pDevItem = DataBaseDevice_GetDevInfo();
     if(NULL == pDevItem)
     {    

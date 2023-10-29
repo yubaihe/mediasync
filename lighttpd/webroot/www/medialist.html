@@ -15,6 +15,7 @@
 <script src="./js/masonry.pkgd.min.js"></script>
 <script src="./js/imagesloaded.pkgd.min.js"></script>
 <script src="./js/Common.js?id=3"></script>
+<script src="./js/LanguageOpt.js"></script>
 
 <link rel="stylesheet" href="./css/dialog.css"/>
 <script type="text/javascript" src="./js/dialog.min.js"></script>
@@ -23,6 +24,7 @@
 <link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
 <!-- Plugin JS -->
 <script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+
 <style type="text/css">
     .folditem { 
         width: 100%;
@@ -58,7 +60,7 @@
         }
         $(".recentupload").find(".yeardetail").eq(0).attr("pic", picCount + "");
         $(".recentupload").find(".yeardetail").eq(0).attr("video", videoCount + "");
-        $(".recentupload").find(".yeardetail").eq(0).html("图片数:{0} 视频数:{1}".format(picCount, videoCount));
+        $(".recentupload").find(".yeardetail").eq(0).html(LanguageText("图片数:{0} 视频数:{1}").format(picCount, videoCount));
     }
 
     function YearRemove(iYear, iType)
@@ -79,7 +81,7 @@
         }
         $(".year_" + iYear).find(".yeardetail").eq(0).attr("pic", picCount);
         $(".year_" + iYear).find(".yeardetail").eq(0).attr("video", videoCount);
-        $(".year_" + iYear).find(".yeardetail").eq(0).html("图片数:{0} 视频数:{1}".format(picCount, videoCount));
+        $(".year_" + iYear).find(".yeardetail").eq(0).html(LanguageText("图片数:{0} 视频数:{1}").format(picCount, videoCount));
     }
 
     function Init()
@@ -143,7 +145,7 @@
                     $(".year_" + jsonRoot["year"]).find(".yearname").eq(0).html(jsonRoot["year"]);
                     $(".year_" + jsonRoot["year"]).find(".yeardetail").eq(0).attr("pic", jsonRoot["piccount"]);
                     $(".year_" + jsonRoot["year"]).find(".yeardetail").eq(0).attr("video", jsonRoot["videocount"]);
-                    $(".year_" + jsonRoot["year"]).find(".yeardetail").eq(0).html("图片数:{0} 视频数:{1}".format(jsonRoot["piccount"], jsonRoot["videocount"]));
+                    $(".year_" + jsonRoot["year"]).find(".yeardetail").eq(0).html(LanguageText("图片数:{0} 视频数:{1}").format(jsonRoot["piccount"], jsonRoot["videocount"]));
                     $(".year_" + jsonRoot["year"]).find(".yearwithdetail").eq(0).removeClass("hidden");
                     $(".year_" + jsonRoot["year"]).find(".yearwithdetail").eq(0).removeClass("hidden");
                     $(".year_" + jsonRoot["year"]).find(".year").eq(0).addClass("hidden");
@@ -178,7 +180,7 @@
             DeviceApi.device.recentupload($(this).attr("year"));
             });
         itemDiv.addClass("recentupload");
-        itemDiv.find(".year").eq(0).html("最近同步");
+        itemDiv.find(".year").eq(0).html(LanguageText("最近同步"));
         itemDiv.find(".year").eq(0).removeClass("hidden");
         $(".divmain").append(itemDiv);
         itemDiv.find(".cover").eq(0).attr("src", "./img/meidarecent.png");
@@ -193,10 +195,10 @@
             {
                 return;
             }
-            $(".recentupload").find(".yearname").eq(0).html("最近同步");
+            $(".recentupload").find(".yearname").eq(0).html(LanguageText("最近同步"));
             $(".recentupload").find(".yeardetail").eq(0).attr("pic", jsonRoot["piccount"]);
             $(".recentupload").find(".yeardetail").eq(0).attr("video", jsonRoot["videocount"]);
-            $(".recentupload").find(".yeardetail").eq(0).html("图片数:{0} 视频数:{1}".format(jsonRoot["piccount"], jsonRoot["videocount"]));
+            $(".recentupload").find(".yeardetail").eq(0).html(LanguageText("图片数:{0} 视频数:{1}").format(jsonRoot["piccount"], jsonRoot["videocount"]));
             $(".recentupload").find(".yearwithdetail").eq(0).removeClass("hidden");
             $(".recentupload").find(".yearwithdetail").eq(0).removeClass("hidden");
             $(".recentupload").find(".year").eq(0).addClass("hidden");
@@ -227,7 +229,7 @@
             DeviceApi.device.groupinfo($(this).attr("year"));
             });
         itemDiv.addClass("group");
-        itemDiv.find(".year").eq(0).html("分组集合");
+        itemDiv.find(".year").eq(0).html(LanguageText("分组集合"));
         itemDiv.find(".year").eq(0).removeClass("hidden");
         $(".divmain").append(itemDiv);
         
@@ -249,8 +251,8 @@
             if(jsonRoot.items.length > 0)
             {
                 itemDiv.removeClass("hidden");
-                $(".group").find(".yearname").eq(0).html("分组集合");
-                $(".group").find(".yeardetail").eq(0).html("分组数({0})".format(jsonRoot.items.length));
+                $(".group").find(".yearname").eq(0).html(LanguageText("分组集合"));
+                $(".group").find(".yeardetail").eq(0).html(LanguageText("分组数({0})").format(jsonRoot.items.length));
                 $(".group").find(".yearwithdetail").eq(0).removeClass("hidden");
                 $(".group").find(".yearwithdetail").eq(0).removeClass("hidden");
                 $(".group").find(".year").eq(0).addClass("hidden");

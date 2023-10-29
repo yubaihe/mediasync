@@ -18,6 +18,7 @@
 <script src="js/baidumap.js"></script>
 <link rel="stylesheet" href="css/bootstrap-slider.min.css"/>
 <script src="js/bootstrap-slider.min.js"></script>
+<script src="./js/LanguageOpt.js"></script>
 <!-- Plugin CSS -->
 <link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
 <!-- Plugin JS -->
@@ -115,9 +116,7 @@
     var g_markLabelMap = new Map();
     function SetItem(itemdiv, bdPoint, location, newClass)
     {
-        
         setTimeout(function()  {
-            
                     var str = "{\"action\":\"{0}\",\"location\":\"{1}\",\"devnames\":\"{2}\",\"year\":\"{3}\",\"month\":\"{4}\",\"day\":\"{5}\"}".format("yearlocationgrouptongji", location, GetSelectDeviceString(), year, month, day);
                     ServerApi.request.yearlocationgrouptongji(str,function(data,textStatus,jqXHR)
                     {
@@ -154,15 +153,15 @@
                         var item = "";
                         if(piccount == 0)
                         {
-                            item = "视频:{0}条".format(videocount);
+                            item = LanguageText("视频:{0}条").format(videocount);
                         }
                         else if(videocount == 0)
                         {
-                            item = "图片:{0}张".format(piccount);
+                            item = LanguageText("图片:{0}张").format(piccount);
                         }
                         else 
                         {
-                            item = "图片:{0}张  视频:{1}条".format(piccount, videocount);
+                            item = LanguageText("图片:{0}张  视频:{1}条").format(piccount, videocount);
                         }
                         
                         if(null != bdPoint)
@@ -219,7 +218,7 @@
                         }
                         
                         itemdiv.find(".locationinfo").eq(0).attr("location", location);
-                        itemdiv.find(".locationinfo").eq(0).html("{0}({1})".format(location, piccount  + videocount));
+                        itemdiv.find(".locationinfo").eq(0).html("{0}({1})".format(LanguageText(location), piccount  + videocount));
                         var label = g_markLabelMap.get(newClass);
                         if(undefined != label)
                         {

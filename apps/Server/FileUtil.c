@@ -507,3 +507,28 @@ BOOL FileUtil_IsSoftLink(char* pszFileName)
     }
     return TRUE;
 }
+
+char* FileUtil_GetFileContent(const char* pszFile)
+{
+    FILE* pFile = fopen(pszFile, "r");
+    if(NULL == pFile)
+    {
+        char* pszRet = (char*)malloc(1);
+        memset(pszRet, 0, 1);
+        return pszRet;
+    }
+    fseek(pFile, 0L,SEEK_END);
+    int iContentLen = ftell(pFile);
+    char* pszFileContent = (char*)malloc(iContentLen + 1);
+    memset(pszFileContent, 0, iContentLen + 1);
+    fseek(pFile, 0L,SEEK_SET);
+    fread(pszFileContent, iContentLen, 1, pFile);
+    fclose(pFile);
+    pFile = NULL;
+    return pszFileContent;
+}
+
+char* FileUtil_GetLicence()
+{
+    return FileUtil_GetFileContent("/etc/licence");
+}

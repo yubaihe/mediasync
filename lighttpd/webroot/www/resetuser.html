@@ -12,7 +12,8 @@
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 <script src="js/Common.js"></script>
-<script src="js/Api.js?id=1"></script>
+<script src="js/Api.js"></script>
+<script src="js/LanguageOpt.js"></script>
 <!-- Plugin CSS -->
 <link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
 <!-- Plugin JS -->
@@ -52,6 +53,7 @@
     var DeviceApi = new API("");
     $(document).ready(function()
     {
+        InitLanguage();
         DisableContextMenu();
         //支持IOS的 active
         $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
@@ -93,6 +95,19 @@
             //DeviceApi.device.confirm("0");
             UnSetToast();
         });
+    }
+    function InitLanguage()
+    {
+        let iLabelCount = $("label").length;
+        for(let i = 0; i < iLabelCount; ++i)
+        {
+            $("label").eq(i).html(LanguageText($("label").eq(i).html()));
+        }
+        let iInputCount = $("input").length;
+        for(let i = 0; i < iInputCount; ++i)
+        {
+            $("input").eq(i).attr("placeholder", LanguageText($("input").eq(i).attr("placeholder")));
+        }
     }
 </script>
 <body>

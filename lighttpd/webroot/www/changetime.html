@@ -17,12 +17,16 @@
 <!-- 时间选择器前置脚本 -->
 <script src="./bootstrap-datetimepicker/moment-with-locales.min.js"></script>
 <!-- 时间选择器核心脚本 -->
-<script src="./bootstrap-datetimepicker//bootstrap-datetimepicker.min.js"></script>
+<script src="./bootstrap-datetimepicker/bootstrap-datetimepicker.min.js"></script>
 
 <script>
     var ServerApi = new API("http://" + window.location.host);
     var DeviceApi = new API("");
-
+    var languagename = GetUrlParam("languagename");
+    if(languagename == null)
+     {
+        languagename = "zh-CN";
+     }
      var time = GetUrlParam("time");
      if(time == null)
      {
@@ -39,7 +43,7 @@
         $('#ChangeTime').datetimepicker({
                     inline: true,
                     sideBySide: true,
-                    locale: 'zh-CN',
+                    locale:languagename,//'en',
                      maxDate: new Date(),
                     format: 'YYYY-MM-DD HH:mm:ss',
                     defaultDate:dateTime

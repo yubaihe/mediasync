@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="./css/dialog.css"/>
 <script type="text/javascript" src="./js/dialog.min.js"></script>
 <script type="text/javascript" src="./js/Toast.js"></script>
+<script type="text/javascript" src="./js/LanguageOpt.js"></script>
 <!-- Plugin CSS -->
 <link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
 <!-- Plugin JS -->
@@ -83,9 +84,10 @@
     var ServerApi = new API("http://" + window.location.host);
     var DeviceApi = new API("");
     var mPlayer = null;
-
+  
     $(document).ready(function()
     {
+        InitLanguage();
         DisableContextMenu();
         $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
         $(".favorite").click(function(){
@@ -99,9 +101,9 @@
             //$(this).find('img').eq(0).attr("src", "./img/favorite.png");
         });
         $(".mediaitemdel").click(function(){
-            ShowConfirm("确认", "删除后将永远丢失该媒体的存储,请确认!", 1, "确定", function(){
+            ShowConfirm(LanguageText("确认"), LanguageText("删除后将永远丢失该媒体的存储,请确认!"), 1, LanguageText("按钮确定"), function(){
             DeviceApi.device.confirm("1");
-        }, "取消", function(){
+        }, LanguageText("按钮取消"), function(){
             //DeviceApi.device.confirm("0");
             UnSetToast();
         });
@@ -118,7 +120,7 @@
             var jsonRoot = JSON.parse(data);
             if(jsonRoot["status"] !=1)
             {
-                $(".suoshufenzuvalue").html("未知");
+                $(".suoshufenzuvalue").html(LanguageText("未知"));
                 return;
             }
             var GroupNames = "";
@@ -140,7 +142,7 @@
             }
             if(GroupNames.length == 0)
             {
-                $(".suoshufenzuvalue").html("未分组");
+                $(".suoshufenzuvalue").html(LanguageText("未分组"));
             }
             else
             {
@@ -198,9 +200,13 @@
         $(".mediaitemsize").html(msize);
         $(".mediaitemsynctime").html(synctime);
         $(".mediaitemname").html(name);
-        if(location == "")
+        if(location == ""||location=="未知")
         {
-            SetPlayAddr("未知");
+            SetPlayAddr(LanguageText("未知"));
+        }
+        else if(location == "待定位")
+        {
+            SetPlayAddr(LanguageText("待定位"));
         }
         else
         {
@@ -311,6 +317,19 @@
     {
         DeviceApi.device.updatefenzu("" + g_selectGroupIds);
     }
+    function InitLanguage()
+    {
+        $(".fenbianlvlabel").html(LanguageText("分辨率:"));
+        $(".mediasizelabel").html(LanguageText("媒体大小:"));
+        $(".mediadurationlabel").html(LanguageText("持续时间:"));
+        $(".mediadevicenamelabel").html(LanguageText("设备名称:"));
+        $(".mediasynctimelabel").html(LanguageText("同步时间:"));
+        $(".mediagrouplabel").html(LanguageText("所属分组:"));
+        $(".meidapaitimelabel").html(LanguageText("拍摄时间:"));
+        $(".mediapaiaddrlabel").html(LanguageText("拍摄地点:"));
+        $(".paishedidian").html(LanguageText("获取中..."));
+        $(".mediaremovelabel").html(LanguageText("删 除"));
+    }
 </script>
 <body>
     <div class="contentDiv hidden">
@@ -326,7 +345,7 @@
         </div>
         <div class="mediaitem">
             <div style="position: absolute;">
-                <div class="mediaitemtitle" style="float: left;">分辨率:</div>
+                <div class="mediaitemtitle fenbianlvlabel" style="float: left;">分辨率:</div>
                 <div class="fenbianlv" style="float: left;"></div>
             </div>
             <div style="float: right; margin-right: 2.3vh; width: 3vh; height: 3vh; margin-top: 1.5vh; ">
@@ -337,7 +356,7 @@
         </div>
         <div class="mediaitem">
             <div style="position: absolute;">
-                <div class="mediaitemtitle" style="float: left;">媒体大小:</div>
+                <div class="mediaitemtitle mediasizelabel" style="float: left;">媒体大小:</div>
             <div class="mediaitemsize" style="float: left;">4.8M</div>
             </div>
             <div style="float: right; margin-right: 2.3vh; width: 3vh; height: 3vh; margin-top: 1.5vh; ">
@@ -348,21 +367,21 @@
         </div>
 
         <div class="mediaitem chixushijian hidden">
-            <div class="mediaitemtitle" style="float: left;">持续时间:</div>
+            <div class="mediaitemtitle mediadurationlabel" style="float: left;">持续时间:</div>
             <div class="mediaitemdur" style="float: left;">4S</div>
         </div>
         
         <div class="mediaitem shebeimingcheng">
-            <div class="mediaitemtitle" style="float: left;">设备名称:</div>
+            <div class="mediaitemtitle mediadevicenamelabel" style="float: left;">设备名称:</div>
             <div class="mediaitemname" style="float: left;">HM 2A</div>
         </div>
         <div class="mediaitem synctime">
-            <div class="mediaitemtitle" style="float: left;">同步时间:</div>
+            <div class="mediaitemtitle mediasynctimelabel" style="float: left;">同步时间:</div>
             <div class="mediaitemsynctime" style="float: left;">2020-05-08 11:00:00</div>
         </div>
         <div class="mediaitem suoshufenzu canclick" onclick="SuoShuFenZuTimeClick(this)">
             <div style="position: absolute;">
-                <div class="mediaitemtitle" style="float: left;">所属分组:</div>
+                <div class="mediaitemtitle mediagrouplabel" style="float: left;">所属分组:</div>
                 <div class="suoshufenzuvalue" style="float: left;"></div>
             </div>
             <div style="float: right;margin-right: 3vh; width: 1.5vh; height: 2.5vh; margin-top: 1.8vh;">
@@ -373,7 +392,7 @@
         </div>
         <div class="mediaitem canclick" onclick="ChooseTimeClick(this)">
             <div style="position: absolute;">
-                <div class="mediaitemtitle" style="float: left;">拍摄时间:</div>
+                <div class="mediaitemtitle meidapaitimelabel" style="float: left;">拍摄时间:</div>
                 <div class="paisheshijian" style="float: left;"></div>
             </div>
             <div style="float: right;margin-right: 3vh; width: 1.5vh; height: 2.5vh; margin-top: 1.8vh;">
@@ -384,7 +403,7 @@
         </div>
         <div class="mediaitem playaddr canclick" >
             <div style="position: absolute;">
-                <div class="mediaitemtitle" style="float: left;">拍摄地点:</div>
+                <div class="mediaitemtitle mediapaiaddrlabel" style="float: left;">拍摄地点:</div>
                 <div class="paishedidian" style="float: left;">获取中...</div>
             </div>
             <div style="float: right;margin-right: 3vh; width: 1.5vh; height: 2.5vh; margin-top: 1.8vh;">
@@ -394,7 +413,7 @@
             </div>
         </div>
         <div style="width: 100%; height: 10vh;text-align: center; margin-top: 2vh;">
-            <div class="mediaitemdel canclick" style="width:20vh; height: 7vh; background-color:#d9534f; border: #d43f3a 1px solid; margin: 0 auto; border-radius: 4px; color:white; font-size: 2.5vh; text-align: center;line-height: 7vh;">删 除</div>
+            <div class="mediaitemdel canclick mediaremovelabel" style="width:20vh; height: 7vh; background-color:#d9534f; border: #d43f3a 1px solid; margin: 0 auto; border-radius: 4px; color:white; font-size: 2.5vh; text-align: center;line-height: 7vh;">删 除</div>
 
         </div>
     </div>

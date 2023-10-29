@@ -9,12 +9,13 @@
 <link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
 <link rel="stylesheet" href="css/animate.css"/>
 <link rel="stylesheet" href="css/Common.css"/>
-<script src="js/Api.js?id=1"></script>
+<script src="js/Api.js"></script>
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 <script src="./js/masonry.pkgd.min.js"></script>
 <script src="./js/imagesloaded.pkgd.min.js"></script>
-<script src="./js/Common.js?id=3"></script>
+<script src="./js/Common.js"></script>
+<script src="./js/LanguageOpt.js"></script>
 
 <link rel="stylesheet" href="./css/dialog.css"/>
 <script type="text/javascript" src="./js/dialog.min.js"></script>
@@ -53,7 +54,7 @@
         {
             $(".month_" + iMonth).find(".monthdetail").eq(0).attr("pic", picCount);
             $(".month_" + iMonth).find(".monthdetail").eq(0).attr("video", videoCount);
-            $(".month_" + iMonth).find(".monthdetail").eq(0).html("图片数:{0} 视频数:{1}".format(picCount, videoCount));
+            $(".month_" + iMonth).find(".monthdetail").eq(0).html(LanguageText("图片数:{0} 视频数:{1}").format(picCount, videoCount));
         }
         if($(".divmain").children().length == 0)
         {
@@ -80,7 +81,7 @@
         {
             $(".month_" + iMonth).find(".monthdetail").eq(0).attr("pic", picCount);
             $(".month_" + iMonth).find(".monthdetail").eq(0).attr("video", videoCount);
-            $(".month_" + iMonth).find(".monthdetail").eq(0).html("图片数:{0} 视频数:{1}".format(picCount, videoCount));
+            $(".month_" + iMonth).find(".monthdetail").eq(0).html(LanguageText("图片数:{0} 视频数:{1}").format(picCount, videoCount));
         }
         if($(".divmain").children().length == 0)
         {
@@ -118,12 +119,12 @@
                 {
                     DeviceApi.device.monthsel($(this).attr("month"));
                 });
-                itemDiv.find(".month").eq(0).html(months[i].month + "月");
+                itemDiv.find(".month").eq(0).html(LanguageText(months[i].month + "月"));
                 itemDiv.find(".month").eq(0).removeClass("hidden");
                 $(".divmain").append(itemDiv);
 
-                var str = "{\"action\":\"yearmonthdaycover\",\"year\":{0},\"month\":{1},\"devnames\":\"{2}\"}".format(year, months[i].month, GetSelectDeviceString());
-                ServerApi.request.yearmonthdaycover(str,function(data,textStatus,jqXHR)
+                var request = "{\"action\":\"yearmonthdaycover\",\"year\":{0},\"month\":{1},\"devnames\":\"{2}\"}".format(year, months[i].month, GetSelectDeviceString());
+                ServerApi.request.yearmonthdaycover(request,function(data,textStatus,jqXHR)
                 {
                     console.log(data);
                     var jsonRoot = JSON.parse(data);
@@ -134,10 +135,10 @@
                    $(".month_" + jsonRoot.month).find(".cover").eq(0).attr("src", GetPic(jsonRoot.cover));
                 });
 
-                $(".month_" + months[i].month).find(".monthname").eq(0).html(months[i].month + "月");
+                $(".month_" + months[i].month).find(".monthname").eq(0).html(LanguageText(months[i].month + "月"));
                 $(".month_" + months[i].month).find(".monthdetail").eq(0).attr("pic", months[i].piccount);
                 $(".month_" + months[i].month).find(".monthdetail").eq(0).attr("video", months[i].videocount);
-                $(".month_" + months[i].month).find(".monthdetail").eq(0).html("图片数:{0} 视频数:{1}".format(months[i].piccount, months[i].videocount));
+                $(".month_" + months[i].month).find(".monthdetail").eq(0).html(LanguageText("图片数:{0} 视频数:{1}").format(months[i].piccount, months[i].videocount));
                 $(".month_" + months[i].month).find(".monthwithdetail").eq(0).removeClass("hidden");
                 $(".month_" + months[i].month).find(".monthwithdetail").eq(0).removeClass("hidden");
                 $(".month_" + months[i].month).find(".month").eq(0).addClass("hidden");

@@ -13,8 +13,9 @@
 <link rel="stylesheet" href="css/buttons.css"/>
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
-<script src="js/Common.js?id=2"></script>
-<script src="js/Api.js?id=2"></script>
+<script src="js/Common.js"></script>
+<script src="js/Api.js"></script>
+<script src="js/LanguageOpt.js"></script>
 
 <link rel="stylesheet" href="./css/dialog.css"/>
 <script type="text/javascript" src="./js/dialog.min.js"></script>
@@ -240,9 +241,9 @@ function AddGroupItem(iID, name)
         var iID = $(this).find(".delgroup").eq(0).attr("gid");
         var name = $(this).find(".delgroup").eq(0).attr("name");
 
-        $(".panel").find(".paneltitle").eq(0).html("修改分组");
-        $(".panel").find(".panel_setting").eq(0).html("确定");
-        $(".panel").find(".panel_cancel").eq(0).html("取消");
+        $(".panel").find(".paneltitle").eq(0).html(LanguageText("修改分组"));
+        $(".panel").find(".panel_setting").eq(0).html(LanguageText("按钮确定"));
+        $(".panel").find(".panel_cancel").eq(0).html(LanguageText("按钮取消"));
         $(".panel").find(".panel_value").eq(0).val(name);
         $(".panel").find(".panel_value").eq(0).attr("gid", iID);
         $(".panel").removeClass("hidden");
@@ -250,6 +251,7 @@ function AddGroupItem(iID, name)
         $(".panel").find(".panel_setting").unbind("click");
 
         $(".panel").find(".panel_cancel").bind("click", function(){
+            UnSetToast();
             $(".panel").addClass("hidden");
         });
         $(".panel").find(".panel_setting").bind("click", function(){
@@ -281,11 +283,11 @@ function UpdateGroupItemRequest()
             $(".panel").removeClass("hidden");
             if($(".groupitem_" + iID).length > 0)
             {
-                Toast("该分组已经存在!");
+                Toast(LanguageText("该分组已经存在!"));
             }
             else
             {
-                Toast("请求异常!");
+                Toast(LanguageText("请求异常!"));
             }
             return;
         }
@@ -301,7 +303,7 @@ function UpdateGroupItemRequest()
     
     },function(xhr,textStatus)
     {
-        Toast("设备异常!");
+        Toast(LanguageText("设备异常!"));
         $(".panel").removeClass("hidden");
     });
 }
@@ -337,10 +339,10 @@ function Init()
 
 $(document).ready(function()
 {
+    InitLanguage();
     DisableContextMenu();
     //支持IOS的 active
     $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
-    document.body.addEventListener('touchstart',function(){});
     Init();
 
     $(".panel_value").on('keydown', function(event){
@@ -381,9 +383,10 @@ function ShowAddGroup()
         g_iOldSelectDelBtnID = 0;
     }
 
-    $(".panel").find(".paneltitle").eq(0).html("添加分组");
-    $(".panel").find(".panel_setting").eq(0).html("提交");
-    $(".panel").find(".panel_cancel").eq(0).html("取消");
+    $(".panel").find(".paneltitle").eq(0).html(LanguageText("添加分组"));
+    $(".panel").find(".panel_setting").eq(0).html(LanguageText("提交"));
+    $(".panel").find(".panel_cancel").eq(0).html(LanguageText("按钮取消"));
+    $(".panel").find(".groupnameinputlabel").eq(0).attr("placeholder", LanguageText("分组名称"));
     $(".panel").find(".panel_value").eq(0).val("");
     $(".panel").removeClass("hidden");
     $(".panel").find(".panel_cancel").unbind("click");
@@ -416,7 +419,7 @@ function AddGroupItemRequest()
         if($(".groupitem_" + iID).length > 0)
         {
             $(".panel").removeClass("hidden");
-            Toast("该分组已经存在!");
+            Toast(LanguageText("该分组已经存在!"));
         }
         else
         {
@@ -428,23 +431,22 @@ function AddGroupItemRequest()
 
     },function(xhr,textStatus)
     {
-        Toast("设备异常!");
+        Toast(LanguageText("设备异常!"));
         $(".panel").removeClass("hidden");
     });
 }
-
 
 function PanelDelGroupCancel()
 {
     $(".paneldel").addClass("hidden");
 }
 
-function CancelDel()
-{
-    setTimeout(function() {
-        $(".toastprocessinfo").html("加载完成");
-    }, 2000);
-}
+// function CancelDel()
+// {
+//     setTimeout(function() {
+//         $(".toastprocessinfo").html("加载完成");
+//     }, 2000);
+// }
 
 var g_curMediaItemID;
 var g_TotalCount;
@@ -472,7 +474,7 @@ function RemoveOne(gid)
             return;
         }
         g_dealCount++;
-        $(".toastprocessinfo").html("正在删除("+g_dealCount+"/"+g_TotalCount+")");
+        $(".toastprocessinfo").html(LanguageText("正在删除") + "("+g_dealCount+"/"+g_TotalCount+")");
         
         if(false == g_cancel)
         {
@@ -482,7 +484,7 @@ function RemoveOne(gid)
         {
             var data = "{\"optype\":\"del\",\"id\":\"{0}\"}".format(gid);
             DeviceApi.device.groupchange(data);
-            Toast("已取消!");
+            Toast(LanguageText("已取消!"));
         }
     },function(xhr,textStatus)
     {
@@ -535,25 +537,25 @@ function DeleteGroup()
         if(jsonRoot["status"] != 1)
         {
             //DeviceApi.device.toast("未查询到媒体数据!");
-            Toast("删除失败!");
+            Toast(LanguageText("删除失败!"));
             return;
         }
         $(".groupitem_" + iID).remove();
         //删除分组成功
         var data = "{\"optype\":\"del\",\"id\":\"{0}\"}".format(iID);
         DeviceApi.device.groupchange(data);
-        Toast("删除成功!");
+        Toast(LanguageText("删除成功!"));
 
     },function(xhr,textStatus)
     {
-        Toast("设备异常!");
+        Toast(LanguageText("设备异常!"));
         $(".panel").removeClass("hidden");
     });
 }
 
 function CancelDel()
 {
-    $(".toastprocessinfo").html("正在取消...");
+    $(".toastprocessinfo").html(LanguageText("正在取消..."));
     g_cancel = true;
 }
 function PanelDelGroupSure()
@@ -572,7 +574,11 @@ function PanelDelGroupSure()
         g_dealCount = 0;
         g_cancel = false;
         
-        SetToast("<div class='toastprocessinfo'>请等待...</div><div class='toastprocessbtn' onclick='CancelDel()'>取 消</div>");
+        var toastText = "<div class='toastprocessinfo'>{0}</div><div class='toastprocessbtn' onclick='CancelDel()'>{1}</div>".format(
+            LanguageText("请等待..."),LanguageText("取 消")
+        );
+
+        SetToast(toastText);
         $(".dialog-content").addClass("dialog-content_del");
         $(".dialog-content-bd").addClass("dialog-content-bd_del");
         setTimeout(function(){
@@ -581,15 +587,48 @@ function PanelDelGroupSure()
         }, 100);
     }
 }
+function InitLanguage()
+{
+    $(".addgrouplabel").html(LanguageText("添加分组"));
+    $(".paneldellabel").html(LanguageText("请确认是否需要删除分组"));
+    $(".paneldelcheckboxlabel").html(LanguageText("同时删除分组下媒体文件"));
+    $(".panelsettinglabel").html(LanguageText("设置"));
+    $(".panelcancellabel").html(LanguageText("按钮取消"));
+    $(".PanelDelGroupCancellabel").html(LanguageText("按钮取消"));
+    $(".PanelDelGroupSurelabel").html(LanguageText("按钮确定"));
+    $(".dialogcontenttitlelabel").html(LanguageText("确认"));
+    $(".delgrouplabel").html(LanguageText("删除"));
+}
 </script>
-
-    
     <body>
+        <div class="paneldel dialog dialog-open dialog-modal hidden" data-style="ios">
+            <div class="dialog-overlay">
+            </div>
+            <div class="dialog-content">
+                <div class="dialog-content-hd">
+                    <h3 class="dialogcontenttitlelabel dialog-content-title">确认</h3>
+                </div>
+                <div class="dialog-content-bd" style="max-height: 658px;overflow-y: auto;">
+                    <div style="float: left; position: relative; width: 100%;">
+                        <div><span class="paneldellabel">请确认是否需要删除分组</span><span class="name">hello word</span>？</div>
+                        <div class="icheck-info" style="position: relative;">
+                            <input type="checkbox" id="checkdelfiles">
+                            <label class="paneldelcheckboxlabel" for="checkdelfiles">同时删除分组下媒体文件</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="dialog-content-ft side">
+                    <button class="PanelDelGroupCancellabel dialog-btn dialog_cancel" onclick="PanelDelGroupCancel()">取消</button>
+                    <button class="PanelDelGroupSurelabel dialog-btn dialog_sure" onclick="PanelDelGroupSure()">确定</button>
+                </div>
+            </div>
+        </div>
+
         <div class="groupitem" onclick="ShowAddGroup()">
             <div style="float: left; width:6vh; height: 6vh; margin-top: 1vh; margin-left: 1vh;">
                 <img src="./img/groupadd.png" width="100%" height="100%"/>
             </div>
-            <div style="float: left; font-size: 2.4vh; font-weight:550;line-height: 8vh; margin-left: 1vh;">添加分组</div>
+            <div class="addgrouplabel" style="float: left; font-size: 2.4vh; font-weight:550;line-height: 8vh; margin-left: 1vh;">添加分组</div>
         </div>         
         <div class="divmain" style="width: 100%;">
 
@@ -605,7 +644,7 @@ function PanelDelGroupSure()
                     <img src="./img/groupdel_underline.png" width="100%" height="100%"/>
                 </div>
                 <div class="delgroup " style="z-index: 1; height: 100%; float: right; width: 0px; " >
-                    <img src="./img/groupdel.png" width="100%" height="100%"/>
+                    <div class="delgrouplabel" style="background-color: #d84140; width: 100%;height: 100%;border-radius: 3px;color: #ffffff;text-align:center;line-height: 5vh;font-size: 2.3vh;">删除</div>
                 </div>
             </div>
         </div>   
@@ -614,38 +653,14 @@ function PanelDelGroupSure()
             <div style="width: 100%; height: 25vh; background-color: #ffffff; border-radius: 2vh 2vh 0 0;bottom: 0; position:absolute;" onclick="event.stopPropagation();">
                 <div  class="paneltitle"  style="width: 100%; text-align: center;height: 6.5vh; line-height: 6.5vh; font-size: 2.3vh;">分组标题</div>
                 <div style="width: 80%; text-align: center;height: 6vh; line-height:6vh; font-size: 1.9vh;margin-left: 10%;">
-                    <input class="panel_value form-control" name="panel_value" maxlength="10" type="text"  placeholder="分组名称"/>
+                    <input class="groupnameinputlabel panel_value form-control" name="panel_value" maxlength="10" type="text"  placeholder="分组名称"/>
                 </div>
                
                 <div style="width: 80%; text-align: center;height: 7vh; line-height: 7vh; font-size: 1.9vh;margin-left: 10%;margin-top: 5vh;">
-                    <a href="#" class="panel_setting button  button-rounded button-primary" style="float: left;width: 40%;">设置</a>
-                    <a href="#" class="panel_cancel button  button-rounded button-caution" style="float: right;width: 40%;">取消</a>
+                    <a href="#" class="panelsettinglabel panel_setting button  button-rounded button-primary" style="float: left;width: 40%;">设置</a>
+                    <a href="#" class="panelcancellabel panel_cancel button  button-rounded button-caution" style="float: right;width: 40%;">取消</a>
                 </div>
             </div>
         </div>
-
-        <div class="paneldel dialog dialog-open dialog-modal hidden" data-style="ios">
-            <div class="dialog-overlay">
-            </div>
-            <div class="dialog-content">
-                <div class="dialog-content-hd">
-                    <h3 class="dialog-content-title">确认</h3>
-                </div>
-                <div class="dialog-content-bd content-scroll" style="max-height: 658px;">
-                    <div style="float: left; position: relative; width: 100%;">
-                        <div>请确认是否需要删除分组<span class="name">hello word</span>？</div>
-                        <div class="icheck-info" style="position: relative;">
-                            <input type="checkbox" id="checkdelfiles">
-                            <label for="checkdelfiles">同时删除分组下媒体文件</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="dialog-content-ft side">
-                    <button class="dialog-btn dialog_cancel" onclick="PanelDelGroupCancel()">取消</button>
-                    <button class="dialog-btn dialog_sure" onclick="PanelDelGroupSure()">确定</button>
-                </div>
-            </div>
-        </div>
-
     </body>
 </html>

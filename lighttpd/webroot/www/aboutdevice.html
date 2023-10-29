@@ -14,10 +14,11 @@
 
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
-<script src="js/Common.js?id=2"></script>
-<script src="js/Api.js?id=2"></script>
+<script src="js/Common.js"></script>
+<script src="js/Api.js"></script>
 <script src="js/jquery.md5.js"></script>
 <script src="js/easy.qrcode.min.js"></script>
+<script src="js/LanguageOpt.js"></script>
 
 <link rel="stylesheet" href="css/bootstrap-slider.min.css"/>
 <script src="js/bootstrap-slider.min.js"></script>
@@ -125,27 +126,27 @@
                     if("deviceid" == k)
                     {
                         g_devno = v;
-                        AddItem("设备号", v);
+                        AddItem(LanguageText("设备号"), v);
                     }
                     if("devversion" == k)
                     {
-                        AddItem("版本号", v);
+                        AddItem(LanguageText("版本号"), v);
                     }
                     if("space" == k)
                     {
                         g_space = v;
-                        AddItem("总容量", SizeToStringkb(v));
+                        AddItem(LanguageText("总容量"), SizeToStringkb(v));
                     }
                     if("wifi" == k)
                     {
                         g_wifi = v;
                         if(v == 0)
                         {
-                            AddItem("无线网络", "不支持");
+                            AddItem(LanguageText("无线网络"), LanguageText("不支持"));
                         }
                         else
                         {
-                            AddItem("无线网络", "支持");
+                            AddItem(LanguageText("无线网络"), LanguageText("支持"));
                         }
                     }
                     if("eth" == k)
@@ -153,11 +154,11 @@
                         g_eth = v;
                         if(v == 0)
                         {
-                            AddItem("有线网络", "不支持");
+                            AddItem(LanguageText("有线网络"), LanguageText("不支持"));
                         }
                         else
                         {
-                            AddItem("有线网络", "支持");
+                            AddItem(LanguageText("有线网络"), LanguageText("支持"));
                         }
                     }
                     if("samba" == k)
@@ -165,17 +166,17 @@
                         g_samba = v;
                         if(v == 0)
                         {
-                            AddItem("Samba", "不支持");
+                            AddItem("Samba", LanguageText("不支持"));
                         }
                         else
                         {
-                            AddItem("Samba", "支持");
+                            AddItem("Samba", LanguageText("支持"));
                         }
                     }
                     if("mac" == k)
                     {
                         g_mac = v;
-                        AddItem("物理地址", v);
+                        AddItem(LanguageText("物理地址"), v);
                     }
                 });
         },
@@ -188,7 +189,8 @@
     {
         DisableContextMenu();
         EnableScroll($('.scrollview'));
-        setTimeout(function()  {
+        setTimeout(function()  
+        {
             RequestAboutDevice();
         }, 1);
         

@@ -1,13 +1,13 @@
 function ClearCacheStart()
     {
-        SetToast("缓存清理:" + "0%");
+        SetToast(LanguageText("缓存清理:") + "0%");
         var str = "{\"action\":\"clearcachestart\"}";
         ServerApi.request.clearcachestart(str,function(data,textStatus,jqXHR)
         {
             var jsonRoot = JSON.parse(data);
             if(jsonRoot.status != 1)
             {
-                Toast("缓存清理失败");
+                Toast(LanguageText("缓存清理失败!"));
                 return;
             }
             GetClearCacheStatus();
@@ -25,30 +25,30 @@ function ClearCacheStart()
             {
                 var jsonRoot = JSON.parse(data);
                 console.log(data);
-                SetToast("缓存清理:" + jsonRoot.precent + "%");
+                SetToast(LanguageText("缓存清理:") + jsonRoot.precent + "%");
                 if(jsonRoot.status != 1)
                 {
                     UnSetToast();
-                    Toast("缓存清理失败");
+                    Toast(LanguageText("缓存清理失败!"));
                     return;
                 }
                 if(jsonRoot.pstatus == 1)
                 {
                     UnSetToast();
-                    Toast("缓存清理成功");
+                    Toast(LanguageText("缓存清理成功!"));
                     clearInterval(timer);
                 }
                 if(jsonRoot.pstatus == -1)
                 {
                     UnSetToast();
-                    Toast("缓存清理失败");
+                    Toast(LanguageText("缓存清理失败!"));
                     clearInterval(timer);
                 }
             },
             function(xhr,textStatus)
             {
                 UnSetToast();
-                Toast("缓存清理失败");
+                Toast(LanguageText("缓存清理失败!"));
                 clearInterval(timer);
             });
         }, 1*1000);

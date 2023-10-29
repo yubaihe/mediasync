@@ -32,7 +32,7 @@ function DelCookie(name)
 {
     var exp = new Date();
     exp.setTime(exp.getTime() - 1);
-    var cval=getCookie(name);
+    var cval=GetCookie(name);
     if(cval!=null)
         document.cookie= name + "="+cval+";expires="+exp.toGMTString();
 }
@@ -159,20 +159,20 @@ function SecToTime(iSec)
     iSec = parseInt(iSec % 60);//剩余秒数
     if(iDays > 0)
     {
-        var strRet = "{0}天{1}小时{2}分{3}秒".format(iDays, iHours, iMinutes, iSec);
+        var strRet = LanguageText("{0}天{1}小时{2}分{3}秒").format(iDays, iHours, iMinutes, iSec);
         return strRet;
     }
     if(iHours > 0)
     {
-        var strRet = "{0}小时{1}分{2}秒".format(iHours, iMinutes, iSec);
+        var strRet = LanguageText("{0}小时{1}分{2}秒").format(iHours, iMinutes, iSec);
         return strRet;
     }
     if(iMinutes > 0)
     {
-        var strRet = "{0}分{1}秒".format(iMinutes, iSec);
+        var strRet = LanguageText("{0}分{1}秒").format(iMinutes, iSec);
         return strRet;
     }
-    var strRet = "{0}秒".format(iSec);
+    var strRet = LanguageText("{0}秒").format(iSec);
     return strRet;
 }
 function GetSelectDeviceMap()

@@ -32,4 +32,6 @@ BOOL FileUtil_IsFold(const char* pszFold);
 BOOL FileUtil_FileNameFromThumbName(char* pszThumbFileName, char* pszFileName);
 BOOL FileUtil_ReadLink(char* pFileName, char* pFullFileName, size_t  iBufferLen);
 BOOL FileUtil_IsSoftLink(char* pszFileName);
+char* FileUtil_GetFileContent(const char* pszFile);
+char* FileUtil_GetLicence();
 #endif
