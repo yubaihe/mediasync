@@ -44,7 +44,7 @@ $ROOTDIR/stop.sh
 
 # 6.使用介绍
 
-> http://www.yubaihe.net/privacy/myg/help.html
+> [使用介绍](http://www.yubaihe.net/privacy/myg/help.html)
 
 # 7.发行
 
