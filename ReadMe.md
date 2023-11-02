@@ -58,10 +58,10 @@ $ROOTDIR/stop.sh
 
 [Android](./Release/MediaSync.apk "点击下载Android安装程序")
 
-> IOS
-
-<img src="./ios.png" align="left" />
-
 > MAC
 
 [MAC](https://apps.apple.com/cn/app/%E7%BE%8E%E4%BA%BF%E6%A0%BC/id6444566528)
+
+> IOS
+
+<img src="./ios.png" align="left" />
