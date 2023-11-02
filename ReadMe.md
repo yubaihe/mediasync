@@ -60,7 +60,7 @@ $ROOTDIR/stop.sh
 
 > IOS
 
-<img src="./ios.png" align="left" width="150px" height="150px">
+<img src="./ios.png" align="left" />
 
 > MAC
 
