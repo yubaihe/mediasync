@@ -387,6 +387,7 @@ void ComputerServerMessage_OnComputerServerDeviceInfo(struct ConnectServer* pSer
 	json_object_object_add(pJsonRet, "wlan", json_object_new_int(g_bWlan));
 	json_object_object_add(pJsonRet, "mac", json_object_new_string(pszMac));
 	json_object_object_add(pJsonRet, "licence", json_object_new_string(pszLicence));
+	json_object_object_add(pJsonRet, "buildtime", json_object_new_string(BUILDDATE));//版本编译时间
 
 	free(pszMac);
 	pszMac = NULL;

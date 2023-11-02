@@ -26,11 +26,11 @@ source ./initenv.sh LINUX /home/relech/syncmedia/
 make
 ```
 
-# 3.修改配置项
+# 4.修改配置项
 
 ![](./config.png)
 
-# 4.运行
+# 5.运行
 
 ```shell
 #设置环境变量
@@ -42,7 +42,11 @@ $ROOTDIR/start.sh
 $ROOTDIR/stop.sh
 ```
 
-# 5.发行
+# 6.使用介绍
+
+> http://www.yubaihe.net/privacy/myg/help.html
+
+# 7.发行
 
 [Windows版本](./Release/MediaSyncSetup.exe "点击下载windows安装程序")
 
