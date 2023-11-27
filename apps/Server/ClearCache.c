@@ -13,7 +13,14 @@ void ClearCache_CallBack(int iPrecent, LPVOID* lpParameter)
 DWORD ClearCache_Proc(LPVOID* lpParameter)
 {
     struct ClearCache* pClearCache = (struct ClearCache*)lpParameter;
-    pClearCache->iStepCount = 2;
+    pClearCache->iStepCount = 3;
+//扫描媒体文件    
+    MediaScanDriver* pMediaScanDriver = MediaScanDriver_Start(ClearCache_CallBack, lpParameter);
+    WaitForSingleObject(pMediaScanDriver->hScanHandle, INFINITE);
+    CloseHandle(pMediaScanDriver->hScanHandle);
+    MediaScanDriver_Stop(pMediaScanDriver);
+    pClearCache->iCurStepIndex++;
+//重新计数
     BOOL bRet = DataBaseMediaJiShu_ReSet(ClearCache_CallBack, lpParameter); 
     if(FALSE == bRet)
     {
@@ -21,6 +28,7 @@ DWORD ClearCache_Proc(LPVOID* lpParameter)
         return 1;
     }
     pClearCache->iCurStepIndex++;
+//删除groupid
     bRet = DataBaseGroupItems_ClearCacheRecord();
     if(FALSE == bRet)
     {
