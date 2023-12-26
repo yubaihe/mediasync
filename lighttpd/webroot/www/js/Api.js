@@ -4,42 +4,81 @@ if (typeof Map == "undefined")
 {
     function Map() {
 
-        this.keys = new Array();
+        this.allkeys = new Array();
         this.data = new Object();
 
-        this.set = function(key, value) {
-            if (this.data[key] == null) {
-                if (this.keys.indexOf(key) == -1) {
-                    this.keys.push(key);
+        this.set = function(key, value) 
+        {
+            if (this.data[key] == null) 
+            {
+                if (this.allkeys.indexOf(key) == -1) 
+                {
+                    this.allkeys.push(key);
                 }
             }
             this.data[key] = value;
         }
 
-        this.get = function(key) {
+        this.get = function(key) 
+        {
             return this.data[key];
         }
         this.has = function(key)
         {
             return this.data[key] == undefined?false:true;
         }
+        this.delete = function(key)
+        {
+            for(let i = 0; i < this.allkeys.length; ++i)
+            {
+                if(this.allkeys[i] == key)
+                {
+                    this.allkeys.splice(i, 1);
+                    delete this.data[key];
+                    break;
+                }
+            }
+            // console.log("======>" + Object.keys(this.data).length);
+        }
+        this.keys = function()
+        {
+            return this.allkeys;
+        }
     }
 }
+
 ///////////////////////////////这里是为IOS准备的//////////////////////////////////////////
     function JsWebMethod()
     {
         var m = new Map();
+        var timeid = null;
         JsWebMethod.prototype.GetVar = function (key)
         {
-            return m[key];
+            return m.get(key);
         }
         JsWebMethod.prototype.SetVar = function (key, value)
         {
-            m[key] = value;
+            m.set(key, value);
+            if(timeid == null)
+            {
+                timeid = setInterval(()=>
+                {
+                    var time = new Date().getTime();
+                    let keys = Array.from(m.keys());
+                    console.log(keys.length);
+                    for(let i = 0; i < keys.length; ++i)
+                    {
+                        if(time - keys[i] > 6000)
+                        {
+                            this.RemoveVar(keys[i]);
+                        }
+                    }
+                }, 1000*3);
+            }
         }
         JsWebMethod.prototype.RemoveVar = function (key)
         {
-            delete m[key];
+            m.delete(key);
         }
         this.JsMethod = function(param1, param2)
         {
@@ -55,15 +94,37 @@ if (typeof Map == "undefined")
         }
         this.CallBack = function(param1, param2)
         {
-            var ajaxData = g_JsCallback.GetVar(param1);
-            g_JsCallback.RemoveVar(param1);
+            var key = Number(param1);
+            var ajaxData = g_JsCallback.GetVar(key);
+            g_JsCallback.RemoveVar(key);
             ajaxData.success(param2, 200, "");
+        }
+        this.ExecuteJS = function(param1, param2)
+        {
+            //param1 这次请求的标识
+            //param2 这次请求的数据
+            // param2 = "TestTome();"; 
+            // param2 = "function greet() { return 'Hello, World!'; } greet();"; 
+            var strIdentify = param1+"";
+            var ExecuteJsCallBack = "/executejscallback";
+            console.log(param2);
+            // let func = new Function(`return ${param2}`);  
+            // let result = func();  
+               // let func = new Function(param2);  
+               // let result = func();  
+               let result = eval(param2);
+               if(typeof result == "undefined")
+               {
+                    result = "";
+               }
+
+            var data = strIdentify.length + (" " + strIdentify) + ExecuteJsCallBack.length + " " + ExecuteJsCallBack + result;
+            g_JsCallback.JsMethod(ExecuteJsCallBack, data);
         }
     }
     var g_JsCallback = new JsWebMethod;
 ///////////////////////////////jquery 使用ajax部分高本的jquery在IE7下显示有错误 这里自己实现ajax//////////////////////////////////////////
 function ajax(){
-
     var ajaxData = {
         type:arguments[0].type || "GET",
         url:arguments[0].url || "",
@@ -85,11 +146,14 @@ function ajax(){
             return;
         }
 
-        setTimeout(function(){
+        setTimeout(function()
+        {
             var time = new Date().getTime();
+            var strTime = time+"";
             var data = (time+"").length + (" " + time) + ajaxData.url.length + " " + ajaxData.url + ajaxData.data;
             g_JsCallback.SetVar(time, ajaxData);
             g_JsCallback.JsMethod(ajaxData.url, data);
+
             // var time = new Date().getTime();
             // var data = time + "&" + ajaxData.url + "&" + ajaxData.data;
             // g_JsCallback.SetVar(time, ajaxData);
@@ -491,7 +555,9 @@ function API(baseurl)
         setitemsgroup:api.Post("/setitemsgroup"),
         mediaitemsgroupadd:api.Post("/mediaitemsgroupadd"),
         languageset:api.Post("/languageset"),
-        languagesetsure:api.Post("/languagesetsure")
+        languagesetsure:api.Post("/languagesetsure"),
+        ClearCacheSuccess:api.Post("/clearcachesuccess"),
+        callback:api.Post("/callback"),
     };
 
     api.request={

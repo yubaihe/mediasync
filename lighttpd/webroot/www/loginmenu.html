@@ -368,7 +368,7 @@ input::-webkit-input-placeholder {
         console.log(document.cookie);
         GetClearCacheStatusWithCallBack(function(precent){
             SetToast(LanguageText("缓存清理:") + precent + "%");
-            GetClearCacheStatus();
+            GetClearCacheStatus(DeviceApi);
         });
         
         //更新时间

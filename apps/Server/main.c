@@ -37,7 +37,6 @@ BOOL g_bSamba = FALSE;
 BOOL g_bEth = FALSE;
 BOOL g_bWlan = FALSE;
 BOOL g_bSupportGpsGet = TRUE;
-int g_iMediaScanPrecent = 0;
 void OnSystemSig(int iSigNo) 
 {
 	printf("OnSystemSig\n");
@@ -278,40 +277,6 @@ void CheckDaemonize(int iArgc, char *pszArgsV[])
     } 
 }
 
-void main_MediaScanCallBack(int iPrecent, LPVOID* lpParameter)
-{
-    printf("scan:%d\n", iPrecent);
-    g_iMediaScanPrecent = iPrecent;
-}
-
-void main_ScanMedia()
-{
-    g_iMediaScanPrecent = 0;
-    g_pMediaScanDriver = MediaScanDriver_Start(main_MediaScanCallBack, NULL);
-    //1S后开始检测 否则灯必然会闪 如果媒体数量较小的话1S钟就扫描完了 也就没必要闪
-    int i = 0;
-    while (1)
-    {
-        if(100 != g_iMediaScanPrecent)
-        {
-            if(i != 5)
-            {
-                Sleep(200);
-                i++;
-                continue;
-            }
-            Sleep(500);
-            system("led close");
-            Sleep(500);
-            system("led set green");
-        }
-        else
-        {
-            break;
-        }
-    }
-}
-
 void CheckNotifyOnLine()
 {
     //如果设备启动后亮绿灯(启动正常且读到IP地址),向局域网发送设备上线通知
@@ -358,7 +323,6 @@ int main(int iArgc, char *pszArgsV[])
     // DataBaseUserInfo_AddRecord(&useritem);
 
     //TestMain();
-    main_ScanMedia();
     //samba文件删除确认完成了
     printf("Start ConnectServer");
     g_pServer = ConnectServer_Start(SERVERPORT);

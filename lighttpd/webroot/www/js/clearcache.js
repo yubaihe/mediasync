@@ -1,4 +1,4 @@
-function ClearCacheStart()
+function ClearCacheStart(DeviceApi)
     {
         SetToast(LanguageText("缓存清理:") + "0%");
         var str = "{\"action\":\"clearcachestart\"}";
@@ -10,14 +10,14 @@ function ClearCacheStart()
                 Toast(LanguageText("缓存清理失败!"));
                 return;
             }
-            GetClearCacheStatus();
+            GetClearCacheStatus(DeviceApi);
         },
         function(xhr,textStatus)
         {
         });
     }
 
-    function GetClearCacheStatus()
+    function GetClearCacheStatus(DeviceApi)
     {
         var timer = setInterval(function(){
             var str = "{\"action\":\"clearcacheprocess\"}";
@@ -37,6 +37,7 @@ function ClearCacheStart()
                     UnSetToast();
                     Toast(LanguageText("缓存清理成功!"));
                     clearInterval(timer);
+                    DeviceApi.device.ClearCacheSuccess();
                 }
                 if(jsonRoot.pstatus == -1)
                 {

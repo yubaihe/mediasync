@@ -104,7 +104,7 @@
             };
             g_QRCode = new QRCode(document.getElementById("erweimadiv"), options);
         }
-        var value = "{0};{1};{2};{3};{4}".format(g_devno, g_space, g_wifi,g_eth,g_mac);
+        var value = "{0};{1};{2};{3};{4}".format(g_devno, g_space, g_wifi, g_eth, g_mac);
         console.log(value);
         g_QRCode.makeCode(value + new Date().getTime()); 
    }

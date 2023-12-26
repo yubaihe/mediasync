@@ -125,6 +125,7 @@ void MediaScanDriver_Run(MediaScanDriver* pDriver)
     int iTotalLen = pDriver->pFileQueue->iItemLen;
     while(pDriver->pFileQueue->iItemLen > 0)
     {
+        // sleep(1);
         if(NULL != pDriver->callBack)
         {
             int iDealLen = iTotalLen - pDriver->pFileQueue->iItemLen;

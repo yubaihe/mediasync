@@ -8,6 +8,7 @@ void ClearCache_CallBack(int iPrecent, LPVOID* lpParameter)
     double dCurPos = pClearCache->iCurStepIndex*100.0f + iPrecent;
     double dTotalPos = pClearCache->iStepCount*100.0f;
     pClearCache->iPrecent = (int)(dCurPos*100/dTotalPos);
+    printf("%.1f %.1f %d\n", dCurPos, dTotalPos, pClearCache->iPrecent);
 }
 
 DWORD ClearCache_Proc(LPVOID* lpParameter)
@@ -16,8 +17,6 @@ DWORD ClearCache_Proc(LPVOID* lpParameter)
     pClearCache->iStepCount = 3;
 //扫描媒体文件    
     MediaScanDriver* pMediaScanDriver = MediaScanDriver_Start(ClearCache_CallBack, lpParameter);
-    WaitForSingleObject(pMediaScanDriver->hScanHandle, INFINITE);
-    CloseHandle(pMediaScanDriver->hScanHandle);
     MediaScanDriver_Stop(pMediaScanDriver);
     pClearCache->iCurStepIndex++;
 //重新计数
@@ -35,9 +34,6 @@ DWORD ClearCache_Proc(LPVOID* lpParameter)
         pClearCache->eStatus = CLEARCACHE_FAILED;
         return 1;
     }
-    // pClearCache->iCurStepIndex++;
-    // MediaScanDriver* pMediaScanDriver = MediaScanDriver_Start(ClearCache_CallBack, lpParameter);
-    // MediaScanDriver_Stop(pMediaScanDriver);
     pClearCache->iPrecent = 100;
     pClearCache->eStatus = CLEARCACHE_SUCCESS;
     return 1;
