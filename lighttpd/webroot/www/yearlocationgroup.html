@@ -389,9 +389,13 @@
     </div>
 
     <div class="hidden template" style="margin-left: 100px;">
-        <div class="groupitem canclick" style="position: relative; width: 100%; height: 10vh; line-height: 10vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;" >
-            <div class="locationinfo" style="float: left;  height: 100%;width: 100%;overflow: hidden;" onclick="Locationitemclick(this)"></div>
-            <div style="position: absolute; right: 0; top: 0;  width: 10vh; height: 10vh; line-height: 10vh;padding-left: 6vh;" onclick="ShowFlow(this)"><img src="./img/more.png" width="9px" height="14px"></div>
+        <div class="groupitem layout_flex canclick" style="border-bottom:1px solid #e9e8e8; font-size: 1.5rem;width: 100%; height: 8vh; line-height: 8vh; ">
+            <div class="layout-middle locationinfo" onclick="Locationitemclick(this)"></div>
+            <div class="layout-right" style="margin-right: 1.2vh; margin-top: 3.2vh; width: 1.5vh;height: 2.5vh;" onclick="ShowFlow(this)">
+                <div style="position: relative; width: 100%; height: 100%;">
+                    <img style="position:absolute;width:100%; height:100%;" src="../img/more.png" style="width: 100%; height: 100%;scale: fit;"/>
+                </div>
+            </div>
         </div>
     </div>
   

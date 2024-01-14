@@ -41,18 +41,22 @@
 {
     color: #c3c3c3;
 }
-    .slider-selection 
-    {
-        background: #e9e8e8;
-    }
-    .slider-handle 
-    {
-        background: #9abcfa;
-    }
-    .slider.slider-horizontal
-    {
-        width: 100% !important;
-    }
+.slider-selection 
+{
+    background: #e9e8e8;
+}
+.slider-handle 
+{
+    background: #9abcfa;
+}
+.slider.slider-horizontal
+{
+    width: 100% !important;
+}
+.settinglabel
+{
+    white-space: nowrap;
+}
 </style>
 <script>
     var ServerApi = new API("http://" + window.location.host);
@@ -68,7 +72,7 @@
         }
         else
         {
-            $(".coverbar").css("width", $(".covermain").width() - $(".covertitle").width() - 20);
+            // $(".coverbar").css("width", $(".covermain").width() - $(".covertitle").width() - 20);
             $(".coverbar").removeClass("hidden");
         }   
     }
@@ -237,9 +241,11 @@
                     </div>
                     
                     <div class="covermain" style="width: 100%; height: 8vh; line-height: 8vh; font-size: 1.5rem; border-bottom:1px solid #e9e8e8;">
-                        <div class="settinglabel covertitle covertitlelabel" style="display: inline-block; height: 100%; ">封面模糊度:</div>
-                        <div class="coverbar hidden" style="float: right;">
-                            <input  class="blueslide" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="15"/>
+                        <div class="mediaitem layout_flex ">
+                            <div class="layout-left settinglabel covertitle covertitlelabel">封面模糊度:</div>
+                            <div class="layout-middle coverbar hidden" style="padding-left: 15px;">
+                                <input  class="blueslide" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="15"/>
+                            </div>
                         </div>
                     </div>
                     <div class="clearmemory canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
