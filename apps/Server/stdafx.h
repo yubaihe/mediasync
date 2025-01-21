@@ -112,6 +112,7 @@ extern BOOL g_bWlan;
 extern char FOLD_PREFIX[255];
 extern char FOLDTHUMB_PREFIX[255];
 extern char TMPFILEPATH[255];
+extern char FOLDEX_PREFIX[255];
 extern char TODIR[255];
 extern BOOL g_bSupportGpsGet;
 #define MEDIATYPE_IMAGE 1

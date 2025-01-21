@@ -35,10 +35,12 @@ function LanguageText(strText)
     if(mLanguageIndex < 0)
     {
         var languagecontent = $.parseJSON(localStorage.getItem("languagecontent"));
+        if(null == languagecontent)
+        {
+            return strText;
+        }
         var languageid = localStorage.getItem("languageid");
         AssembleLanguage(languagecontent, languageid);
-        console.log(languagecontent);
-        console.log(languageid);
     }
     if(mLanguageMap.length == 0)
     {

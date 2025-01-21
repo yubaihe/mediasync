@@ -31,6 +31,7 @@ int SERVERPORT = 0;
 int CASTPORT = 9082;
 char FOLD_PREFIX[255] = {0};
 char FOLDTHUMB_PREFIX[255] = {0};
+char FOLDEX_PREFIX[255] = {0};
 char TMPFILEPATH[255] = {0};
 char TODIR[255] = {0};
 BOOL g_bSamba = FALSE;
@@ -174,6 +175,9 @@ BOOL InitParam_SetSoftLink(json_object* pJsonRoot)
 
     sprintf(FOLDTHUMB_PREFIX, "%s/.media", pToAddr);
     FileUtil_CreateFold(FOLDTHUMB_PREFIX);
+    
+    sprintf(FOLDEX_PREFIX, "%s/.media_ex", pToAddr);
+    FileUtil_CreateFold(FOLDEX_PREFIX);
 
     sprintf(TMPFILEPATH, "%s/.media_tmp", pToAddr);
     FileUtil_RemoveFold(TMPFILEPATH);

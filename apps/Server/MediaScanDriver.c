@@ -159,6 +159,15 @@ void MediaScanDriver_Run(MediaScanDriver* pDriver)
                 bRet = FileUtil_RemoveFile(szThumbFile);
                 if(bRet)
                 {
+                    char szExFileTmp[MAX_PATH] = {0};
+                    bRet = FileUtil_FileExNameFromFileName(szFileName, szExFileTmp);
+                    char szExFile[MAX_PATH] = {0};
+                    sprintf(szExFile, "%s/%s", FOLDEX_PREFIX, szExFileTmp);
+                    if(TRUE == bRet)
+                    {
+                        FileUtil_RemoveFile(szExFileTmp);
+                    }
+
                     bRet = DataBaseMedia_RemoveItemFromName(szFileName);
                     if(FALSE == bRet)
                     {
@@ -171,10 +180,13 @@ void MediaScanDriver_Run(MediaScanDriver* pDriver)
         {
             char szFilePrefix[MAX_PATH] = {0};
             sprintf(szFilePrefix, "%s/%s", FOLD_PREFIX, psz);
+            char szExFilePrefix[MAX_PATH] = {0};
+            sprintf(szExFilePrefix, "%s/%s", FOLDEX_PREFIX, psz);
             if(FileUtil_IsEmptyDir(szThumbFile))
             {
                 FileUtil_RemoveFold(szThumbFile);
                 FileUtil_RemoveFold(szFilePrefix);
+                FileUtil_RemoveFold(szExFilePrefix);
             }
             // if(FileUtil_IsEmptyDir(szFilePrefix))
             // {

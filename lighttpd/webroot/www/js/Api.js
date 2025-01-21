@@ -82,13 +82,19 @@ if (typeof Map == "undefined")
         }
         this.JsMethod = function(param1, param2)
         {
-            if(window.webkit == undefined)
+             if(window.chrome != undefined && window.chrome.webview != undefined)
             {
-                JsCallback.jsMethod(param2);
+                //edge
+                window.chrome.webview.postMessage(param2);
+            }
+            else if(window.webkit != undefined)
+            {
+                //Ios
+                window.webkit.messageHandlers.JsCallback.postMessage(param2);
             }
             else
             {
-                window.webkit.messageHandlers.JsCallback.postMessage(param2);
+                JsCallback.jsMethod(param2);
             }
             
         }
@@ -140,7 +146,7 @@ function ajax(){
    
     if(ajaxData.url.indexOf("fcgi") == -1)
     {
-        if(typeof(JsCallback) == "undefined" && typeof(window.webkit) == "undefined")
+        if(typeof(JsCallback) == "undefined" && typeof(window.webkit) == "undefined" && typeof(window.chrome.webview) == "undefined")
         {
             console.log("not suport this action is for device:" + ajaxData.url);
             return;
@@ -558,6 +564,9 @@ function API(baseurl)
         languagesetsure:api.Post("/languagesetsure"),
         ClearCacheSuccess:api.Post("/clearcachesuccess"),
         callback:api.Post("/callback"),
+        nextitem:api.Post("/nextitem"),
+        previtem:api.Post("/previtem"),
+        ackitemid:api.Post("/ackitemid"),
     };
 
     api.request={

@@ -120,6 +120,9 @@ void ComputerServerMessage_OnComputerServerReportInfo(struct ConnectServer* pSer
 	//大文件信息
 	const char* pszLFileName = json_object_get_string(json_object_object_get(pJsonRoot, "lfile"));
 	long iLFileSize = json_object_get_int64(json_object_object_get(pJsonRoot, "llen"));
+	//LivePhoto
+	const char* pszExFileName = json_object_get_string(json_object_object_get(pJsonRoot, "exfile"));
+	long iExFileSize = json_object_get_int64(json_object_object_get(pJsonRoot, "exlen"));
 	//先判断文件在不再
 	char szPathFile[MAX_PATH] = {0};
 	sprintf(szPathFile, "%s/%s", TMPFILEPATH, pszSFileName);
@@ -139,6 +142,16 @@ void ComputerServerMessage_OnComputerServerReportInfo(struct ConnectServer* pSer
 		printf("%s device:%ld server:%ld\n", szPathFile, iLFileSize, FileUtil_GetFileSize(szPathFile));
 		char szBuffer[255] = {0};
 		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_REPORTINFO_ACK, "large file size not match");
+		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
+		return ;
+	}
+	memset(szPathFile, 0, MAX_PATH);
+	sprintf(szPathFile, "%s/%s", TMPFILEPATH, pszExFileName);
+	if(iExFileSize > 0 && FileUtil_GetFileSize(szPathFile) != iExFileSize)
+	{
+		printf("%s device:%ld server:%ld\n", szPathFile, iExFileSize, FileUtil_GetFileSize(szPathFile));
+		char szBuffer[255] = {0};
+		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_REPORTINFO_ACK, "exfile file size not match");
 		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
 		return ;
 	}
@@ -162,6 +175,8 @@ void ComputerServerMessage_OnComputerServerReportInfo(struct ConnectServer* pSer
 	sprintf(szDestFold, "%s/%d/", FOLD_PREFIX, iYear);
 	char szDestThumbFold[MAX_PATH] = {0};
 	sprintf(szDestThumbFold, "%s/%d/", FOLDTHUMB_PREFIX, iYear);
+	char szDestExFold[MAX_PATH] = {0};
+	sprintf(szDestExFold, "%s/%d/", FOLDEX_PREFIX, iYear);
 	if(FALSE == FileUtil_CheckFoldExist(szDestFold))
 	{
 		//文件夹不存在 创建
@@ -184,21 +199,36 @@ void ComputerServerMessage_OnComputerServerReportInfo(struct ConnectServer* pSer
 			return ;
 		}
 	}
+	if(FALSE == FileUtil_CheckFoldExist(szDestExFold))
+	{
+		//文件夹不存在 创建
+		if(FALSE == FileUtil_CreateFold(szDestExFold))
+		{
+			char szBuffer[255] = {0};
+			sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_REPORTINFO_ACK, "fold no permission");
+			ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
+			return ;
+		}
+	}
 
 	char szFileName[MAX_PATH] = {0};
 	char szSmallDestFile[MAX_PATH] = {0};
 	char szLargeDestFile[MAX_PATH] = {0};
+	char szExDestFile[MAX_PATH] = {0};
 	//使用图片原来的名字
 	// FileUtil_GetNewFileName2(iYear, szName, szPostFix, szFileName);
 	//使用毫秒数的名字
 	FileUtil_GetNewFileName2(iYear, pszLFileName, szPostFix, szFileName);
 	sprintf(szLargeDestFile, "%s%s.%s", szDestFold, szFileName, szPostFix);
 	sprintf(szSmallDestFile, "%s%s_%s.%s", szDestThumbFold, szFileName, szPostFix, "jpg");
+	sprintf(szExDestFile, "%s%s_%s.%s", szDestThumbFold, szFileName, szPostFix, "mp4");
 	
 	char szSmallSrcFile[MAX_PATH] = {0};
 	char szLargeSrcFile[MAX_PATH] = {0};
+	char szExSrcFile[MAX_PATH] = {0};
 	sprintf(szSmallSrcFile, "%s/%s", TMPFILEPATH, pszSFileName);
 	sprintf(szLargeSrcFile, "%s/%s", TMPFILEPATH, pszLFileName);
+	sprintf(szExSrcFile, "%s/%s", TMPFILEPATH, pszExFileName);
 	if(FALSE == FileUtil_MoveFile(szLargeSrcFile, szLargeDestFile))
 	{
 		char szBuffer[255] = {0};
@@ -210,6 +240,13 @@ void ComputerServerMessage_OnComputerServerReportInfo(struct ConnectServer* pSer
 	{
 		char szBuffer[255] = {0};
 		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_REPORTINFO_ACK, "move small file error");
+		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
+		return ;
+	}
+	if(iExFileSize > 0 && FALSE == FileUtil_MoveFile(szExSrcFile, szExDestFile))
+	{
+		char szBuffer[255] = {0};
+		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_REPORTINFO_ACK, "move ex file error");
 		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
 		return ;
 	}
@@ -279,12 +316,14 @@ void ComputerServerMessage_OnComputerServerReportInfo(struct ConnectServer* pSer
 	pMediaItem->pszDeviceIdentify = (char*)pszDeviceName; 					//设备名称
 	pMediaItem->pszAddr = szFileAddr;									//媒体地址
 	pMediaItem->pszLocation = pszLocation==NULL?"":(char*)pszLocation;  //拍摄时候地理位置
+	pMediaItem->iHasExtra = iExFileSize > 0?TRUE:FALSE;
 	BOOL bRet = DataBaseMedia_AddItem(pMediaItem);
 	if(FALSE == bRet)
 	{
 		//入库失败了
 		FileUtil_RemoveFile(szSmallDestFile);
 		FileUtil_RemoveFile(szLargeDestFile);
+		FileUtil_RemoveFile(szExDestFile);
 		char szBuffer[255] = {0};
 		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_REPORTINFO_ACK, "add record error");
 		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
@@ -752,6 +791,12 @@ void ComputerServerMessage_OnComputerServerMediaItemDelete(struct ConnectServer*
 	sprintf(szPathFile, "%s/%s", FOLD_PREFIX, szFileName);
 	FileUtil_RemoveFile(szPathFile);
 	printf("remove file:%s\n", szPathFile);
+	char szExFileName[255] = {0};
+	FileUtil_FileExNameFromFileName(szFileName, szExFileName);
+	memset(szPathFile, 0, 255);
+	sprintf(szPathFile, "%s/%s", FOLDEX_PREFIX, szExFileName);
+	FileUtil_RemoveFile(szPathFile);
+	printf("remove file:%s\n", szPathFile);
 	memset(szPathFile, 0, 255);
 	sprintf(szPathFile, "%s/%s", FOLDTHUMB_PREFIX, szThumbFileName);
 	FileUtil_RemoveFile(szPathFile);
@@ -1019,6 +1064,8 @@ void ComputerServerMessage_OnUpdatePaiSheTime(struct ConnectServer* pServer, SOC
 	sprintf(szDestFold, "%s/%d/", FOLD_PREFIX, iYear);
 	char szDestThumbFold[MAX_PATH] = {0};
 	sprintf(szDestThumbFold, "%s/%d/", FOLDTHUMB_PREFIX, iYear);
+	char szDestExFold[MAX_PATH] = {0};
+	sprintf(szDestExFold, "%s/%d/", FOLDEX_PREFIX, iYear);
 	if(FALSE == FileUtil_CheckFoldExist(szDestFold))
 	{
 		//文件夹不存在 创建
@@ -1043,6 +1090,18 @@ void ComputerServerMessage_OnUpdatePaiSheTime(struct ConnectServer* pServer, SOC
 			return ;
 		}
 	}
+	if(FALSE == FileUtil_CheckFoldExist(szDestExFold))
+	{
+		//文件夹不存在 创建
+		if(FALSE == FileUtil_CreateFold(szDestExFold))
+		{
+			char szBuffer[255] = {0};
+			sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_UPDATEPAISHETIME_ACK, "fold no permission");
+			ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
+			DataBaseMedia_ReleaseItem(pItem);
+			return ;
+		}
+	}
 	//2020/IMG_2937_1.jpg   => IMG_2937_1.jpg
 	char szFileName[MAX_PATH] = {0};
 	FileUtil_GetFileOnlyName(pItem->pszAddr, szFileName);
@@ -1058,17 +1117,21 @@ void ComputerServerMessage_OnUpdatePaiSheTime(struct ConnectServer* pServer, SOC
 
 	char szSmallDestFile[MAX_PATH] = {0};
 	char szLargeDestFile[MAX_PATH] = {0};
+	char szExDestFile[MAX_PATH] = {0};
 	sprintf(szLargeDestFile, "%s%s.%s", szDestFold, szFileName, szPostFix);
 	sprintf(szSmallDestFile, "%s%s_%s.%s", szDestThumbFold, szFileName, szPostFix, "jpg");
+	sprintf(szExDestFile, "%s%s_%s.%s", szDestExFold, szFileName, szPostFix, "mp4");
 	
 	char szSmallSrcFile[MAX_PATH] = {0};
 	char szLargeSrcFile[MAX_PATH] = {0};
+	char szExSrcFile[MAX_PATH] = {0};
 	
 	memset(szName, 0, MAX_PATH);
 	memset(szPostFix, 0, MAX_PATH);
 	FileUtil_SepFile(pItem->pszAddr, szName, szPostFix);
 
 	sprintf(szSmallSrcFile, "%s/%s_%s.jpg", FOLDTHUMB_PREFIX, szName, szPostFix);
+	sprintf(szExSrcFile, "%s/%s_%s.mp4", FOLDEX_PREFIX, szName, szPostFix);
 	sprintf(szLargeSrcFile, "%s/%s", FOLD_PREFIX, pItem->pszAddr);
 
 	if(FALSE == FileUtil_MoveFile(szLargeSrcFile, szLargeDestFile))
@@ -1084,6 +1147,14 @@ void ComputerServerMessage_OnUpdatePaiSheTime(struct ConnectServer* pServer, SOC
 	{
 		char szBuffer[255] = {0};
 		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_UPDATEPAISHETIME_ACK, "move small file error");
+		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
+		DataBaseMedia_ReleaseItem(pItem);
+		return ;
+	}
+	if(1 == pItem->iHasExtra && FALSE == FileUtil_MoveFile(szExSrcFile, szExDestFile))
+	{
+		char szBuffer[255] = {0};
+		sprintf(szBuffer, "{\"otype\":\"%d\",\"status\":0,\"info\":\"%s\"}", MESSAGETYPECMD_UPDATEPAISHETIME_ACK, "move ex file error");
 		ComputerServerMessage_SendCmdMessage(pServer, iSocket, szBuffer);
 		DataBaseMedia_ReleaseItem(pItem);
 		return ;

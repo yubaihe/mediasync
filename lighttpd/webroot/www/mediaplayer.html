@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="./css/dialog.css"/>
 <script type="text/javascript" src="./js/dialog.min.js"></script>
 <script type="text/javascript" src="./js/Toast.js"></script>
-<script type="text/javascript" src="./js/LanguageOpt.js"></script>
+<script type="text/javascript" src="./js/LanguageOpt.js?id=2"></script>
 <!-- Plugin CSS -->
 <link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
 <!-- Plugin JS -->
@@ -87,6 +87,42 @@
   
     $(document).ready(function()
     {
+        FigureDetect($('.MediaItemImage'), function() {
+        // alert('长按触发了！');
+        if(g_extraurl.length > 0)
+        {
+            g_playextra = true;
+            ReSetContainer();
+        }
+        }, 1000, function(type){
+            if(type == "prev")
+            {
+                console.log("上一个");
+                DeviceApi.device.previtem();
+            }
+            else
+            {
+                console.log("下一个");
+                DeviceApi.device.nextitem();
+            }
+        }, 50);
+        FigureDetect($('.MediaItemVideo'), function() {
+        
+        }, 1000, function(type){
+            if(type == "prev")
+            {
+                console.log("上一个");
+                DeviceApi.device.previtem();
+            }
+            else
+            {
+                console.log("下一个");
+                DeviceApi.device.nextitem();
+            }
+        }, 50);
+        setTimeout(() => {
+            //SetInfo(9, 1,'http://192.168.110.12:80/media/2024/1736471891851.jpg','http://192.168.110.12:80/media/.media/2024/1736471891851_jpg.jpg','http://192.168.110.12:80/media/.media_ex/2024/1736471891851_jpg.mp4', 3000,4000,'2024-08-30 09:50:35','西藏自治区拉萨市城关区八角西街7号', '', '2025-01-10 09:18:12', '4.2MB', '0','0', 'M2007J17C');    
+        }, 500);
         InitLanguage();
         DisableContextMenu();
         $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
@@ -108,7 +144,6 @@
             UnSetToast();
         });
         });
-        // SetInfo(84, 1,'http://47.104.165.97:8080/media/2023/1703568205194.jpeg','http://47.104.165.97:8080/media/.media/2023/1703568205194_jpeg.jpg', 640,1136,'2023-10-30 15:51:38','未知', '', '2023-12-26 13:23:25', '47KB', '1','0', 'RELECH');
     });
     var g_selectGroupIds="";
     function RequestGroupNamesFromItemID(itemid)
@@ -154,6 +189,8 @@ var g_PinchZoom;
 var g_picscale = 0;
 var g_picoriginalheight = 0;
 var g_mediatype = 0;
+var g_extraurl = "";
+var g_playextra = false;
 $(window).on('resize', function() {
     if(g_picscale == 0)
     {
@@ -185,175 +222,313 @@ function SetContainer(containerwidth, containerheight)
     $(".mediacontent > .MediaItemImage").css("width", containerwidth + "px");
     $(".mediacontent > .MediaItemImage").css("height", containerheight + "px");
 }
-    function SetInfo(id, mediatype, url, thumb, width, height, paitime, location, dur, synctime,msize,favorite,cover,name)
+function ReSetContainer()
+{
+    if(true == g_playextra)
     {
-        RequestGroupNamesFromItemID(id);
-        $(".contentDiv").removeClass("hidden");
-        $(".fenbianlv").html(width + " X " + height);
-        $(".favorite").attr("favorite", favorite);
-        if(favorite == "1")
-        {
-            $(".favorite").find('img').eq(0).attr("src", "./img/favorite.png");
-        }
-        else
-        {
-            $(".favorite").find('img').eq(0).attr("src", "./img/nofavorite.png");
-        }
-        $(".cover").attr("cover", cover);
-        if(cover == "1")
-        {
-            $(".cover").find('img').eq(0).attr("src", "./img/cover.png");
-        }
-        else
-        {
-            $(".cover").find('img').eq(0).attr("src", "./img/nocover.png");
-        }
+        $(".MediaItemVideo").removeClass("hidden");
+        $(".MediaItemImage").addClass("hidden");
+        mPlayer.play();
+    }
+    else
+    {
+        $(".MediaItemVideo").addClass("hidden");
+        $(".MediaItemImage").removeClass("hidden");
+    }
+}
 
-        $(".mediaitemdur").html(dur);
+// 长按事件处理程序
+function FigureDetect(element, longPresscallBack, duration, swipecallback, swipewidth) 
+{
+  let touchStart, timeout;
+ 
+  element.on('touchstart', function(event) {
+    console.log("touchstart");
+    touchStart = event.originalEvent.changedTouches[0].clientX;
+    timeout = setTimeout(function() {
+        longPresscallBack();
+    }, duration);
+  });
+ 
+  element.on('touchmove', function(event) {
+    console.log("touchmove");
+    // 如果移动超过一定距离，则不触发长按
+    var curX = event.originalEvent.changedTouches[0].clientX;
+    if (Math.abs(curX - touchStart) > 10) 
+    {
+      clearTimeout(timeout);
+    }
+  });
+ 
+  element.on('touchend', function(event) {
+    console.log("touchend");
+    clearTimeout(timeout);
+    console.log(event);
+    var curX = event.originalEvent.changedTouches[0].clientX;
+    if (curX - touchStart > swipewidth) 
+    {
+      //console.log("上一个");
+        //alert("上一个");
+        swipecallback("prev");
+    }
+    if (touchStart - curX > swipewidth) 
+    {
+      //console.log("下一个");
+      //alert("下一个");
+      swipecallback("next");
+    }
+  });
 
-        $(".paisheshijian").html(paitime);
-        $(".mediaitemsize").html(msize);
-        $(".mediaitemsynctime").html(synctime);
-        $(".mediaitemname").html(name);
-        if(location == ""||location=="未知")
-        {
-            SetPlayAddr(LanguageText("未知"));
-        }
-        else if(location == "待定位")
-        {
-            SetPlayAddr(LanguageText("待定位"));
-        }
-        else
-        {
-            SetPlayAddr(location);
-        }
+  element.on('mousedown', function(e) {
+    console.log("mousedown");
+    touchStart = e.pageX;
+    timeout = setTimeout(function() 
+    {
+        longPresscallBack();
+    }, duration);
+  });
+ 
+  element.on('mousemove', function(e) {
+    console.log("mousemove");
+    // 如果移动超过一定距离，则不触发长按
+    if (Math.abs(e.pageX - touchStart) > 10) 
+    {
+      clearTimeout(timeout);
+    }
+  });
+ 
+  element.on('mouseup', function(e) {
+    console.log("mouseup");
+    clearTimeout(timeout);
+    if (e.pageX - touchStart > swipewidth) 
+    {
+      console.log("上一个");
+      swipecallback("prev");
+    }
+    if (touchStart - e.pageX > swipewidth) 
+    {
+      console.log("下一个");
+      swipecallback("next");
+    }
+  });
+}
+function PlayExtraVideo(thumb, containerwidth, containerheight)
+{
+    if(true == g_playextra)
+    {
+        $(".MediaItemVideo").removeClass("hidden");
+        $(".MediaItemImage").addClass("hidden");
+        $(".vjs-volume-menu-button").css("display", "none");
+        $(".vjs-fullscreen-control").css("display", "none");
+        $(".vjs-control-bar").css("display", "none");
+        $(".vjs-loading-spinner").css("display", "none");
         
-        if(mediatype == 1)
+        mPlayer = videojs("videoid",{},function onPlayerReady() {
+            // videojs.log("播放器已经准备好了!");
+            this.on("ended", function () {
+                g_playextra = false;
+                ReSetContainer();
+            })
+        });
+        mPlayer.width(containerwidth);
+        mPlayer.height(containerheight);
+        mPlayer.poster(thumb);
+        //http://47.104.165.97:8080/media/2020/VID_20200428_162537_1.mp4
+        mPlayer.ready(function(){
+        mPlayer.src(g_extraurl); /*动态设置video.js播放的地址。*/
+        
+        mPlayer.play();
+    });
+    }
+}
+function SetInfo(id, mediatype, url, thumb, extraurl, width, height, paitime, location, dur, synctime,msize,favorite,cover,name)
+{
+    g_extraurl = extraurl;
+    if(g_extraurl.length > 0)
+    {
+        g_playextra = true;
+    }
+    RequestGroupNamesFromItemID(id);
+    $(".contentDiv").removeClass("hidden");
+    $(".fenbianlv").html(width + " X " + height);
+    $(".favorite").attr("favorite", favorite);
+    if(favorite == "1")
+    {
+        $(".favorite").find('img').eq(0).attr("src", "./img/favorite.png");
+    }
+    else
+    {
+        $(".favorite").find('img').eq(0).attr("src", "./img/nofavorite.png");
+    }
+    $(".cover").attr("cover", cover);
+    if(cover == "1")
+    {
+        $(".cover").find('img').eq(0).attr("src", "./img/cover.png");
+    }
+    else
+    {
+        $(".cover").find('img').eq(0).attr("src", "./img/nocover.png");
+    }
+
+    $(".mediaitemdur").html(dur);
+
+    $(".paisheshijian").html(paitime);
+    $(".mediaitemsize").html(msize);
+    $(".mediaitemsynctime").html(synctime);
+    $(".mediaitemname").html(name);
+    if(location == ""||location=="未知")
+    {
+        SetPlayAddr(LanguageText("未知"));
+    }
+    else if(location == "待定位")
+    {
+        SetPlayAddr(LanguageText("待定位"));
+    }
+    else
+    {
+        SetPlayAddr(location);
+    }
+    
+    if(mediatype == 1)
+    {
+        
+        $(".chixushijian").addClass("hidden");
+        $(".MediaItemImage").removeClass("hidden");
+        $(".MediaItemVideo").addClass("hidden");
+        $(".MediaItemImage > img").attr("src",  url);
+        if(null == g_PinchZoom)
         {
-            $(".chixushijian").addClass("hidden");
-
-            $(".MediaItemImage").removeClass("hidden");
-            $(".MediaItemVideo").addClass("hidden");
-            $(".MediaItemImage > img").attr("src",  url);
-            if(null == g_PinchZoom)
-            {
-                let el = document.querySelector('#imgid');
-                g_PinchZoom = new PinchZoom(el, {
-                    draggableUnzoomed:false
-                });
-            }
-        }
-        else
-        {
-            $(".chixushijian").removeClass("hidden");
-
-            $(".MediaItemVideo").removeClass("hidden");
-            $(".MediaItemImage").addClass("hidden");
-
-            $(".vjs-volume-menu-button").css("display", "none");
-            $(".vjs-fullscreen-control").css("display", "none");
-            
-            mPlayer = videojs("videoid",{},function onPlayerReady() {
-                // videojs.log("播放器已经准备好了!");
-                this.on("ended", function () {
-                    mPlayer.play();
-                })
-            }
-            );
-            // mPlayer.width(iScreenWidth);
-            // mPlayer.height(iMediaContentHeight);
-            mPlayer.poster(thumb);
-            //http://47.104.165.97:8080/media/2020/VID_20200428_162537_1.mp4
-            mPlayer.ready(function(){
-            mPlayer.src(url); /*动态设置video.js播放的地址。*/
-            mPlayer.play();
+            let el = document.querySelector('#imgid');
+            g_PinchZoom = new PinchZoom(el, {
+                draggableUnzoomed:false
             });
         }
-        var iScreenWidth = $(document.body).width();
-        g_picscale = (iScreenWidth*1.0)/width;
-        g_picoriginalheight = height;
-        g_mediatype = mediatype;
-        var iMediaContentHeight = height*g_picscale;
-        SetContainer(iScreenWidth, iMediaContentHeight);
     }
+    else
+    {
+        $(".chixushijian").removeClass("hidden");
+
+        $(".MediaItemVideo").removeClass("hidden");
+        $(".MediaItemImage").addClass("hidden");
+
+        $(".vjs-volume-menu-button").css("display", "none");
+        $(".vjs-fullscreen-control").css("display", "none");
+        
+        mPlayer = videojs("videoid",{},function onPlayerReady() {
+            // videojs.log("播放器已经准备好了!");
+            this.on("ended", function () {
+                mPlayer.play();
+            })
+        }
+        );
+        // mPlayer.width(iScreenWidth);
+        // mPlayer.height(iMediaContentHeight);
+        mPlayer.poster(thumb);
+        //http://47.104.165.97:8080/media/2020/VID_20200428_162537_1.mp4
+        mPlayer.ready(function(){
+        mPlayer.src(url); /*动态设置video.js播放的地址。*/
+        mPlayer.play();
+        });
+    }
+    var iScreenWidth = $(document.body).width();
+    g_picscale = (iScreenWidth*1.0)/width;
+    g_picoriginalheight = height;
+    g_mediatype = mediatype;
+    var iMediaContentHeight = height*g_picscale;
+    
+    SetContainer(iScreenWidth, iMediaContentHeight); 
+    setTimeout(() => 
+    {
+        //延时一下 不然照片显示不出来
+        if(true == g_playextra)
+        {
+            PlayExtraVideo(url, iScreenWidth, iMediaContentHeight);
+            $("#imghasextra").removeClass("hidden");
+        }
+        else
+        {
+            $("#imghasextra").addClass("hidden");
+        }
+    }, 500);
+}
   
-    function StopPlay()
+function StopPlay()
+{
+    if(null != mPlayer)
     {
-        if(null != mPlayer)
-        {
-            mPlayer.pause();
-        }
+        mPlayer.pause();
     }
+}
 
-    function SetPlayAddr(addr)
-    {
-        $(".paishedidian").html(addr);
-        $(".playaddr").click(function(){
-                            DeviceApi.device.gpsaddress();
-                        });
-    }
+function SetPlayAddr(addr)
+{
+    $(".paishedidian").html(addr);
+    $(".playaddr").click(function(){
+                        DeviceApi.device.gpsaddress();
+                    });
+}
 
-    function SetFavorite(favorite, strTips)
+function SetFavorite(favorite, strTips)
+{
+    $(".favorite").attr("favorite", favorite);
+    if(favorite == 1)
     {
-        $(".favorite").attr("favorite", favorite);
-        if(favorite == 1)
-        {
-            $(".favorite").find('img').eq(0).attr("src", "./img/favorite.png");
-        }
-        else
-        {
-            $(".favorite").find('img').eq(0).attr("src", "./img/nofavorite.png");
-        }
-        Toast(strTips);
+        $(".favorite").find('img').eq(0).attr("src", "./img/favorite.png");
     }
+    else
+    {
+        $(".favorite").find('img').eq(0).attr("src", "./img/nofavorite.png");
+    }
+    Toast(strTips);
+}
 
-    function SetCover(Cover, strTips)
+function SetCover(Cover, strTips)
+{
+    $(".cover").attr("cover", Cover);
+    if(Cover == 1)
     {
-        $(".cover").attr("cover", Cover);
-        if(Cover == 1)
-        {
-            $(".cover").find('img').eq(0).attr("src", "./img/cover.png");
-        }
-        else
-        {
-            $(".cover").find('img').eq(0).attr("src", "./img/nocover.png");
-        }
-        Toast(strTips);
+        $(".cover").find('img').eq(0).attr("src", "./img/cover.png");
     }
+    else
+    {
+        $(".cover").find('img').eq(0).attr("src", "./img/nocover.png");
+    }
+    Toast(strTips);
+}
 
-    function ChooseTimeClick(item)
-    {
-        DeviceApi.device.updatetime();
-    }
-    function UpdatePaiSheShiJian(paitime)
-    {
-        $(".paisheshijian").html(paitime);
-    }
-    function UpdatePaiSheDiDian(addr)
-    {
-        $(".paishedidian").html(addr);
-    }
-    function SuoShuFenZuTimeClick(item)
-    {
-        DeviceApi.device.updatefenzu("" + g_selectGroupIds);
-    }
-    function InitLanguage()
-    {
-        $(".fenbianlvlabel").html(LanguageText("分辨率:"));
-        $(".mediasizelabel").html(LanguageText("媒体大小:"));
-        $(".mediadurationlabel").html(LanguageText("持续时间:"));
-        $(".mediadevicenamelabel").html(LanguageText("设备名称:"));
-        $(".mediasynctimelabel").html(LanguageText("同步时间:"));
-        $(".mediagrouplabel").html(LanguageText("所属分组:"));
-        $(".mediapaitimelabel").html(LanguageText("拍摄时间:"));
-        $(".mediapaiaddrlabel").html(LanguageText("拍摄地点:"));
-        $(".paishedidian").html(LanguageText("获取中..."));
-        $(".mediaremovelabel").html(LanguageText("删 除"));
-    }
+function ChooseTimeClick(item)
+{
+    DeviceApi.device.updatetime();
+}
+function UpdatePaiSheShiJian(paitime)
+{
+    $(".paisheshijian").html(paitime);
+}
+function UpdatePaiSheDiDian(addr)
+{
+    $(".paishedidian").html(addr);
+}
+function SuoShuFenZuTimeClick(item)
+{
+    DeviceApi.device.updatefenzu("" + g_selectGroupIds);
+}
+function InitLanguage()
+{
+    $(".fenbianlvlabel").html(LanguageText("分辨率:"));
+    $(".mediasizelabel").html(LanguageText("媒体大小:"));
+    $(".mediadurationlabel").html(LanguageText("持续时间:"));
+    $(".mediadevicenamelabel").html(LanguageText("设备名称:"));
+    $(".mediasynctimelabel").html(LanguageText("同步时间:"));
+    $(".mediagrouplabel").html(LanguageText("所属分组:"));
+    $(".mediapaitimelabel").html(LanguageText("拍摄时间:"));
+    $(".mediapaiaddrlabel").html(LanguageText("拍摄地点:"));
+    $(".paishedidian").html(LanguageText("获取中..."));
+    $(".mediaremovelabel").html(LanguageText("删 除"));
+}
 </script>
 <body>
     <div class="contentDiv hidden">
-    
+        <img id="imghasextra" class="hidden" src="../img/shikuang.png" style="position: absolute; z-index: 100;width: 30px;height: 30px;"/>
         <div class="mediacontent" style="width: 100%; height: 100%;">
             <div class="MediaItemImage hidden">
                 <img id="imgid" />

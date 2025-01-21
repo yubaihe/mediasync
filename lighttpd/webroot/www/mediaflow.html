@@ -83,7 +83,7 @@
     // console.log(addr);
     var pageindex = 0;
     var oldPageIndex = pageindex;
-    var pepage = 100;
+    var pepage = 20;
     var bFinish = false;
 
     function NextPage()
@@ -149,7 +149,10 @@
         {
             bFinish = true;
             ShowFinishPage();
-            //DeviceApi.device.toast("已全部加载!");
+            if(g_curitemid > 0)
+            {
+                NextItem(g_curitemid);
+            }
             return;
         }
         for(var i = 0; i < items.length; ++i)
@@ -191,8 +194,11 @@
             $(".grid").append(itemdiv).masonry("appended", itemdiv);
             //$(".itemdiv").removeClass("grid-item" + id);
         }
-        
         pageindex++;
+        if(g_curitemid > 0)
+        {
+            NextItem(g_curitemid);
+        }
     }
 
     function ShowFinishPage()
@@ -200,7 +206,13 @@
         setTimeout(() => {
             var gridHeight = $(".grid").height();
             var windowHeight = $(this).height();
+            if(gridHeight < windowHeight && false == bFinish)
+            {
+                NextPage();
+                return;
+            }
             var iCount = $(".grid-itemmedia").length - 1;
+            
             $(".finishcontenttongji").html(LanguageText("总数量")+"( " + iCount + " )");
 
             if(gridHeight > windowHeight)
@@ -391,6 +403,7 @@
     var g_startX = 0;
     var g_startY = 0;
     var g_SelectDiv = null;
+    var g_curitemid = -1;
     function OptMouseTouch(itemdiv)
     {
         function DownOpt(itemdiv, event)
@@ -404,7 +417,6 @@
             {
                 itemdiv.attr("timeid", 0);
                 EnterSelectMode();
-                
                 return ;
             }, 600);
             g_SelectDiv = itemdiv;
@@ -469,6 +481,7 @@
             });
             itemdiv.on("touchend", function(event){
                 console.log("touchend");
+                console.log(event);
                 var curX = event.originalEvent.changedTouches[0].clientX;
                 var curY = event.originalEvent.changedTouches[0].clientY;
                 if(Math.abs(curX-g_startX) > 5 || Math.abs(curY-g_startY) > 5)
@@ -674,6 +687,76 @@
             chooseGroupItemIds = chooseGroupItemIds.substring(0, chooseGroupItemIds.length - 1);
         }
         DeviceApi.device.setitemsgroup(chooseGroupItemIds);
+    }
+    function GetItemIndex(itemID)
+    {
+        itemID = parseInt(itemID);
+        var iCount = $(".grid-itemmedia").length;
+        for(let i = 0; i < iCount; ++i)
+        {
+            let id = parseInt($(".grid-itemmedia").eq(i).attr("itemid"));
+            if(typeof id == "undefined")
+            {
+                continue;
+            }
+            id = parseInt(id);
+            console.log(itemID + "~~~~~" + id);
+            if(id == itemID)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
+    function NextItem(itemID)
+    {
+        itemID = parseInt(itemID);
+        let bFind = false;
+        var iCount = $(".grid-itemmedia").length;
+        let itemindex = GetItemIndex(itemID);
+        itemindex++;
+        if(itemindex >= iCount - 1)
+        {
+            if(bFinish)
+            {
+                DeviceApi.device.ackitemid(-1 + "");
+                g_curitemid = -1;
+                return ;
+            }
+            g_curitemid = itemID;
+            NextPage();
+            return;
+        }
+        let id = $(".grid-itemmedia").eq(itemindex).attr("itemid");
+        if(typeof id == "undefined")
+        {
+            DeviceApi.device.ackitemid(-1 + "");
+            g_curitemid = -1;
+            return;
+        }
+        DeviceApi.device.ackitemid(id + "");
+        g_curitemid = -1;
+    }
+    function PrevItem(itemID)
+    {
+        itemID = parseInt(itemID);
+        let bFind = false;
+        let itemindex = GetItemIndex(itemID);
+        itemindex--;
+        if(itemindex < 0)
+        {
+            DeviceApi.device.ackitemid(-1 + "");
+            return;
+        }
+        let id = $(".grid-itemmedia").eq(itemindex).attr("itemid");
+        if(typeof id == "undefined")
+        {
+            DeviceApi.device.ackitemid(-1 + "");
+            return;
+        }
+        DeviceApi.device.ackitemid(id + "");
     }
 </script>
 <body>

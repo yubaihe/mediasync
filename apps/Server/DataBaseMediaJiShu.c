@@ -67,6 +67,7 @@ BOOL DataBaseMediaJiShu_Increase(long iPaiSheTime, int iMediaType, const char* p
     BOOL bRet = DataBaseDriver_QuerySQL(pDataBaseDriver, pszSql);
     if(FALSE == bRet)
     {
+        DataBaseDriver_CloseConn(pDataBaseDriver);
         free(pszSql);
         pszSql = NULL;
         return FALSE;
@@ -205,6 +206,11 @@ BOOL DataBaseMediaJiShu_Decrease(long iPaiSheTime, int iMediaType, const char* p
                 bRet = DataBaseDriver_ExecuteSQL(pDataBaseDriver, pszSql);
                 DataBaseDriver_CloseConn(pDataBaseDriver);
             }
+            break;
+        }
+        default:
+        {
+            DataBaseDriver_CloseConn(pDataBaseDriver);
             break;
         }
     }
@@ -381,21 +387,21 @@ char* DataBaseMediaJiShu_GetMonths(int iYear, char* pszDeviceName)
     DataBaseDriver* pDataBaseDriver = DataBaseDriver_GetMediaDataBaseConn();
 	if(NULL == pDataBaseDriver)
 	{
-		char* pBuffer = malloc(1);
-        memset(pBuffer, 0, 1);
+		char* pszBuffer = (char*)malloc(1);
+        memset(pszBuffer, 0, 1);
         free(pszSql);
         pszSql = NULL;
-        return pBuffer;
+        return pszBuffer;
 	}
     BOOL bRet = DataBaseDriver_QuerySQL(pDataBaseDriver, pszSql);
     if(FALSE == bRet)
     {
 		DataBaseDriver_CloseConn(pDataBaseDriver);
-        char* pBuffer = malloc(1);
-        memset(pBuffer, 0, 1);
+        char* pszBuffer = (char*)malloc(1);
+        memset(pszBuffer, 0, 1);
         free(pszSql);
         pszSql = NULL;
-        return pBuffer;
+        return pszBuffer;
     }
     char* pRetBuffer = NULL;
     DataBaseDriver_BeforeFirst(pDataBaseDriver);
@@ -420,13 +426,13 @@ char* DataBaseMediaJiShu_GetMonths(int iYear, char* pszDeviceName)
         }
     }
     DataBaseDriver_CloseConn(pDataBaseDriver);
-    if(pRetBuffer == 0)
+    if(pRetBuffer == NULL)
     {
-        char* pBuffer = malloc(1);
-        memset(pBuffer, 0, 1);
+        char* pszBuffer = malloc(1);
+        memset(pszBuffer, 0, 1);
         free(pszSql);
         pszSql = NULL;
-        return pBuffer;
+        return pszBuffer;
     }
     free(pszSql);
     pszSql = NULL;
@@ -490,11 +496,11 @@ char* DataBaseMediaJiShu_GetDays(int iYear, int iMonth, char* pszDeviceName)
     DataBaseDriver_CloseConn(pDataBaseDriver);
     if(pRetBuffer == 0)
     {
-        char* pBuffer = malloc(1);
-        memset(pBuffer, 0, 1);
+        char* pszBuffer = (char*)malloc(1);
+        memset(pszBuffer, 0, 1);
         free(pszSql);
         pszSql = NULL;
-        return pBuffer;
+        return pszBuffer;
     }
     free(pszSql);
     pszSql = NULL;

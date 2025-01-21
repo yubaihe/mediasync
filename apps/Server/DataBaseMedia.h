@@ -18,6 +18,7 @@ typedef struct
     char* pszWeiZhi;              //拍摄时候的精度纬度 //32.063305,118.946005
     char* pszDeviceIdentify;      //设备的名称
     char* pszAddr;                //媒体地址
+    uint8_t iHasExtra;                //是否有额外视频比如livephoto
     char* pszLocation;            //拍摄位置
 }MediaItem;
 

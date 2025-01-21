@@ -31,10 +31,10 @@ input
      -webkit-tap-highlight-color:
     rgba(0, 0, 0, 0);
 }
-/*.anchorBL
-{隐藏百度地图的图标
+.anchorBL
+{
     display:none
-}*/
+}
 .layout_flex 
 {
     display : -webkit-flex;

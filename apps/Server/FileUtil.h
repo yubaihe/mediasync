@@ -20,6 +20,7 @@ void FileUtil_GetNewFileName(char* pFileName, char* pszPath);
 long FileUtil_GetFileSize(const char* pszPathFile);
 void FileUtil_SepFile(const char* pFileName, char* pName, char* pPostFix);
 void FileUtil_ThumbNameFromFileName(char* pFileName, char* pszOut);
+
 char* FileUtil_GetRelativePath(char* pszFile);
 int FileUtil_GetFoldFileCount(char* pFold);
 char* FileUtil_GetFolds(char* pFold);//返回值需要手动释放
@@ -30,6 +31,7 @@ BOOL FileUtil_CheckStatus(pid_t status);
 BOOL FileUtil_IsFile(const char* pszFile);
 BOOL FileUtil_IsFold(const char* pszFold);
 BOOL FileUtil_FileNameFromThumbName(char* pszThumbFileName, char* pszFileName);
+BOOL FileUtil_FileExNameFromFileName(char* pszThumbFileName, char* pszFileName);
 BOOL FileUtil_ReadLink(char* pFileName, char* pFullFileName, size_t  iBufferLen);
 BOOL FileUtil_IsSoftLink(char* pszFileName);
 char* FileUtil_GetFileContent(const char* pszFile);

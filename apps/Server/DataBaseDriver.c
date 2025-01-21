@@ -91,7 +91,7 @@ DataBaseDriver* DataBaseDriver_GetMediaDataBase()
 	}
  	// sqlite3_exec(pDataBaseDriver->m_pSqlite3, "PRAGMA synchronous = OFF; ", 0, 0, 0);
     const char*  pszTable = "create table if not exists tbl_mediainfo(id integer PRIMARY KEY autoincrement, " \
-                                    "paishetime text, year integer,month integer, day integer, md5num text, weizhi text, location text, meititype text, meitisize text, deviceidentify text, width text, height text, duration text, mediaaddr text, addtime text, favorite text DEFAULT (0))";
+                                    "paishetime text, year integer,month integer, day integer, md5num text, weizhi text, location text, meititype text, meitisize text, deviceidentify text, width text, height text, duration text, mediaaddr text, addtime text, favorite text DEFAULT (0), hasextra text DEFAULT (0))";
     //paishetime 拍摄时间
 	//year 年份
 	//month 月份
@@ -287,6 +287,7 @@ DataBaseDriver* DataBaseDriver_GetDataBase()
 
     return pDataBaseDriver;
 }
+//视频和照片存放的数据库
 DataBaseDriver* g_pMediaDataBase = NULL;
 DataBaseDriver* DataBaseDriver_GetMediaDataBaseConn()
 {
@@ -302,7 +303,7 @@ DataBaseDriver* DataBaseDriver_GetMediaDataBaseConn()
 	pDataBaseDriver->m_pSqlite3 = g_pMediaDataBase->m_pSqlite3;
 	return pDataBaseDriver;
 }
-
+//设备信息存放的数据库
 DataBaseDriver* g_pDataBase = NULL;
 DataBaseDriver* DataBaseDriver_GetDataBaseConn()
 {

@@ -381,11 +381,14 @@ void FileUtil_RemoveYearEmptyFold(int iYear)
 	sprintf(szFold, "%s/%d/", FOLD_PREFIX, iYear);
 	char szThumbFold[MAX_PATH] = {0};
 	sprintf(szThumbFold, "%s/%d/", FOLDTHUMB_PREFIX, iYear);
+    char szExFold[MAX_PATH] = {0};
+	sprintf(szExFold, "%s/%d/", FOLDEX_PREFIX, iYear);
 
 	if(TRUE == FileUtil_IsEmptyDir(szFold))
     {
         FileUtil_RemoveFold(szFold);
 		FileUtil_RemoveFold(szThumbFold);
+        FileUtil_RemoveFold(szExFold);
     }
 }
 
@@ -434,7 +437,21 @@ BOOL FileUtil_FileNameFromThumbName(char* pszThumbFileName, char* pszFileName)
     strcpy(pszFileName + iPosition + 1, szTmpFileName + iPosition + 1);
     return TRUE;
 }
-
+BOOL FileUtil_FileExNameFromFileName(char* pszFileName, char* pszFileExName)
+{
+    printf("pszFileName:%s\n", pszFileName);
+    int iPosition = Tools_Rfind(pszFileName, '.');
+    if(iPosition <= 0)
+    {
+        return FALSE;
+    }
+    
+    memcpy(pszFileExName, pszFileName, iPosition);
+    memcpy(pszFileExName + iPosition, "_", 1);
+    strcat(pszFileExName, pszFileName + iPosition + 1);
+    strcat(pszFileExName, ".mp4");
+    return TRUE;
+}
 ////media/.media/2021/IMG_20210412_072616_jpg.jpg ==> 2021/IMG_20210412_072616.jpg
 char* FileUtil_GetRelativePath(char* pszFile)
 {

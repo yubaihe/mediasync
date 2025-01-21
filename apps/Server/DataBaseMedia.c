@@ -139,12 +139,14 @@ BOOL DataBaseMedia_AddItem(MediaItem* pItem)
     BOOL bGpsCheckOk = Tools_CheckGps(pItem->pszWeiZhi, &iGpsType, &dLong, &dLat);
     if(FALSE == bGpsCheckOk)
     {
+        DataBaseDriver_CloseConn(pDataBaseDriver);
         return FALSE;
     }
    	char szSQL[2048] = { 0 };
-    sprintf(szSQL, "insert into tbl_mediainfo(paishetime, year, month, day, md5num, weizhi, location, meititype, meitisize, deviceidentify,width,height,duration,mediaaddr,addtime)values \
-												( '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%d')",  
-    				pItem->iPaiSheTime, iYear, iMonth, iDay, pItem->pszMd5Num, pItem->pszWeiZhi, pItem->pszLocation, pItem->iMediaType, pItem->iMeiTiSize, pItem->pszDeviceIdentify, pItem->iWidth, pItem->iHeight, pItem->iDuration, pItem->pszAddr, pItem->iAddTime);
+    sprintf(szSQL, "insert into tbl_mediainfo(paishetime, year, month, day, md5num, weizhi, location, meititype, meitisize, deviceidentify,width,height,duration,mediaaddr,addtime,hasextra)values \
+												( '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%d', '%d')",  
+    				pItem->iPaiSheTime, iYear, iMonth, iDay, pItem->pszMd5Num, pItem->pszWeiZhi, pItem->pszLocation, pItem->iMediaType, pItem->iMeiTiSize, pItem->pszDeviceIdentify, pItem->iWidth, 
+                    pItem->iHeight, pItem->iDuration, pItem->pszAddr, pItem->iAddTime, pItem->iHasExtra);
     BOOL bRet = DataBaseDriver_ExecuteSQL(pDataBaseDriver, szSQL);
     if(FALSE == bRet)
     {
@@ -212,6 +214,7 @@ MediaItem* DataBaseMedia_GetLatestItem()
     pItem->iWidth = DataBaseDriver_GetInt(pDataBaseDriver, "width");
     pItem->iHeight = DataBaseDriver_GetInt(pDataBaseDriver, "height");
     pItem->iDuration = DataBaseDriver_GetInt(pDataBaseDriver, "duration");
+    pItem->iHasExtra = DataBaseDriver_GetInt(pDataBaseDriver, "hasextra");
     DataBaseMedia_SetParam(&(pItem->pszAddr), DataBaseDriver_GetString(pDataBaseDriver, "mediaaddr"));
     pItem->iAddTime = DataBaseDriver_GetLong(pDataBaseDriver, "addtime");
     DataBaseDriver_CloseConn(pDataBaseDriver);
@@ -255,6 +258,7 @@ MediaItem* DataBaseMedia_GetItemByID(int iID)
     pItem->iWidth = DataBaseDriver_GetInt(pDataBaseDriver, "width");
     pItem->iHeight = DataBaseDriver_GetInt(pDataBaseDriver, "height");
     pItem->iDuration = DataBaseDriver_GetInt(pDataBaseDriver, "duration");
+    pItem->iHasExtra = DataBaseDriver_GetInt(pDataBaseDriver, "hasextra");
     DataBaseMedia_SetParam(&(pItem->pszAddr), DataBaseDriver_GetString(pDataBaseDriver, "mediaaddr"));
     pItem->iAddTime = DataBaseDriver_GetLong(pDataBaseDriver, "addtime");
     DataBaseDriver_CloseConn(pDataBaseDriver);
@@ -357,9 +361,11 @@ BOOL DataBaseMedia_GetRecentRecords(int iPage, int iLimit, char* pDevNames, char
         DataBaseMedia_SetParam(&pszMeiTiSize, DataBaseDriver_GetString(pDataBaseDriver, "meitisize"));
         char* pszMeiTiAddr = NULL;
         DataBaseMedia_SetParam(&pszMeiTiAddr, DataBaseDriver_GetString(pDataBaseDriver, "mediaaddr"));
+        char* pszHasExtra = NULL;
+        DataBaseMedia_SetParam(&pszHasExtra, DataBaseDriver_GetString(pDataBaseDriver, "hasextra"));
         char szBuffer[1024] = {0};
-        sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\"}",
-                pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr);
+        sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\",\"hasextra\":\"%s\"}",
+                pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr, pszHasExtra);
         strcat(*pRetBuffer, szBuffer);
         free(pszID);
         pszID = NULL;
@@ -375,6 +381,8 @@ BOOL DataBaseMedia_GetRecentRecords(int iPage, int iLimit, char* pDevNames, char
         pszMeiTiSize = NULL;
         free(pszMeiTiAddr);
         pszMeiTiAddr = NULL;
+        free(pszHasExtra);
+        pszHasExtra = NULL;
     }
     DataBaseDriver_CloseConn(pDataBaseDriver);
     return TRUE;
@@ -399,11 +407,11 @@ BOOL DataBaseMedia_GetFavoriteRecords(int iPage, int iLimit, char* pDevNames, ch
     memset(pSQL, 0, iDevNamesLen + 500);
     if(iDevNamesLen == 0)
     {
-        sprintf(pSQL, "select id,width,height,duration,meititype,meitisize,mediaaddr from tbl_mediainfo where favorite == '1' order by paishetime desc limit %d offset %d", iLimit, iLimit * iPage);     
+        sprintf(pSQL, "select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where favorite == '1' order by paishetime desc limit %d offset %d", iLimit, iLimit * iPage);     
     }
     else
     {
-        sprintf(pSQL, "select id,width,height,duration,meititype,meitisize,mediaaddr from tbl_mediainfo where favorite == '1' and deviceidentify in ('%s') order by paishetime desc limit %d offset %d", pDevNames, iLimit, iLimit * iPage); 
+        sprintf(pSQL, "select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where favorite == '1' and deviceidentify in ('%s') order by paishetime desc limit %d offset %d", pDevNames, iLimit, iLimit * iPage); 
     }
     
     BOOL bRet = DataBaseDriver_QuerySQL(pDataBaseDriver, pSQL);
@@ -436,9 +444,11 @@ BOOL DataBaseMedia_GetFavoriteRecords(int iPage, int iLimit, char* pDevNames, ch
         DataBaseMedia_SetParam(&pszMeiTiSize, DataBaseDriver_GetString(pDataBaseDriver, "meitisize"));
         char* pszMeiTiAddr = NULL;
         DataBaseMedia_SetParam(&pszMeiTiAddr, DataBaseDriver_GetString(pDataBaseDriver, "mediaaddr"));
+        char* pszHasExtra = NULL;
+        DataBaseMedia_SetParam(&pszHasExtra, DataBaseDriver_GetString(pDataBaseDriver, "hasextra"));
         char szBuffer[1024] = {0};
-        sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\"}",
-                pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr);
+        sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\",\"hasextra\":\"%s\"}",
+                pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr, pszHasExtra);
         strcat(*pRetBuffer, szBuffer);
         free(pszID);
         pszID = NULL;
@@ -454,6 +464,8 @@ BOOL DataBaseMedia_GetFavoriteRecords(int iPage, int iLimit, char* pDevNames, ch
         pszMeiTiSize = NULL;
         free(pszMeiTiAddr);
         pszMeiTiAddr = NULL;
+        free(pszHasExtra);
+        pszHasExtra = NULL;
     }
     DataBaseDriver_CloseConn(pDataBaseDriver);
     return TRUE;
@@ -473,7 +485,7 @@ BOOL DataBaseMedia_GetYearRecords(int iPage, int iLimit, int iYear, int iMonth, 
     int iDevNamesLen = strlen(pDevNames);
     char* pszSQL = malloc(iDevNamesLen + 500);
     memset(pszSQL, 0, iDevNamesLen + 500);
-    strcpy(pszSQL, "select id,width,height,duration,meititype,meitisize,mediaaddr from tbl_mediainfo where ");
+    strcpy(pszSQL, "select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where ");
     if(iYear > 0)
     {
         char szBuffer[100] = {0};
@@ -550,9 +562,11 @@ BOOL DataBaseMedia_GetYearRecords(int iPage, int iLimit, int iYear, int iMonth, 
         DataBaseMedia_SetParam(&pszMeiTiSize, DataBaseDriver_GetString(pDataBaseDriver, "meitisize"));
         char* pszMeiTiAddr = NULL;
         DataBaseMedia_SetParam(&pszMeiTiAddr, DataBaseDriver_GetString(pDataBaseDriver, "mediaaddr"));
+        char* pszHasExtra = NULL;
+        DataBaseMedia_SetParam(&pszHasExtra, DataBaseDriver_GetString(pDataBaseDriver, "hasextra"));
         char szBuffer[1024] = {0};
-        sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\"}",
-                pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr);
+        sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\",\"hasextra\":\"%s\"}",
+                pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr, pszHasExtra);
         strcat(*pRetBuffer, szBuffer);
         free(pszID);
         pszID = NULL;
@@ -568,6 +582,8 @@ BOOL DataBaseMedia_GetYearRecords(int iPage, int iLimit, int iYear, int iMonth, 
         pszMeiTiSize = NULL;
         free(pszMeiTiAddr);
         pszMeiTiAddr = NULL;
+        free(pszHasExtra);
+        pszHasExtra = NULL;
     }
     DataBaseDriver_CloseConn(pDataBaseDriver);
     return TRUE;
@@ -693,7 +709,7 @@ BOOL DataBaseMedia_RecordsFromIds(char* pszIds, char** pRetBuffer)
     int iDevNamesLen = strlen(pszIds);
     char* pszSQL = malloc(iDevNamesLen + 500);
     memset(pszSQL, 0, iDevNamesLen + 500);
-    sprintf(pszSQL, "select id,width,height,duration,meititype,meitisize,mediaaddr from tbl_mediainfo where id in('%s')", pszIds);
+    sprintf(pszSQL, "select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where id in('%s')", pszIds);
     
     BOOL bRet = DataBaseDriver_QuerySQL(pDataBaseDriver, pszSQL);
     free(pszSQL);
@@ -725,9 +741,11 @@ BOOL DataBaseMedia_RecordsFromIds(char* pszIds, char** pRetBuffer)
         DataBaseMedia_SetParam(&pszMeiTiSize, DataBaseDriver_GetString(pDataBaseDriver, "meitisize"));
         char* pszMeiTiAddr = NULL;
         DataBaseMedia_SetParam(&pszMeiTiAddr, DataBaseDriver_GetString(pDataBaseDriver, "mediaaddr"));
+        char* pszHasExtra = NULL;
+        DataBaseMedia_SetParam(&pszHasExtra, DataBaseDriver_GetString(pDataBaseDriver, "hasextra"));
         char szBuffer[1024] = {0};
-        sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\"}",
-                pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr);
+        sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\",\"hasextra\":\"%s\"}",
+                pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr, pszHasExtra);
         strcat(*pRetBuffer, szBuffer);
         free(pszID);
         pszID = NULL;
@@ -743,6 +761,8 @@ BOOL DataBaseMedia_RecordsFromIds(char* pszIds, char** pRetBuffer)
         pszMeiTiSize = NULL;
         free(pszMeiTiAddr);
         pszMeiTiAddr = NULL;
+        free(pszHasExtra);
+        pszHasExtra = NULL;
     }
     DataBaseDriver_CloseConn(pDataBaseDriver);
     return TRUE;
@@ -839,10 +859,12 @@ BOOL DataBaseMedia_GetItem(int iID, char** pRetBuffer)
     DataBaseMedia_SetParam(&pszAddTime, DataBaseDriver_GetString(pDataBaseDriver, "addtime"));
     char* pszLocation = NULL;
     DataBaseMedia_SetParam(&pszLocation, DataBaseDriver_GetString(pDataBaseDriver, "location"));
+    char* pszHasExtra = NULL;
+    DataBaseMedia_SetParam(&pszHasExtra, DataBaseDriver_GetString(pDataBaseDriver, "hasextra"));
     uint32_t iFavorite = DataBaseDriver_GetInt(pDataBaseDriver, "favorite");
     char szBuffer[1024] = {0};
-    sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\",\"device\":\"%s\",\"paitime\":\"%s\",\"weizhi\":\"%s\",\"location\":\"%s\",\"addtime\":\"%s\",\"favorite\":\"%d\"}",
-            pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr, pszDeviceIdentify, pszPaiSheTime, pszWeiZhi, strlen(pszLocation) > 0?pszLocation:"待定位", pszAddTime, iFavorite);
+    sprintf(szBuffer, "{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",\"msize\":\"%s\",\"maddr\":\"%s\",\"device\":\"%s\",\"paitime\":\"%s\",\"weizhi\":\"%s\",\"location\":\"%s\",\"addtime\":\"%s\",\"favorite\":\"%d\",\"hasextra\":\"%s\"}",
+            pszID, pszWidth, pszHeight, pszDuration, pszMeiTiType, pszMeiTiSize, pszMeiTiAddr, pszDeviceIdentify, pszPaiSheTime, pszWeiZhi, strlen(pszLocation) > 0?pszLocation:"待定位", pszAddTime, iFavorite, pszHasExtra);
     strcat(*pRetBuffer, szBuffer);
     free(pszID);
     pszID = NULL;
@@ -868,6 +890,8 @@ BOOL DataBaseMedia_GetItem(int iID, char** pRetBuffer)
     pszAddTime = NULL;
     free(pszLocation);
     pszLocation = NULL;
+    free(pszHasExtra);
+    pszHasExtra = NULL;
     DataBaseDriver_CloseConn(pDataBaseDriver);
 	return TRUE;
 }
@@ -1011,6 +1035,7 @@ MediaItem* DataBaseMedia_GetItemFromName(const char* pszName)
     pItem->iWidth = DataBaseDriver_GetInt(pDataBaseDriver, "width");
     pItem->iHeight = DataBaseDriver_GetInt(pDataBaseDriver, "height");
     pItem->iDuration = DataBaseDriver_GetInt(pDataBaseDriver, "duration");
+    pItem->iHasExtra = DataBaseDriver_GetInt(pDataBaseDriver, "hasextra");
     DataBaseMedia_SetParam(&(pItem->pszAddr), DataBaseDriver_GetString(pDataBaseDriver, "mediaaddr"));
     pItem->iAddTime = DataBaseDriver_GetLong(pDataBaseDriver, "addtime");
     DataBaseDriver_CloseConn(pDataBaseDriver);
@@ -1296,6 +1321,7 @@ char* DataBaseMedia_YearLocationGroupTongJi(const char* pszLocation, int iYear, 
     pszSQL = NULL;
     if(FALSE == bRet)
     {
+        DataBaseDriver_CloseConn(pDataBaseDriver);
 		return NULL;
     }
     char* pszRetBuffer = NULL;
@@ -1376,6 +1402,7 @@ BOOL DataBaseMedia_UpdateItemGpsAddr(int iID, const char* pszGps, const char* ps
     BOOL bGpsCheckOk = Tools_CheckGps(pszGps, &iGpsType, &dLong, &dLat);
     if(FALSE == bGpsCheckOk)
     {
+        DataBaseDriver_CloseConn(pDataBaseDriver);
         return FALSE;
     }
     char szSQL[1024] = { 0 };
