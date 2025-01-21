@@ -240,10 +240,10 @@ function ReSetContainer()
 // 长按事件处理程序
 function FigureDetect(element, longPresscallBack, duration, swipecallback, swipewidth) 
 {
-  let touchStart, timeout;
- 
+  let touchStart, timeout,downtime;
   element.on('touchstart', function(event) {
     console.log("touchstart");
+    downtime = Date.now();
     touchStart = event.originalEvent.changedTouches[0].clientX;
     timeout = setTimeout(function() {
         longPresscallBack();
@@ -267,19 +267,24 @@ function FigureDetect(element, longPresscallBack, duration, swipecallback, swipe
     var curX = event.originalEvent.changedTouches[0].clientX;
     if (curX - touchStart > swipewidth) 
     {
-      //console.log("上一个");
-        //alert("上一个");
+        if((Date.now() - downtime) > 200)
+        {
+            return;
+        }
         swipecallback("prev");
     }
     if (touchStart - curX > swipewidth) 
     {
-      //console.log("下一个");
-      //alert("下一个");
-      swipecallback("next");
+        if((Date.now() - downtime) > 200)
+        {
+            return;
+        }
+        swipecallback("next");
     }
   });
 
   element.on('mousedown', function(e) {
+    downtime = Date.now();
     console.log("mousedown");
     touchStart = e.pageX;
     timeout = setTimeout(function() 
@@ -302,13 +307,19 @@ function FigureDetect(element, longPresscallBack, duration, swipecallback, swipe
     clearTimeout(timeout);
     if (e.pageX - touchStart > swipewidth) 
     {
-      console.log("上一个");
-      swipecallback("prev");
+        if((Date.now() - downtime) > 200)
+        {
+            return;
+        }
+        swipecallback("prev");
     }
     if (touchStart - e.pageX > swipewidth) 
     {
-      console.log("下一个");
-      swipecallback("next");
+        if((Date.now() - downtime) > 200)
+        {
+            return;
+        }
+        swipecallback("next");
     }
   });
 }
