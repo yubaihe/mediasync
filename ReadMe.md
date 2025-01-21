@@ -48,11 +48,9 @@ $ROOTDIR/stop.sh
 
 # 7.发行
 
-> Windows版本需要将第一部分和第二部分全部下载以后再解压
+> Windows
 
-[Windows(第一部分)](./Release/MediaSyncSetup.zip.001 "点击下载windows安装程序第一部分")
-
-[Windows(第二部分)](./Release/MediaSyncSetup.zip.002 "点击下载windows安装程序第二部分")
+[Windows](./Release/MediaSyncSetup.exe "点击下载")
 
 > Android
 
