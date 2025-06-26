@@ -23,4 +23,4 @@ $ROOTDIR/bin/dbus-daemon --config-file=${ROOTDIR}/bin/dbus-1/session.conf  --add
 mkdir $ROOTDIR/media/.media_tmp -p
 $ROOTDIR/lighttpd/sbin/lighttpd -f $ROOTDIR/lighttpd/config/lighttpd.conf
 $ROOTDIR/apps/MediaParse/MediaParse &
-exec $ROOTDIR/apps/Server/Server
+$ROOTDIR/apps/Server/Server &
