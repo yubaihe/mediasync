@@ -42,7 +42,7 @@ cp package/install/** $ROOTDIR -R
 cp package/startup/docker.sh $ROOTDIR/start.sh
 # 添加可执行权限并以root权限执行脚本
 chmod +x $ROOTDIR/start.sh
-$ROOTDIR/start.sh
+sudo $ROOTDIR/start.sh &
 ```
 
 # 5.支持samba访问
