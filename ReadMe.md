@@ -15,9 +15,9 @@ sudo apt-get install libtool
 
 ```shell
 #gitee
-git clone git@gitee.com:relech/mediasync.git mediasyncsrc
+git clone https://gitee.com/relech/mediasync.git mediasyncsrc
 #github
-git clone git@github.com:yubaihe/mediasync.git mediasyncsrc
+git clone https://github.com/yubaihe/mediasync.git mediasyncsrc
 ```
 
 # 3.编译
