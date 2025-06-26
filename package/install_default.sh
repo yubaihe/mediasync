@@ -22,7 +22,7 @@ LighttpdFilter()
 	cp -R $ROOTDIR/lighttpd/config $PWD/install/lighttpd
 	#fcgi
 	mkdir -p $PWD/install/lighttpd/fcgi
-        cp -R $ROOTDIR/lighttpd/fcgi/** $PWD/install/lighttpd/fcgi/
+	cp -R $ROOTDIR/lighttpd/fcgi/** $PWD/install/lighttpd/fcgi/
 	#lib
 	mkdir -p $PWD/install/lighttpd/lib
 	cp -R $ROOTDIR/lighttpd/lib/*.so $PWD/install/lighttpd/lib/
