@@ -15,15 +15,15 @@ sudo apt-get install libtool
 
 ```shell
 #gitee
-git clone git@gitee.com:relech/mediasync.git
+git clone git@gitee.com:relech/mediasync.git mediasyncsrc
 #github
-git clone git@github.com:yubaihe/mediasync.git
+git clone git@github.com:yubaihe/mediasync.git mediasyncsrc
 ```
 
 # 3.编译
 
 ```shell
-cd mediasync
+cd mediasyncsrc
 # 初始化环境变量
 source ./initenv.sh LINUX /home/relech/mediasync/
 # 编译
@@ -40,7 +40,7 @@ cp package/install/** $ROOTDIR -R
 ```shell
 # 把启动脚本拷贝进目的目录
 cp package/startup/docker.sh $ROOTDIR/start.sh
-# 添加可执行权限并执行脚本
+# 添加可执行权限并以root权限执行脚本
 chmod +x $ROOTDIR/start.sh
 $ROOTDIR/start.sh
 ```
