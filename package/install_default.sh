@@ -18,6 +18,8 @@ LighttpdFilter()
 {
 	echo "-----LighttpdFilter"
 	mkdir -p $PWD/install/lighttpd
+	#config
+	cp -R $ROOTDIR/lighttpd/config $PWD/install/lighttpd
 	#fcgi
 	mkdir -p $PWD/install/lighttpd/fcgi
         cp -R $ROOTDIR/lighttpd/fcgi/** $PWD/install/lighttpd/fcgi/
