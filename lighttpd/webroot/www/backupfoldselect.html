@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>Document</title>
+</head>
+<script src="js/Api.js?id=2"></script>
+<link rel="stylesheet" href="css/Common.css"/>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/bootstrap-theme.min.css"/>
+<link rel="stylesheet" href="css/buttons.css"/>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/Common.js?id=2"></script>
+<script src="js/LanguageOpt.js"></script>
+
+<link rel="stylesheet" href="./css/dialog.css"/>
+<script type="text/javascript" src="./js/dialog.min.js"></script>
+<script src="js/Toast.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
+
+<!-- Plugin CSS -->
+<link type="text/css" href="./css/bootstrap-toggle.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="./js/bootstrap-toggle.min.js"></script>
+<style type="text/css">
+.folditem { 
+    width: 100%;
+    height: 8vh;
+    border-bottom: 1px solid #e9e8e8; 
+}
+.foldselected > img
+{
+    display: block;
+    
+}
+    </style>
+    <script>
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
+    var DeviceApi = new API("");
+    $(document).ready(function()
+    {
+        InitLanguage();
+        DisableContextMenu();
+        //支持IOS的 active
+        $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
+        document.body.addEventListener('touchstart',function(){});
+        //SelectBackupFold("100");
+    });
+
+    var g_iStart = 0;
+    var g_iPageSize = 5;
+    var g_selectedFold = "";
+    function SelectItem(itemDiv)
+    {
+        $(".foldselected").find(".folditemright").addClass("hidden");
+        $(".foldselected").removeClass("foldselected");
+        
+        $(itemDiv).addClass("foldselected");
+        $(itemDiv).find(".folditemright").eq(0).removeClass("hidden");
+    }
+    function CheckDefault()
+    {
+        if(g_selectedFold.length == 0)
+        {
+            return;
+        }
+        console.log($(".divmain").children().length);
+        let find = false;
+        for(let i = 0; i < $(".divmain").children().length; ++i)
+        {
+            let floderName = $(".divmain").children().eq(i).attr("foldname");
+            if(g_selectedFold == floderName)
+            {
+                find = true;
+                SelectItem($(".divmain").children().eq(i));
+            }
+        }
+        if(false == find)
+        {
+            AddItem(g_selectedFold, "", true);
+            SelectItem($(".divmain").children().eq(0));
+        }
+    }
+    function AddItem(name, cover, issetfirst)
+    {
+        var html = $(".folditemtemplate").prop("outerHTML");
+        var itemDiv = $(html);
+        itemDiv.removeClass("folditemtemplate");
+        itemDiv.removeClass("hidden");
+        itemDiv.find(".foldname").eq(0).html(name);
+        itemDiv.find(".foldname").eq(0).removeClass("hidden");
+        itemDiv.attr("foldname", name);
+        if(cover.length == 0)
+        {
+            itemDiv.find(".flodcover").eq(0).attr("src", "./img/file_folder.png");
+        }
+        else
+        {
+            let url = GetBackupThumbPic(name, cover);
+            itemDiv.find(".flodcover").eq(0).attr("src", url);
+        }
+        if(true == issetfirst)
+        {
+            $(".divmain").prepend(itemDiv);
+        }
+        else
+        {
+            $(".divmain").append(itemDiv);
+        }
+        itemDiv.click(function()
+        {
+            $(".foldselected").find(".folditemright").addClass("hidden");
+            $(".foldselected").removeClass("foldselected");
+            
+            $(this).addClass("foldselected");
+            $(this).find(".folditemright").eq(0).removeClass("hidden");
+
+            let selectName = $(".foldselected").find(".foldname").eq(0).html();
+            console.log(selectName);
+            DeviceApi.device.changebackupfold(selectName);
+        });
+    }
+    function ResetSelectBackupFold(selectedfold)
+    {
+        g_selectedFold = selectedfold;
+        g_iStart = 0;
+        $(".divmain").html("");
+        SelectBackupFold(selectedfold);
+    }
+    function SelectBackupFold(selectedfold)
+    {
+        g_selectedFold = selectedfold;
+        let json = {};
+        json["action"] = "backupfolds";
+        json["start"] = g_iStart;
+        json["limit"] = g_iPageSize;
+        ServerApi.request.backupfolds(JSON.stringify(json), function(data,textStatus,jqXHR)
+            {
+                //{"items":[{"fcount":0,"name":"7","pic":""},{"fcount":0,"name":"6"},{"fcount":0,"name":"5"},{"fcount":0,"name":"4"},{"fcount":0,"name":"3"}],"status":1}
+                var jsonRoot = JSON.parse(data);
+                console.log(jsonRoot);
+                if(jsonRoot["status"] == 0)
+                {
+                    return;
+                }
+                var items = jsonRoot["items"];
+                if(items.length == 0)
+                {
+                    if($(".divmain").length == 0 && g_selectedFold.length == 0)
+                    {
+                        $(".nodatadiv").removeClass("hidden");
+                        $(".submitbtn").addClass("hidden");
+                    }
+                    else
+                    {
+                        CheckDefault();
+                    }
+                    return;
+                }
+                $(".nodatadiv").addClass("hidden");
+                $(".submitbtn").removeClass("hidden");
+                for(var i = 0; i < items.length; ++i)
+                {
+                    AddItem(items[i].name, items[i].cover, false);
+                }
+                g_iStart += items.length;
+                if(items.length == g_iPageSize)
+                {
+                    SelectBackupFold(selectedfold);
+                }
+                else
+                {
+                    CheckDefault();
+                }
+            });
+    }
+    function InitLanguage()
+    {
+        
+    }
+</script>
+<body>
+    <div class="nodatadiv hidden" style="position:absolute;text-align: center;  width: 100%; height: 100%;display:flex;align-items:center; justify-content:center;">
+        <img src="./img/nodata.png" style="width: 10vh; height: 10vh;"/>
+    </div>
+
+    <div class="divmain" style="width: 100%;">
+
+    </div>
+
+    <div class="folditem folditemtemplate hidden canclick"  style="position: relative;">
+        
+        <div class="foldwithdetail " style="position: absolute; width: 100%; height: 8vh; padding-bottom: 2px; padding-left: 1vh;display: flex;">
+            <div class="foldimg" style="width:6vh;height: 6vh;margin-top: 1vh;"><img class="flodcover" src="./img/file_folder.png" style="width: 100%;height: 100%;border-radius: 1vh;box-shadow: 0px 5px 10px rgba(45,50,64,.2);"/></div>
+            <div class="foldname" style="flex: 1; line-height: 8vh; height: 8vh; font-size: 3vh;margin-left: 1vh;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">2018</div>
+            <div class="folditemright hidden" style=" line-height: 8vh; height: 8vh;width: 8vh;">
+                <div style="float:right; width: 5vh; height: 5vh; margin-right: 1vh; line-height: 5vh; margin-top: 1.5vh;text-align: center;">
+                    <img src="./img/selected.png" width="100%" height="100%"/>
+                </div>
+            </div>
+        </div>
+    </div>
+        
+</body>
+</html>

@@ -1,5 +1,4 @@
-#ifndef __STDAFX_H
-#define __STDAFX_H
+#pragma once
 
 #include<errno.h>
 #include <sys/types.h>    // for socket
@@ -12,23 +11,25 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <sys/ioctl.h> 
-#include <net/if.h> 
 #include <sys/stat.h> 
 #include <sys/types.h>
 #include <stdarg.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
-#include <json.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <sqlite3.h>
 #include <limits.h>
-#include "md5.h"
-#include "Base64Coding.h"
-#include "MessageDefine.h"
-#include "memwatch.h"
+#include "Common.h"
+#include <vector>
+#include <string.h>
+#include <json.hpp>
+#include <curl.h>
 
+using namespace std;
+
+#define MAX_MESSAGE_LEN 65535
 #define MAX_PATH 255
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0x2000
@@ -41,12 +42,6 @@ typedef PTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE;
 
 typedef unsigned long       DWORD;
 
-typedef enum
-{
-    GPSTYPE_UNKNOW,
-    GPSTYPE_NORMAL,
-    GPSTYPE_BAIDU
-}GPSTYPE;
 
 //typedef int                 BOOL;
 #ifndef FALSE
@@ -91,8 +86,10 @@ extern pthread_t LinuxCreateThread(pthread_attr_t* lpThreadAttributes, LPTHREAD_
 #define CloseHandle(threadid) do{threadid = NULL;}while(0);
 #define InitializeCriticalSection(section) pthread_mutex_init(section, NULL);
 #define DeleteCriticalSection(section) pthread_mutex_destroy(section);
-#define EnterCriticalSection(section)  pthread_mutex_lock(section);
-#define LeaveCriticalSection(section)  pthread_mutex_unlock(section);
+// #define EnterCriticalSection(section)  pthread_mutex_lock(section);
+// #define LeaveCriticalSection(section)  pthread_mutex_unlock(section);
+#define EnterCriticalSection(section)  EnterSection((section), __FILE__, __LINE__, __func__);
+#define LeaveCriticalSection(section)  LeaveSection((section), __FILE__, __LINE__, __func__);
 #define TryEnterCriticalSection(section) 0 == pthread_mutex_trylock(section)?TRUE:FALSE;
 #define closesocket(socketfd) close(socketfd);
 #define shutdown(socketfd, type) shutdown(socketfd, type);
@@ -100,25 +97,11 @@ extern pthread_t LinuxCreateThread(pthread_attr_t* lpThreadAttributes, LPTHREAD_
 #define LONGSLEEPPRE(SEC, LIJI)  int iCount = 0; if(LIJI){iCount = SEC;}
 #define LONGSLEEP(SEC) if(iCount >= SEC){iCount = 0;}else{iCount++;Sleep(1000);continue;}
 
-extern int SERVERPORT ;
-extern int CASTPORT ;
-extern BOOL g_bSamba;
-extern BOOL g_bEth;
-extern BOOL g_bWlan;
-
 
 #define CASTTAG "PhotoVideo"
-
-extern char FOLD_PREFIX[255];
-extern char FOLDTHUMB_PREFIX[255];
-extern char TMPFILEPATH[255];
-extern char FOLDEX_PREFIX[255];
-extern char TODIR[255];
-extern BOOL g_bSupportGpsGet;
-#define MEDIATYPE_IMAGE 1
-#define MEDIATYPE_VIDEO 2
-//#define __IOS_
-
-
-#include  "FileUtil.h"
-#endif
+typedef enum
+{
+    GPSTYPE_UNKNOW,
+    GPSTYPE_NORMAL,
+    GPSTYPE_BAIDU
+}GPSTYPE;

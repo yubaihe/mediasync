@@ -23,7 +23,8 @@ img
 }
 .canclick
 {
-    cursor:pointer
+    cursor:pointer;
+    pointer-events: auto !important;
 }
 input
 {
@@ -58,4 +59,45 @@ input
 .layout-right 
 {
     width: 1.5vh;
+}
+
+.swiper-button-prev:after{
+    display: none;
+}
+.swiper-button-next:after{
+    display: none;
+}
+.swiper-button-prev{
+    
+    background-image: url('../img/prev.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 70% 70%;
+    background-color: rgba(220, 220, 220, 0.5);
+    border-radius: 0 1vh 1vh 0;
+    width: 5vh !important;
+    height: 10vh !important; 
+}
+.swiper-button-next{
+    background-image: url('../img/prev.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 70% 70%;
+    background-color: rgba(220, 220, 220, 0.5);
+    border-radius: 0 1vh 1vh 0;
+    width: 5vh !important;
+    height: 10vh !important;
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg); 
+    -moz-transform: rotate(180deg); 
+    -ms-transform: rotate(180deg);   
+    -o-transform: rotate(180deg); 
+}  
+.swiper-button-prev, .swiper-rtl .swiper-button-next
+{
+    left:0px !important;
+}
+.swiper-button-next, .swiper-rtl .swiper-button-prev
+{
+    right: 0px !important;
 }

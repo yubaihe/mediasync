@@ -37,7 +37,7 @@
     }
     </style>
     <script>
-    var ServerApi = new API("http://" + window.location.host);
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var DeviceApi = new API("");
     var year = GetUrlParam("year");
     var month = GetUrlParam("month");
@@ -95,7 +95,7 @@
         ServerApi.request.daylist(str,function(data,textStatus,jqXHR)
         {
             var jsonRoot = JSON.parse(data);
-            if(jsonRoot["status"] != "1")
+            if(jsonRoot["status"] != 1)
             {
                 //DeviceApi.device.toast("未查询到媒体数据!");
                 $(".nodatadiv").removeClass("hidden");

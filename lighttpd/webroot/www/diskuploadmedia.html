@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<link rel="stylesheet" href="css/bootstrap.min.css"/>
+<link rel="stylesheet" href="css/Common.css"/>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/Api.js"></script>
+<script src="js/Common.js"></script>
+<script src="js/Toast.js"></script>
+
+<script src="js/jquery.base64.js"></script>
+<script src="js/LanguageOpt.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<!-- Plugin JS -->
+<script type="text/javascript" src="js/jquery.overlayScrollbars.min.js"></script>
+
+<link rel="stylesheet" href="css/dialog.css"/>
+<script type="text/javascript" src="js/dialog.min.js"></script>
+<script type="text/javascript" src="js/Toast.js"></script>
+<script>
+    var DeviceApi = new API("");
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
+    var g_MainDiv = null;
+    var g_devName = "";
+    $(document).ready(function()
+    {
+        var ScreenHeight = $(document.body).height();
+        var contentHeight = ScreenHeight - $(".UploadTips").height();
+        $('#uploaditemsmain').css("height", contentHeight);
+        //g_MainDiv = $('#uploaditemsmain').overlayScrollbars({ scrollbars:{autoHide:'scroll'}}).overlayScrollbars();
+        g_MainDiv = $('#uploaditemsmain').overlayScrollbars({ scrollbars:{autoHide:'scroll'}}).overlayScrollbars();
+        //Init("sda4");
+    });
+    /*
+    itemid:
+    mediatype:媒体类型=>1:图片 2:视频
+    */
+    var color = ["#87CEEB","#ADFF2F","#F4A460","#F08080","#7CFC00","#EE82EE","#D8BFD8","#7B68EE","#c77eb5","#008792","#74905d"];
+    function AddItem(itemid, mediatype, paitime, filesize, shijian, pic)
+    {
+        var item = $($(".itemtemplate").html());
+        item.addClass("item_" + itemid);
+        item.attr("itemid", itemid);
+        var colorID = Math.round(Math.random()*(color.length - 1));
+       // item.find(".thumbimgbg").eq(0).css("background-color", color[colorID]);
+        item.find(".thumbimg").eq(0).attr("src", pic);
+        if(mediatype == 1)
+        {
+            item.find(".videotag").eq(0).addClass("hidden");
+           var info = item.find(".mediainfo");
+           info.children().eq(2).html(LanguageText("拍摄时间:") + paitime);
+           info.children().eq(1).html(LanguageText("媒体大小:") + filesize);
+           info.children().eq(0).html(" ");
+        }
+        else
+        {
+            item.find(".videotag").eq(0).removeClass("hidden");
+            var info = item.find(".mediainfo");
+            info.children().eq(2).html(LanguageText("拍摄时间:") + paitime);
+            info.children().eq(1).html(LanguageText("视频时长:") + shijian);
+            info.children().eq(0).html(LanguageText("媒体大小:") + filesize);
+        }
+
+        $(".uploaditemsmain").append(item);
+    }
+
+    function UpdateUploadInfo(iSuccess, iFailed, iLeft)
+    {
+        $(".UploadTips_success").html(LanguageText("成功数")+":"+iSuccess);
+        $(".UploadTips_failed").html(LanguageText("失败数")+":"+iFailed);
+        $(".UploadTips_left").html(LanguageText("剩余数")+":"+iLeft);
+		//LoadMore();
+    }
+    var g_iCount = 0;
+    function LoadMore()
+    {
+        var str = "{\"action\":\"{0}\",\"dev\":\"{1}\",\"start\":{2},\"limit\":{3}}".format("diskuploaditemlist", g_devName, g_iCount, 20);
+        console.log(str);
+        ServerApi.request.diskuploaditemlist(str,function(data,textStatus,jqXHR)
+        {
+            //var jsonRoot = JSON.parse($.base64.decode(content));
+            //console.log(data);
+            var jsonRoot = JSON.parse(data);
+            var items =  jsonRoot["items"];
+            if(items.length == 0)
+            {
+                //DeviceApi.device.toast("未查询到媒体数据!");
+                DeviceApi.device.loadfinish();
+                //Start();
+                return;
+            }
+
+            g_iCount += items.length;
+            for(var i = 0; i < items.length; ++i)
+            {
+                //AddItem(itemid, mediatype, paitime, filesize, shijian, pic)
+                var id = items[i]["id"];
+                var mediaType = items[i]["mtype"];
+                var paiTime = items[i]["paitime"];
+                var filesize = items[i]["filesize"];
+                var dur = items[i]["dur"];
+                var pic = "media/.disk/" + g_devName + "/" + items[i]["pic"];
+                //Toast(i + "!!~");
+                AddItem(id, mediaType, paiTime, filesize, dur, pic);
+            }
+            //console.log($(".uploaditemsmain").children.eq(0).html());
+            console.log("relech 12" + $(".uploaditemsmain").children().length);
+            UpdateUploadInfo(0, 0, $(".uploaditemsmain").children().length);
+            LoadMore();
+        },function(xhr,textStatus)
+        {
+        });
+    }
+    var g_iCurItem = null;
+    function UpdateStatus(itemid, Status, precent)
+    {
+        var item = $(".item_" + itemid);
+        item.find(".wait").eq(0).addClass("hidden");
+        item.find(".uploading").eq(0).addClass("hidden");
+        item.find(".uploadsuccess").eq(0).addClass("hidden");
+        item.find(".uploadfailed").eq(0).addClass("hidden");
+        g_iCurItem = null;
+        if(Status == "w")
+        {
+            item.find(".wait").eq(0).removeClass("hidden");
+        }
+        else if(Status == "p")
+        {
+            g_iCurItem = item.find(".uploading").eq(0);
+            item.find(".uploading").eq(0).html(precent + "%");
+            g_iCurItem.removeClass("hidden");
+        }
+        else if(Status == "s")
+        {
+            item.find(".uploadsuccess").eq(0).removeClass("hidden");
+            g_iCurItem = null;
+        }
+        else if(Status == "f")
+        {
+            item.find(".uploadfailed").eq(0).removeClass("hidden");
+            g_iCurItem = null;
+        }
+    }
+
+    function SelectItem(iItemIndex)
+    {
+        console.log("SelectItem:" + iItemIndex);
+        //获取外框的宽度和高度
+        var containerWidth = $("#uploaditemsmain").width();
+        var containerHeight = $("#uploaditemsmain").height();
+        console.log(containerWidth + "   " + containerHeight);
+        //获取自己的宽高
+        var itemWidth = $(".item_" + iItemIndex).outerWidth();
+        var itemHeight = $(".item_" + iItemIndex).outerHeight();
+        var itemBottom = $(".item_" + iItemIndex).position().top + itemHeight;
+        //算出来滚动的高度
+        var scrollTo = itemBottom - containerHeight;
+        if(scrollTo > 0)
+        {
+            g_MainDiv.scroll({x:0,y:scrollTo}, 100, undefined, function() { });
+        }
+    }
+    function Init(devName)
+    {
+        g_devName = devName;
+        LoadMore();
+    }
+    var g_successcount = 0;
+    var g_failedcount = 0;
+    var g_needstop = false;
+    var g_uploadtimerid = null;
+    var g_requesttime = 0;
+    function StartNexItem()
+    {
+        UpdateUploadInfo(g_successcount, g_failedcount, $(".uploaditemsmain").children().length);
+        if(true == g_needstop)
+        {
+            console.log("用户停止");
+            g_needstop = false;
+            clearInterval(g_uploadtimerid);
+            g_uploadtimerid = null;
+            DeviceApi.device.diskuploadstop();
+            return;
+        }
+        let iPos = g_successcount + g_failedcount;
+        if(iPos == $(".uploaditemsmain").children().length)
+        {
+            console.log("全部结束了");
+            clearInterval(g_uploadtimerid);
+            g_uploadtimerid = null;
+            DeviceApi.device.diskuploadfinish(g_failedcount + "");
+            return;
+        }
+
+        let item = $(".uploaditemsmain").children().eq(iPos);
+        let itemid = item.attr("itemid");
+        SelectItem(itemid);
+        var str = "{\"action\":\"{0}\",\"dev\":\"{1}\",\"itemid\":{2}}".format("diskitemupload", g_devName, itemid);
+        console.log(str);
+        g_requesttime = new Date().getTime();
+        ServerApi.request.diskitemupload(str,function(data,textStatus,jqXHR)
+        {
+            g_requesttime = 0;
+            console.log(data);
+            var jsonRoot = JSON.parse(data);
+            if(1 != jsonRoot["status"])
+            {
+                g_errorInfo = "Request failed";
+                return;
+            }
+        });
+    }
+    function Start(restart)
+    {
+        if(g_uploadtimerid != null)
+        {
+            return;
+        }
+        if(true == restart)
+        {
+            g_successcount = 0;
+            g_failedcount = 0;
+        }
+        //开始
+        StartNexItem();
+        g_uploadtimerid = setInterval(() => {
+            if(g_requesttime != 0 && new Date().getTime() - g_requesttime < 5000)
+            {
+                return;
+            }
+            
+            var str = "{\"action\":\"{0}\",\"dev\":\"{1}\"}".format("diskitemuploadprecent", g_devName);
+            console.log(str);
+            g_requesttime = new Date().getTime();
+            ServerApi.request.diskitemuploadprecent(str,function(data,textStatus,jqXHR)
+            {
+                g_requesttime = 0;
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                if(1 != jsonRoot["status"])
+                {
+                    return;
+                }
+                let errorInfo = jsonRoot["error"];
+                let iPrecent = jsonRoot["precent"];
+                if(errorInfo.length != 0)
+                {
+                    //失败了
+                    let iPos = g_successcount + g_failedcount;
+                    let item = $(".uploaditemsmain").children().eq(iPos);
+                    let itemid = item.attr("itemid");
+                    UpdateStatus(itemid, "f");
+                    g_failedcount++;
+                    StartNexItem();
+                    return;
+                }
+                if(iPrecent == 100 && errorInfo.length == 0)
+                {
+                    //成功了
+                    let iPos = g_successcount + g_failedcount;
+                    let item = $(".uploaditemsmain").children().eq(iPos);
+                    let itemid = item.attr("itemid");
+                    UpdateStatus(itemid, "s");
+                    g_successcount++;
+                    StartNexItem();
+                    return;
+                }
+                if(errorInfo.length == 0)
+                {
+                    //正在同步
+                    let iPos = g_successcount + g_failedcount;
+                    let item = $(".uploaditemsmain").children().eq(iPos);
+                    let itemid = item.attr("itemid");
+                    if(iPrecent == 0)
+                    {
+                        UpdateStatus(itemid, "w");
+                    }
+                    else
+                    {
+                        if(iPrecent != 100)
+                        {
+                            UpdateStatus(itemid, "p", iPrecent);
+                        }
+                    }
+                    return;
+                }
+            });
+        }, 100);
+    }
+    function Stop()
+    {
+        g_needstop = true;
+    }
+</script>
+
+<body>
+    <div class="UploadTips" style="background-color: #FFC66A; height: 5vh; line-height: 5vh; ">
+        <span class="UploadTips_success" style="color:#00B459;margin-left: 1vh;">成功数:0</span>
+        <span class="UploadTips_failed" style="color:#ff0000">失败数:0</span>
+        <span class="UploadTips_left" >剩余数:0</span>
+    </div>
+    <div id="uploaditemsmain"  style="overflow-x:hidden;">
+       <div class="uploaditemsmain">
+
+       </div> 
+    </div>
+    <div class="itemtemplate hidden">
+        <div style="position: relative; width: 100%; height: 13vh; padding-left: 1vh; padding-top: 1vh; ">
+            <div class="thumbimgbg" style="position: absolute; width: 10vh; height: 10vh; background-color: #FFFFFF;">
+                <img class="thumbimg" src="http://47.104.165.97:8080/media/2020/thumb_IMG_2496.jpg" width="100%" height="100%"/>
+                <div class="videotag" style="position: absolute; left: 0.1vh; top:7vh;width: 2.3vh; height: 2.3vh;">
+                    <img src="../img/video.png" width="100%" height="100%"/>
+                </div>
+            </div>
+            <div style="float: right; width: 10vh; height: 10vh; margin-right: 1vh;line-height: 10vh; text-align: center;">
+                <div class="wait hidden" style="font-size: 5vh; color: #CDB38B;text-shadow: 1px 1px 1px #CDB5CD;">W</div>
+                <div class="uploading hidden" style="font-size: 4vh; color: #9C9C9C;text-shadow: 1px 1px 1px #5C5C5C;">98%</div>
+                <div class="uploadsuccess hidden" style="font-size: 4vh; color: #00B459; text-shadow: 1px 1px 1px #6CA6CD;">S</div>
+                <div class="uploadfailed hidden" style="font-size: 4vh; color: #EE4000; text-shadow: 1px 1px 1px #EE9572;">F</div>
+            </div>
+
+            <div class="mediainfo" style="margin-left: 11vh; height: 9vh; font-size: 2vh; ">
+                <div style="margin-top: 1vh; height: 3vh;">视频时长:100秒</div>
+                <div style="margin-top: 0.2vh;">媒体大小:1.2M</div>
+                <div style="margin-top: 0.3vh;">拍摄时间:2020-05-23 21:58:02</div>
+            </div>
+            <div style="height: 1px; background-color: #e9e8e8; margin-top: 1vh;"></div>
+        </div>
+    </div>
+</body>
+</html>

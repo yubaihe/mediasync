@@ -59,8 +59,7 @@
 }
 </style>
 <script>
-    var ServerApi = new API("http://" + window.location.host);
-    //var ServerApi = new API("http://" + "192.168.1.12");
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var DeviceApi = new API("");
     function ResizeCoverBar()
     {
@@ -72,7 +71,6 @@
         }
         else
         {
-            // $(".coverbar").css("width", $(".covermain").width() - $(".covertitle").width() - 20);
             $(".coverbar").removeClass("hidden");
         }   
     }
@@ -80,9 +78,8 @@
     {
         InitLanguage();
         DisableContextMenu();
-        var iEthEnable = GetUrlParam("eth");
-        var iWlanEnable = GetUrlParam("wlan");
-        if(iEthEnable == 0 || iWlanEnable == 0)
+        var iNetsetEnable = GetUrlParam("netsetenable");
+        if(iNetsetEnable == 0)
         {
             $(".netsetting").addClass("hidden");
         }
@@ -102,11 +99,11 @@
         
         $(".blueslide").attr("data-slider-value", devBlue);
 
-        $(".headdiv").load("./head.html?id=1", function() {
-            $(".container").removeClass("hidden");
-        });
+        // $(".headdiv").load("./head.html", function() {
+        //     $(".container").removeClass("hidden");
+        // });
 
-        $(".foot").load("./foot.html?id=1", function() {
+        $(".foot").load("./foot.html", function() {
             $(".container").removeClass("hidden");
         });
 
@@ -188,19 +185,6 @@
             DeviceApi.device.aboutdevice();
         });
 
-        $(".clearmemory").click(function(){
-            var tipContent = LanguageText("该操作会重置设备的相关计数，中途请<span style='color:red'>不要断电</span>，否则请<span style='color:#1B9AF7'>重新执行</span>清理缓存操作!");
-            ShowConfirm(LanguageText("清理缓存"), tipContent, 1,
-            LanguageText("按钮确定"), 
-            function(){
-                ClearCacheStart(DeviceApi);
-            }, 
-            LanguageText("按钮取消"), 
-            function()
-            {
-                UnSetToast();
-            });
-        });
 
     });
     function InitLanguage()
@@ -214,7 +198,7 @@
         // }
         $(".namelabel").html(LanguageText("设备名称:"));
         $(".covertitlelabel").html(LanguageText("封面模糊度:"));
-        $(".clearmemorylabel").html(LanguageText("清理缓存"));
+        $(".clearmemorylabel").html(LanguageText("磁盘整理"));
         $(".languagesetlabel").html(LanguageText("语言设置"));
         $(".resetuserlabel").html(LanguageText("重置用户"));
         $(".netsettinglabel").html(LanguageText("网络设置"));
@@ -230,9 +214,9 @@
 <body>
     <div class="scrollview" style="width: 100%; height: 100%;">
         <div class="divmain">
-            <div class="headdiv" style="height: 30vh;"></div>
+            <div class="headdiv hidden" style="height: 30vh;"></div>
             <div class="container hidden">
-                <div style="margin-left: 10%; margin-right: 10%;  width: 80%;">
+                <div style="width: 100%;">
                     <div style="display: flex; width: 100%; height: 8vh; line-height: 8vh; font-size: 1.5rem; border-bottom:1px solid #e9e8e8;">
                         <div class="settinglabel namelabel" style="display: inline-block;height: 100%;margin-right: 5%;">设备名称:</div>
                         <div style="float: right;">
@@ -243,13 +227,10 @@
                     <div class="covermain" style="width: 100%; height: 8vh; line-height: 8vh; font-size: 1.5rem; border-bottom:1px solid #e9e8e8;">
                         <div class="mediaitem layout_flex ">
                             <div class="layout-left settinglabel covertitle covertitlelabel">封面模糊度:</div>
-                            <div class="layout-middle coverbar hidden" style="padding-left: 15px;">
+                            <div class="layout-middle coverbar hidden" style="padding-left: 15px;padding-right: 20px;">
                                 <input  class="blueslide" type="text" data-slider-min="0" data-slider-max="255" data-slider-step="1" data-slider-value="15"/>
                             </div>
                         </div>
-                    </div>
-                    <div class="clearmemory canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
-                        <span class="settinglabel clearmemorylabel" style="display: inline-block;">清理缓存</span>                      
                     </div>
                     <div class="languageset canclick" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
                         <span class="settinglabel languagesetlabel" style="display: inline-block;">语言设置</span>

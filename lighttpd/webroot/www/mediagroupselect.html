@@ -81,7 +81,7 @@
 }
     </style>
     <script>
-    var ServerApi = new API("http://" +  window.location.host);
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var DeviceApi = new API("");
     var g_groupids = "";
     var g_mediaAddr = "";
@@ -107,12 +107,10 @@
             {
                 $(".nodatadiv").removeClass("hidden");
                 $(".cover").addClass("hidden");
-                $(".submitbtn").addClass("hidden");
                 return;
             }
             $(".nodatadiv").addClass("hidden");
             $(".cover").removeClass("hidden");
-            $(".submitbtn").removeClass("hidden");
             for(var i = 0; i < items.length; ++i)
             {
                 var html = $(".groupitemtemplate").prop("outerHTML");
@@ -191,74 +189,72 @@
         //支持IOS的 active
         $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
         document.body.addEventListener('touchstart',function(){});
-        
-        $(".submitbtn").click(function(){
-
-            let selectLen = $(".groupselected").length;
-            let selectItems = "";
-            let groupids = "";
-            for(var i = 0; i < selectLen; ++i)
+        //SetItemInfo("1", "aa", 1, "devname", "test1");
+    });
+    function NotifySubmit()
+    {
+        let selectLen = $(".groupselected").length;
+        let selectItems = "";
+        let groupids = "";
+        for(var i = 0; i < selectLen; ++i)
+        {
+            var gid = $(".groupselected").eq(i).attr("groupid");
+            var setCover = $(".groupselected").eq(i).find(".coverimageset").eq(0).attr("coverselected");
+            if(selectItems.length == 0)
             {
-                var gid = $(".groupselected").eq(i).attr("groupid");
-                var setCover = $(".groupselected").eq(i).find(".coverimageset").eq(0).attr("coverselected");
-                if(selectItems.length == 0)
-                {
-                    selectItems = '{"gid":{0},"cover":{1}}'.format(gid, setCover);
-                }
-                else
-                {
-                    selectItems += ',{"gid":{0},"cover":{1}}'.format(gid, setCover);
-                }
-                if(groupids.length == 0)
-                {
-                    groupids = $(".groupselected").eq(i).attr("groupid");
-                }
-                else
-                {
-                    groupids += "&";
-                    groupids += $(".groupselected").eq(i).attr("groupid");
-                }
-            }
-            if(g_ItemIds.length == 0)
-            {
-                var str = "{\"action\":\"mediaitemgroupsetting\",\"itemid\":{0},\"devname\":\"{1}\",\"mediatype\":{2},\"mediaaddr\":\"{3}\",\"groups\":[{4}]}".format(g_itemid, 
-                g_devName, g_mediaType, g_mediaAddr, selectItems);
-                console.log(str);
-                ServerApi.request.mediaitemgroupsetting(str,function(data,textStatus,jqXHR)
-                {
-                    console.log(data);
-                    var jsonRoot = JSON.parse(data);
-                    if(jsonRoot["status"] !=1)
-                    {
-                        Toast(LanguageText("更新分组信息失败!"));
-                        return;
-                    }
-                    Toast(LanguageText("更新分组信息成功!"));
-                    DeviceApi.device.mediaitemgroupchange(groupids);
-                });
+                selectItems = '{"gid":{0},"cover":{1}}'.format(gid, setCover);
             }
             else
             {
-                var str = "{\"action\":\"mediaitemsgroupadd\",\"itemids\":\"{0}\",\"groupids\":\"{1}\"}".format(g_ItemIds, groupids);
-                console.log(str);
-                ServerApi.request.mediaitemsgroupadd(str,function(data,textStatus,jqXHR)
-                {
-                    console.log(data);
-                    var jsonRoot = JSON.parse(data);
-                    if(jsonRoot["status"] !=1)
-                    {
-                        Toast(LanguageText("添加分组信息失败!"));
-                        return;
-                    }
-                    Toast(LanguageText("添加分组信息成功!"));
-                    var strNotify = "{\"itemids\":\"{0}\",\"groupids\":\"{1}\"}".format(g_ItemIds, groupids);
-                    DeviceApi.device.mediaitemsgroupadd(strNotify);
-                });
+                selectItems += ',{"gid":{0},"cover":{1}}'.format(gid, setCover);
             }
-        });
-        //SetItemInfo("1", "aa", 1, "devname", "test1");
-    });
-
+            if(groupids.length == 0)
+            {
+                groupids = $(".groupselected").eq(i).attr("groupid");
+            }
+            else
+            {
+                groupids += "&";
+                groupids += $(".groupselected").eq(i).attr("groupid");
+            }
+        }
+        if(g_ItemIds.length == 0)
+        {
+            var str = "{\"action\":\"mediaitemgroupsetting\",\"itemid\":{0},\"devnames\":\"{1}\",\"mediatype\":{2},\"mediaaddr\":\"{3}\",\"groups\":[{4}]}".format(g_itemid, 
+            g_devName, g_mediaType, g_mediaAddr, selectItems);
+            console.log(str);
+            ServerApi.request.mediaitemgroupsetting(str,function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                if(jsonRoot["status"] !=1)
+                {
+                    Toast(LanguageText("更新分组信息失败!"));
+                    return;
+                }
+                Toast(LanguageText("更新分组信息成功!"));
+                DeviceApi.device.mediaitemgroupchange(groupids);
+            });
+        }
+        else
+        {
+            var str = "{\"action\":\"mediaitemsgroupadd\",\"itemids\":\"{0}\",\"groupids\":\"{1}\"}".format(g_ItemIds, groupids);
+            console.log(str);
+            ServerApi.request.mediaitemsgroupadd(str,function(data,textStatus,jqXHR)
+            {
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                if(jsonRoot["status"] !=1)
+                {
+                    Toast(LanguageText("添加分组信息失败!"));
+                    return;
+                }
+                Toast(LanguageText("添加分组信息成功!"));
+                var strNotify = "{\"itemids\":\"{0}\",\"groupids\":\"{1}\"}".format(g_ItemIds, groupids);
+                DeviceApi.device.mediaitemsgroupadd(strNotify);
+            });
+        }
+    }
     function SetCover(item)
     {
         var e = window.event || arguments.callee.caller.arguments[0];
@@ -292,7 +288,6 @@
     }
     function InitLanguage()
     {
-        $(".submitbtn").html(LanguageText("提交"));
     }
 </script>
 <body>
@@ -302,10 +297,6 @@
 
     <div class="divmain" style="width: 100%;">
 
-    </div>
-
-    <div class="submitbtn canclick hidden" style="width: 50vh; height: 7vh; background-color: #9abcfa; border-radius: 1vh; margin: 0 auto; overflow: hidden; margin-top: 7vh; line-height: 7vh;text-align: center; color: white; font-size: 3vh;">
-        提交
     </div>
 
     <div class="groupitem groupitemtemplate hidden canclick"  style="position: relative;">

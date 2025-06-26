@@ -89,13 +89,25 @@ input::-webkit-input-placeholder {
     }
     </style>
 <script>
-    //var ServerApi = new API("http://47.104.165.97:8080/");
-    var ServerApi = new API("http://" + window.location.host);
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var DeviceApi = new API("");
     var baiduAk = GetUrlParam("baiduak");
     if(baiduAk.length > 0)
     {
         SetCookie("baiduak", baiduAk);
+        let json = {};
+        json["action"] = "setbaiduak";
+        json["baiduak"] = baiduAk;
+        ServerApi.request.devnames(JSON.stringify(json), function(data,textStatus,jqXHR)
+        {
+
+        },function(xhr,textStatus)
+        {
+        });
+    }
+    else
+    {
+        SetCookie("baiduak", "");
     }
     function InitDeviceFilter()
     {
@@ -203,7 +215,6 @@ input::-webkit-input-placeholder {
     {
         if(pagename == "login")
         {
-            
             $(".pwdtipsdiv").addClass("hidden");
             $(".menudiv").addClass("hidden");
             $(".logindiv").removeClass("hidden");
@@ -246,7 +257,7 @@ input::-webkit-input-placeholder {
                 return;
             }
             $(".loginbtn").attr("logining", 1);
-            console.log($.md5(value));
+            console.log("relech 12" + $.md5(value));
             var password = $.base64.encode($.md5(value));
             var str = "{\"action\":\"login\", \"pwd\":\"{0}\"}".format(password);
             ServerApi.request.login(str,function(data,textStatus,jqXHR)
@@ -342,7 +353,26 @@ input::-webkit-input-placeholder {
             }
         });
         $(".mediasync").click(function(){
-            DeviceApi.device.mediasync();
+            var str = "{\"action\":\"listdisk\"}";
+            ServerApi.request.listdisk(str, function(data,textStatus,jqXHR)
+                {
+                    console.log("loginmenu:" + data);
+                    var jsonRoot = JSON.parse(data);
+                    if(jsonRoot["status"] == 0)
+                    {
+                        DeviceApi.device.mediasync();
+                        return;
+                    }
+                    if(jsonRoot["items"].length == 0)
+                    {
+                        DeviceApi.device.mediasync();
+                    }
+                    else
+                    {
+                        DeviceApi.device.diskchoose();
+                    }
+                }
+            );
         });
         $(".meitishezhi").click(function(){
             DeviceApi.device.mediasetting();
@@ -365,9 +395,9 @@ input::-webkit-input-placeholder {
     function InitPage()
     {
         InitLanguage();
-        console.log(document.cookie);
+        console.log("relech 12" + document.cookie);
         GetClearCacheStatusWithCallBack(function(precent){
-            SetToast(LanguageText("缓存清理:") + precent + "%");
+            SetToast(LanguageText("磁盘整理:") + precent + "%");
             GetClearCacheStatus(DeviceApi);
         });
         
@@ -431,11 +461,11 @@ input::-webkit-input-placeholder {
     <!-- <div class="logocontainer" style="display: none; position: absolute;left: 0; top: 0; right: 0; bottom: 0; background-color: #ffffff; z-index: 100;"></div>
      -->
     <div style="overflow: hidden; width: 100%; height: 100%;">
-        <div class="headdiv" style="height: 30vh;"></div>
+        <div class="headdiv" style="height: 23vh;"></div>
         <div style="width: 100%; height: 70vh; position: relative; overflow: hidden;">
             <!--菜单界面-->
             <div class="menudiv hidden" style="position: absolute; width: 100%; height: 100%; background-color: white;">
-                <div class="menumain" style="width: 98%; height: 55vh; margin: 0 auto;  margin-top: 5vh;">
+                <div class="menumain" style="width: 98%; height: 55vh; margin: 0 auto;  margin-top: 2vh;">
                    <div class="canclick" style="float: left; width: 50%; height: 25vh; ">
                         <div class="menuitem_main mediasync">
                             <div class=" menuitem" style="text-align: center;">

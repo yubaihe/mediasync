@@ -1,9 +1,9 @@
 .PHONY: all clean install
+name=file-5.25
 all:
-	@make clean;
-	@mkdir ./file-FILE5_04
-	@tar -xzf file-5.25.tar.gz
-	@cd ./file-5.25;./configure --prefix=$(shell pwd)/out $(CONFIGARGS);make || exit $$?;make install;
+	@make clean
+	@tar -xzf $(name).tar.gz
+	@cd ./$(name);./configure --prefix=$(shell pwd)/out $(CONFIGARGS);make || exit $$?;make install;
 	@cd -;
 	@echo "---------------file finish----------------"
 install:
@@ -15,6 +15,5 @@ install:
 	@cp -r $(shell pwd)/out/bin/** $(ROOTDIR)/bin/file/
 	@cp -r $(shell pwd)/out/share/misc/** $(ROOTDIR)/bin/file/
 clean:
-	@[ -d ./file-FILE5_04 ] &  rm -rf ./file-FILE5_04
-	@[ -d ./file-5.25 ] &  rm -rf ./file-5.25
+	@[ -d ./$(name) ] &  rm -rf ./$(name)
 	@[ -d ./out ] &  rm -rf ./out

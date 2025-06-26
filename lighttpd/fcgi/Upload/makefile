@@ -1,34 +1,33 @@
 TARGET = upload.fcgi
 LDFLAGS = -lm 
-CFLAGS  += -MD -fPIE -fno-stack-protector \
-		-I$(ROOTDIR)/include/json-c\
-		-I$(ROOTDIR)/include/fcgi
+CFLAGS  += -std=gnu++11 -MD -fPIE -fno-stack-protector \
+		-I$(ROOTDIR)/include/dbus\
+		-I$(ROOTDIR)/include/Common \
+		-I$(ROOTDIR)/include/fcgi \
+		-I$(ROOTDIR)/include/sqlite \
+		-I$(ROOTDIR)/include/nlohmannjson/ \
+		-I$(ROOTDIR)/include/nlohmannjson/nlohmann/ \
+		-I.
 			
-STATICLIB =  -lpthread \
-			$(ROOTDIR)/libs/libjson-c.a  \
-			$(ROOTDIR)/libs/libfcgi.a
+STATICLIB =  -lpthread -L$(ROOTDIR)/libs/ -lfcgi -ldbus-1 -lcommon \
 
-ifeq ($(memcheck), y)
-SOURCE += memwatch.c 
-CFLAGS += -DMEMWATCH -DMW_STDIO 
-endif
 ####################################################################################################
 .PHONY: clean install
-SOURCE +=  main.c  \
+SOURCE +=  main.cpp  \
 #SOURCE = test2.c\
 ####################################################################################################
-OBJS = $(SOURCE:%.c=obj.$(TARGET)/%.o)
-DEPS = $(SOURCE:%.c=obj.$(TARGET)/%.d)
+OBJS = $(SOURCE:%.cpp=obj.$(TARGET)/%.o)
+DEPS = $(SOURCE:%.cpp=obj.$(TARGET)/%.d)
 
 default:
 	make $(TARGET)
 	
 $(TARGET): $(OBJS)
-	$(CC) obj.$(TARGET)/*.o $(LDFLAGS) $(STATICLIB) -o $@
+	$(CXX) obj.$(TARGET)/*.o $(LDFLAGS) $(STATICLIB) -o $@
 
-obj.$(TARGET)/%.o: %.c
+obj.$(TARGET)/%.o: %.cpp
 	@mkdir -p obj.$(TARGET)
-	$(CC) $(CFLAGS) $(LDFLAGS)  -c -o $@ $<
+	$(CXX) $(CFLAGS) $(LDFLAGS)  -c -o $@ $<
 
 ####################################################################################################
 clean:

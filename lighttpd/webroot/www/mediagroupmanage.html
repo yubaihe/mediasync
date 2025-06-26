@@ -104,7 +104,8 @@
 .groupitem
 { 
     width: 100%;
-    height:8.6vh;
+    display: flex;
+    align-items: center;
     border-bottom: 1px solid #e9e8e8; 
    
 }
@@ -148,7 +149,7 @@
     }
 </style>
 <script>
-var ServerApi = new API("http://" +  window.location.host);
+var ServerApi = new API(window.location.protocol + "//" + window.location.host);
 var DeviceApi = new API("");
 var g_iOldSelectDelBtnID = 0;
 function OnKeyBoardShow(keyboardHeight)
@@ -273,7 +274,7 @@ function UpdateGroupItemRequest()
     }
     $(".panel").addClass("hidden");
 
-    var str = "{\"action\":\"groupupdate\",\"id\":\"{0}\",\"name\":\"{1}\"}".format(gid, value);
+    var str = "{\"action\":\"groupupdate\",\"id\":{0},\"name\":\"{1}\"}".format(gid, value);
     ServerApi.request.groupupdate(str,function(data,textStatus,jqXHR)
     {
         var jsonRoot = JSON.parse(data);
@@ -493,7 +494,7 @@ function RemoveOne(gid)
 function RemoveSome(gid)
 {
     //取该分组下的ID列表
-    var str = "{\"action\":\"{0}\",\"id\":{1},\"gid\":{2},\"limit\":{3},\"devnames\":\"{4}\"}".format("groupitemlist", 
+    var str = "{\"action\":\"{0}\",\"page\":0,\"id\":{1},\"gid\":{2},\"limit\":{3},\"devnames\":\"{4}\"}".format("groupitemlist", 
                 g_curMediaItemID, gid, pepage, GetSelectDeviceString());
     ServerApi.request.groupitemlist(str,function(data,textStatus,jqXHR)
     {
@@ -624,7 +625,7 @@ function InitLanguage()
             </div>
         </div>
 
-        <div class="groupitem" onclick="ShowAddGroup()">
+        <div class="groupitem canclick" onclick="ShowAddGroup()">
             <div style="float: left; width:6vh; height: 6vh; margin-top: 1vh; margin-left: 1vh;">
                 <img src="./img/groupadd.png" width="100%" height="100%"/>
             </div>
@@ -635,11 +636,11 @@ function InitLanguage()
         </div>
 
         <div class="groupitem groupitemtemplate hidden canclick" style="margin-right: 10vh;">
-            <div class="showdelbuttom" style="float: left; width:4vh; height: 4vh; margin-top:2.3vh; margin-left: 2vh;" >
+            <div class="showdelbuttom" style="float: left; width:4vh; height: 4vh; margin-left: 2vh;" >
                 <img src="./img/groupdel_oneline.png" width="100%" height="100%"/>
             </div>
             <div class="groupitemname" style="float: left; font-size: 2.4vh; font-weight:550;line-height: 8.6vh; margin-left: 2vh;">我的好友</div>
-            <div style="float: right; width: 8.35vh; height: 5vh;margin-top: 1.8vh; margin-right: 2vh; position: relative;">
+            <div style="float: right; width: 8.35vh; height: 5vh; margin-right: 2vh; position: absolute; right: 0;">
                 <div style="position: absolute;" onclick="event.stopPropagation();">
                     <img src="./img/groupdel_underline.png" width="100%" height="100%"/>
                 </div>

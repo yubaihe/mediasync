@@ -1,5 +1,4 @@
-#ifndef __STDAFX_H
-#define __STDAFX_H
+#pragma once
 
 #include<errno.h>
 #include <sys/types.h>    // for socket
@@ -18,10 +17,8 @@
 #include <stdarg.h>
 #include <pthread.h>
 #include <signal.h>
-#include <json.h>
+#define MAX_MESSAGE_LEN 65535
 
-#include "MessageDefine.h"
-#include "memwatch.h"
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0x2000
 #endif
@@ -89,5 +86,3 @@ extern int CASTPORT;
 extern char SERVERIP[16];
 
 #define CASTTAG "PhotoVideo"
-
-#endif

@@ -1,9 +1,10 @@
 .PHONY: all clean install
+name=zlog-1.2.15
 all:
-	@make clean;
-	@tar -xvzf zlog-1.2.15.tar.gz
-	@sed -i 's:PREFIX?=/usr/local:PREFIX?=$(shell pwd)/out:g' $(shell pwd)/zlog-1.2.15/src/makefile
-	@cd zlog-1.2.15;make || exit $$?;make install;
+	@make clean
+	@tar -xvzf $(name).tar.gz
+	@sed -i 's:PREFIX?=/usr/local:PREFIX?=$(shell pwd)/out:g' $(shell pwd)/$(name)/src/makefile
+	@cd $(name);make || exit $$?;make install;
 	@cd -;
 	@echo "---------------zlog finish----------------"
 install:
@@ -12,5 +13,5 @@ install:
 	@cp -r $(shell pwd)/out/include/** $(ROOTDIR)/include/zlog/
 	@cp -r $(shell pwd)/out/lib/** $(ROOTDIR)/libs/
 clean:
-	@[ -d ./zlog-1.2.15 ] &  rm -rf ./zlog-1.2.15
+	@[ -d ./$(name) ] &  rm -rf ./$(name)
 	@[ -d ./out ] &  rm -rf ./out

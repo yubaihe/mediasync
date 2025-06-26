@@ -1,26 +1,34 @@
-#ifndef RELECH_CLEARCACHE_H__
-#define RELECH_CLEARCACHE_H__
+#pragma once
 #include "stdafx.h"
-#include "DataBaseMediaJiShu.h"
-
+#include "MediaJishuTable.h"
+#include "MediaScan.h"
 typedef enum
 {
     CLEARCACHE_FAILED = -1,
     CLEARCACHE_PROCESS,
     CLEARCACHE_SUCCESS
-    
 }CLEARCACHESTATUS;
-struct ClearCache
+class CClearCache
 {
-    CLEARCACHESTATUS eStatus;
-    int iStepCount;
-    int iCurStepIndex;
-    int iPrecent;
-    HANDLE hClearHandle;
-    ResetJiShuCallBack JiShuCallBack;
+public:
+    CClearCache();
+    ~CClearCache();
+    static CClearCache* GetInstance();
+    static void Release();
+    BOOL Start();
+    BOOL IsRuning();
+    void GetStatus(CLEARCACHESTATUS& eStatus, int& iPrecent);
+private:
+    static DWORD ClearCacheProc(LPVOID* lpParameter);
+    static void CallBack(int iPrecent, LPVOID* lpParameter);
+    void ScanMediaParse();
+private:
+    CLEARCACHESTATUS m_eStatus;
+    int m_iStepCount;
+    int m_iCurStepIndex;
+    int m_iPrecent;
+    HANDLE m_hClearHandle;
+    CMediaScan m_MediaScan;
+    static CClearCache* m_pInstance;
 };
 
-
-BOOL ClearCache_Start(struct ClearCache** pClearCache);
-void ClearCache_Release(struct ClearCache* pClearCache);
-#endif

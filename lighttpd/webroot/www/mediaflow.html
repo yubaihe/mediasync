@@ -29,7 +29,7 @@
 <style type="text/css">
 .grid-itemmedia { 
     float: left;
-    width: 33%; 
+    width: 32.5%; 
 }
 .mediaselect
 {
@@ -39,10 +39,14 @@
 {
     content:url(./img/picunsel.png);
 }
+.ignore
+{
+    display: none;
+    /* padding: 0vh; */
+}
 </style>
 <script>
-    //var ServerApi = new API("http://" + "47.104.165.97:8080");
-    var ServerApi = new API("http://" + window.location.host);
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var DeviceApi = new API("");
     function SetDefaultImg()
     {
@@ -50,14 +54,29 @@
             $(this).attr("src", "../img/background.png");
         });
     }
-    function RemoveItem(id)
+    function HideItem(id)
     {
-        grid.masonry('remove', $(".grid-item" + id) );
+        // grid.masonry( 'remove', $(".grid-item" + id) ).masonry('layout');
+        $(".grid-item" + id).addClass("ignore");
+        grid.masonry('layout');
+        CheckEmpty();
+    }
+    function ShowItem(id)
+    {
+        // grid.masonry( 'remove', $(".grid-item" + id) ).masonry('layout');
+        $(".grid-item" + id).removeClass("ignore");
+        grid.masonry('layout');
+        CheckEmpty();
+    }
+    var type = GetUrlParam("type");
+    if(type == null)
+    {
+        type = "recent";
     }
     var year = GetUrlParam("year");
     if(year == null)
     {
-        year = "recentupload";
+        year = 0;
     }
     var month = GetUrlParam("month");
     if(month == null)
@@ -92,7 +111,7 @@
         {
             return ;
         }
-        if(year == "recentupload")
+        if(type == "recent")
         {
             var str = "{\"action\":\"{0}\",\"page\":{1},\"limit\":{2},\"devnames\":\"{3}\",\"location\":\"{4}\"}".format("recentupload", pageindex, pepage, GetSelectDeviceString(), addr);
             ServerApi.request.recentupload(str,function(data,textStatus,jqXHR)
@@ -104,7 +123,7 @@
                 oldPageIndex = 0;
             });
         }
-        else if(year == "favorite")
+        else if(type == "favorite")
         {
             var str = "{\"action\":\"{0}\",\"page\":{1},\"limit\":{2},\"devnames\":\"{3}\",\"location\":\"{4}\"}".format("favorite", pageindex, pepage, GetSelectDeviceString(), addr);
             ServerApi.request.favorite(str,function(data,textStatus,jqXHR)
@@ -116,7 +135,7 @@
                 oldPageIndex = 0;
             });
         }
-        else if(year == "groupitem")
+        else if(type == "group")
         {
             var str = "{\"action\":\"{0}\",\"page\":{1},\"gid\":{2},\"limit\":{3},\"devnames\":\"{4}\"}".format("groupitemlist", pageindex, gid, pepage, GetSelectDeviceString());
             ServerApi.request.groupitemlist(str,function(data,textStatus,jqXHR)
@@ -128,9 +147,9 @@
                 oldPageIndex = 0;
             });
         }
-        else if(parseInt(year) != "NaN")
+        else
         {
-            var str = "{\"action\":\"{0}\",\"year\":{1},\"page\":{2},\"limit\":{3},\"devnames\":\"{4}\",\"location\":\"{5}\",\"month\":\"{6}\",\"day\":\"{7}\"}".format("yearitemlist", year, pageindex, pepage, GetSelectDeviceString(), addr, month, day);
+            var str = "{\"action\":\"{0}\",\"year\":{1},\"page\":{2},\"limit\":{3},\"devnames\":\"{4}\",\"location\":\"{5}\",\"month\":{6},\"day\":{7}}".format("yearitemlist", year, pageindex, pepage, GetSelectDeviceString(), addr, month, day);
             ServerApi.request.yearitemlist(str,function(data,textStatus,jqXHR)
             {
                 var jsonRoot = JSON.parse(data);
@@ -149,10 +168,6 @@
         {
             bFinish = true;
             ShowFinishPage();
-            if(g_curitemid > 0)
-            {
-                NextItem(g_curitemid);
-            }
             return;
         }
         for(var i = 0; i < items.length; ++i)
@@ -164,8 +179,27 @@
             var mediatype = items[i]["mtype"];
             var mediasize = items[i]["msize"];
             var mediaaddr = items[i]["maddr"];
+            var hasextra = items[i]["hasextra"];
+            var pinnedtime = items[i]["pinnedtime"];
             var html = $(".template .grid-itemmedia").prop("outerHTML");
             var itemdiv = $(html);
+            if(hasextra == 0)
+            {
+                itemdiv.find(".shikuang").eq(0).addClass("hidden");
+            }
+            else
+            {
+                itemdiv.find(".shikuang").eq(0).removeClass("hidden");
+            }
+            
+            if(typeof pinnedtime == "undefined" || pinnedtime == 0)
+            {
+                itemdiv.find(".pinned").eq(0).addClass("hidden");
+            }
+            else
+            {
+                itemdiv.find(".pinned").eq(0).removeClass("hidden");
+            }
             itemdiv.addClass("grid-item" + id);
             itemdiv.attr("itemid", id);
             itemdiv.attr("mediatype", mediatype);
@@ -173,7 +207,7 @@
             //itemdiv.find(".picname").eq(0).html(mediaaddr);
             itemdiv.find(".filesize").eq(0).html(SizeToString(mediasize));
             itemdiv.find(".mediapic").eq(0).attr("src", GetPic(mediaaddr));
-            if(mediatype == "1")
+            if(mediatype == 1)
             {
                 //图片
                 itemdiv.find(".videoinfo").eq(0).addClass("hidden");
@@ -194,11 +228,8 @@
             $(".grid").append(itemdiv).masonry("appended", itemdiv);
             //$(".itemdiv").removeClass("grid-item" + id);
         }
+        grid.masonry('layout');
         pageindex++;
-        if(g_curitemid > 0)
-        {
-            NextItem(g_curitemid);
-        }
     }
 
     function ShowFinishPage()
@@ -211,8 +242,8 @@
                 NextPage();
                 return;
             }
-            var iCount = $(".grid-itemmedia").length - 1;
-            
+            var iCount = $(".grid-itemmedia").length - 2;
+            console.log("总数量:" + iCount);
             $(".finishcontenttongji").html(LanguageText("总数量")+"( " + iCount + " )");
 
             if(gridHeight > windowHeight)
@@ -229,9 +260,6 @@
     var MainContainer = null;
     $(document).ready(function()
     {
-        LoadBaiduMapScript(function(){
-            CheckGps();
-        });
         var bodyHeight = $("body").height();
         DisableContextMenu();
         MainContainer = $('body').overlayScrollbars({ 
@@ -249,7 +277,7 @@
                 }
             }
         }).overlayScrollbars();
-        if(year == "recentupload")
+        if(type == "recent")
         {
             var str = "{\"action\":\"{0}\",\"page\":{1},\"limit\":{2},\"devnames\":\"{3}\"}".format("recentupload", pageindex, pepage, GetSelectDeviceString());
             ServerApi.request.recentupload(str,function(data,textStatus,jqXHR)
@@ -262,7 +290,7 @@
             {
             });
         }
-        else if(year == "favorite")
+        else if(type == "favorite")
         {
             var str = "{\"action\":\"{0}\",\"page\":{1},\"limit\":{2},\"devnames\":\"{3}\"}".format("favorite", pageindex, pepage, GetSelectDeviceString());
             ServerApi.request.favorite(str,function(data,textStatus,jqXHR)
@@ -275,7 +303,7 @@
             {
             });
         }
-        else if(year == "groupitem")
+        else if(type == "group")
         {
             var str = "{\"action\":\"{0}\",\"page\":{1},\"gid\":{2},\"limit\":{3},\"devnames\":\"{4}\"}".format("groupitemlist", pageindex, gid, pepage, GetSelectDeviceString());
             ServerApi.request.groupitemlist(str,function(data,textStatus,jqXHR)
@@ -288,12 +316,12 @@
             {
             });
         }
-        else if(parseInt(year) != "NaN")
+        else 
         {
-            var str = "{\"action\":\"{0}\",\"year\":{1},\"page\":{2},\"limit\":{3},\"devnames\":\"{4}\",\"location\":\"{5}\",\"month\":\"{6}\",\"day\":\"{7}\"}".format("yearitemlist", year, pageindex, pepage, GetSelectDeviceString(), addr, month, day);
+            var str = "{\"action\":\"{0}\",\"year\":{1},\"page\":{2},\"limit\":{3},\"devnames\":\"{4}\",\"location\":\"{5}\",\"month\":{6},\"day\":{7}}".format("yearitemlist", year, pageindex, pepage, GetSelectDeviceString(), addr, month, day);
             ServerApi.request.yearitemlist(str,function(data,textStatus,jqXHR)
             {
-                // console.log(data);
+                console.log(data);
                 var jsonRoot = JSON.parse(data);
                 AssembleItems(jsonRoot);
             
@@ -334,7 +362,7 @@
             ShowFinishPage();
             });
         grid.on( 'removeComplete', function(){
-            var iCount = $(".grid-itemmedia").length - 1;
+            var iCount = $(".grid-itemmedia").length - 2;
             if(iCount == 0)
             {
                 $(".nodatadiv").removeClass("hidden");
@@ -355,9 +383,16 @@
             DeviceApi.device.dataempty();
             return;
         }
+        // //添加头 否则隐藏第一个的时候 会错乱
+        var html = $(".template .grid-itemmedia").prop("outerHTML");
+        var itemdiv = $(html);
+        itemdiv.css("height" , "1px");
+        itemdiv.css("width" , "1px");
+        itemdiv.css("padding" , "1px");
+        $(".grid").append(itemdiv);
+        InitGrid();
         for(var i = 0; i < items.length; ++i)
         {
-            //"id": "9", "w": "2448", "h": "3264", "dur": "0", "mtype": "1", "msize": "11575152", "maddr": "2020\/IMG_2383.jpg" 
             var id = items[i]["id"];
             var width = items[i]["w"];
             var height = items[i]["h"];
@@ -365,15 +400,32 @@
             var mediatype = items[i]["mtype"];
             var mediasize = items[i]["msize"];
             var mediaaddr = items[i]["maddr"];
-
+            var hasextra = items[i]["hasextra"];
+            var pinnedtime = items[i]["pinnedtime"];
             var html = $(".template .grid-itemmedia").prop("outerHTML");
             //alert(html);
             var itemdiv = $(html);
+            if(hasextra == 0)
+            {
+                itemdiv.find(".shikuang").eq(0).addClass("hidden");
+            }
+            else
+            {
+                itemdiv.find(".shikuang").eq(0).removeClass("hidden");
+            }
+            if(typeof pinnedtime == "undefined" || pinnedtime == 0)
+            {
+                itemdiv.find(".pinned").eq(0).addClass("hidden");
+            }
+            else
+            {
+                itemdiv.find(".pinned").eq(0).removeClass("hidden");
+            }
             itemdiv.addClass("grid-item" + id);
             itemdiv.attr("itemid", id);
             itemdiv.attr("mediatype", mediatype);
             itemdiv.find(".imgdiv").eq(0).css("height" , GetHeight(width, height) + "px");
-            if(mediatype == "1")
+            if(mediatype == 1)
             {
                 //图片
                 itemdiv.find(".videoinfo").eq(0).addClass("hidden");
@@ -396,14 +448,14 @@
             OptMouseTouch(itemdiv);
             $(".grid").append(itemdiv).masonry("appended", itemdiv);
         }
-        InitGrid();
+        grid.masonry('layout');
         pageindex++;
     }
+    
     var g_OptMode = 0;
     var g_startX = 0;
     var g_startY = 0;
     var g_SelectDiv = null;
-    var g_curitemid = -1;
     function OptMouseTouch(itemdiv)
     {
         function DownOpt(itemdiv, event)
@@ -457,7 +509,7 @@
                 DownOpt(itemdiv, event);
             });
             itemdiv.on("touchmove", function(event){
-                console.log("touchmove");
+                //console.log("touchmove");
                 var curX = event.originalEvent.changedTouches[0].clientX;
                 var curY = event.originalEvent.changedTouches[0].clientY;
                 if(Math.abs(curX-g_startX) > 5 || Math.abs(curY-g_startY) > 5)
@@ -619,7 +671,7 @@
             var jsonRoot = JSON.parse(data);
             if(jsonRoot["status"] == 1)
             {
-                if(mediatype == "1")
+                if(mediatype == 1)
                 {
                     //图片
                     g_piccount++;
@@ -630,7 +682,7 @@
                     g_videocount++;
                 }
                 SetToast(LanguageText("剩余:") + g_removeitems.length);
-                RemoveItem(id);
+                HideItem(id);
                 RequestRemoveItem();
             }
             else
@@ -708,55 +760,30 @@
         }
         return -1;
     }
-
-
-    function NextItem(itemID)
+    function CheckEmpty()
     {
-        itemID = parseInt(itemID);
-        let bFind = false;
-        var iCount = $(".grid-itemmedia").length;
-        let itemindex = GetItemIndex(itemID);
-        itemindex++;
-        if(itemindex >= iCount - 1)
+        var iCount = $(".grid-itemmedia").length - 1;
+        console.log("ItemCount:" + iCount);
+        var hasShow = false;
+        //i = 1? 原因是第0个是预置的
+        for(var i = 1; i < iCount; ++i)
         {
-            if(bFinish)
+            if(false == $(".grid-itemmedia").eq(i).hasClass("ignore"))
             {
-                DeviceApi.device.ackitemid(-1 + "");
-                g_curitemid = -1;
-                return ;
+                hasShow = true;
+                break;
             }
-            g_curitemid = itemID;
-            NextPage();
-            return;
         }
-        let id = $(".grid-itemmedia").eq(itemindex).attr("itemid");
-        if(typeof id == "undefined")
+        if(hasShow == false)
         {
-            DeviceApi.device.ackitemid(-1 + "");
-            g_curitemid = -1;
-            return;
+            $(".nodatadiv").removeClass("hidden");
+            CancelSelectMode();
+            DeviceApi.device.dataempty();
         }
-        DeviceApi.device.ackitemid(id + "");
-        g_curitemid = -1;
-    }
-    function PrevItem(itemID)
-    {
-        itemID = parseInt(itemID);
-        let bFind = false;
-        let itemindex = GetItemIndex(itemID);
-        itemindex--;
-        if(itemindex < 0)
+        else
         {
-            DeviceApi.device.ackitemid(-1 + "");
-            return;
+            $(".nodatadiv").addClass("hidden");
         }
-        let id = $(".grid-itemmedia").eq(itemindex).attr("itemid");
-        if(typeof id == "undefined")
-        {
-            DeviceApi.device.ackitemid(-1 + "");
-            return;
-        }
-        DeviceApi.device.ackitemid(id + "");
     }
 </script>
 <body>
@@ -769,7 +796,7 @@
     <div class="finishcontent" style="display:none; width: 100%; height: 4vh; ">
         <div style="display:table-cell; vertical-align:middle; text-align: center; padding-left: 10px; padding-right: 10px;">
             <div style="background:linear-gradient(to left,#efefef, #ddd,#efefef);height:1px;"></div>
-            <div class="finishcontenttongji" style="color: #ccc;">我是有底线的</div>
+            <div class="finishcontenttongji" style="color: #ccc;">总数量(44)</div>
         </div>
     </div>
     <div class="hidden template" style="margin-left: 100px;">
@@ -781,12 +808,14 @@
                 <img class="mediapic" style="width: 100%; height: 100%; " src="./img/background.png"/>
             </div>
             <div class="picinfo" style="width: 100%; height: 3vh; background-color: #ffffff; position: relative;">
-                <div class="videoinfo" style="width: 60%; height: 3vh; float: left;">
-                    <div style="width: 2vh; height: 2vh; line-height: 2.5vh; float: left;"><img src="./img/video.png" width="100%" height="100%"></div>
-                    <div class="videoduration" style="float: left; margin-left: 0.5vh; font-size: 1rem; line-height: 3.2vh; color: #6F87A8;">01:23:10</div>
+                <div class="videoinfo" style="width: 60%; height: 100%; position: relative;display: flex;align-items: center;">
+                    <div style="width: 1.5vh; height: 1.5vh; "><img style="position: absolute;width: 1.5vh; height: 1.5vh;" src="./img/video.png" ></div>
+                    <div class="videoduration" style="margin-left: 0.5vh; font-size: 1rem; color: #6F87A8;">01:23:10</div>
                 </div>
-                <div class="filesize" style="float: right; width: 40%; height: 100%; font-size: 1rem; line-height: 3.2vh; color: #6F87A8; text-align: right;">100.42M</div>
+                <div class="filesize" style="position: absolute; right: 0; top: 0; width: 40%; height: 100%; font-size: 1rem; line-height: 3vh; color: #6F87A8; text-align: right;">100.42M</div>    
             </div>
+            <div class="shikuang" style="position: absolute;left: 0.5vh;top: 0.5vh;width: 3vh;height: 3vh;z-index: 2;"><img src="./img/shikuang.png" width="100%" height="100%"></div>
+            <div class="pinned" style="position: absolute;right: 0.5vh;top: 0.5vh;width: 3vh;height: 3vh;z-index: 2;"><img src="./img/pinned.png" width="100%" height="100%" style="opacity: 0.8;filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3)) drop-shadow(-2px -2px 4px rgba(255,255,255,0.5));"></div>
         </div>
     </div>
     <div  class="selectbottom" style="display: none; background-color:rgba(255, 255, 255, 0.9);  width: 100%; height: 7vh;  bottom: 0; position:fixed; box-shadow: 0 -5px 15px  #d0d2d3;">

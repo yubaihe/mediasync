@@ -20,7 +20,7 @@
 <script src="./bootstrap-datetimepicker/bootstrap-datetimepicker.min.js"></script>
 
 <script>
-    var ServerApi = new API("http://" + window.location.host);
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var DeviceApi = new API("");
     var languagename = GetUrlParam("languagename");
     if(languagename == null)

@@ -1,13 +1,14 @@
 .PHONY: all clean install
+name=ntp-dev-4.2.5p59
 all:
-	@make clean;
-	@tar -xvzf ntp-dev-4.2.5p59.tar.gz
-	@cd ./ntp-dev-4.2.5p59;./configure --prefix=$(shell pwd)/out $(CONFIGARGS) || exit $$?;make || exit $$?;make install;
+	@make clean
+	@tar -xvzf $(name).tar.gz
+	@cd ./$(name);./configure --prefix=$(shell pwd)/out $(CONFIGARGS) || exit $$?;make || exit $$?;make install;
 	@cd -;
 	@echo "---------------ntp finish----------------"
 install:
 	@mkdir -p $(ROOTDIR)/bin/ntp/
 	@cp -r $(shell pwd)/out/bin/** $(ROOTDIR)/bin/ntp/
 clean:
-	@[ -d ./ntp-dev-4.2.5p59 ] &  rm -rf ./ntp-dev-4.2.5p59
+	@[ -d ./$(name) ] &  rm -rf ./$(name)
 	@[ -d ./out ] &  rm -rf ./out

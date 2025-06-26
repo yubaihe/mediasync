@@ -1,624 +1,1197 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0,maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>展示视频和图片</title>
 </head>
-<link rel="stylesheet" href="./css/bootstrap.min.css"/>
-<link rel="stylesheet" href="./css/bootstrap-theme.min.css"/>
-<link rel="stylesheet" href="./css/animate.css"/>
-<link rel="stylesheet" href="./css/Common.css"/>
+<link rel="stylesheet" href="./css/bootstrap.min.css" />
+<link rel="stylesheet" href="./css/bootstrap-theme.min.css" />
+<link rel="stylesheet" href="./css/animate.css" />
+<link rel="stylesheet" href="./css/Common.css" />
+<link rel="stylesheet" href="css/swiper-bundle.min.css">
+<script src="js/swiper-bundle.min.js"></script>
 <script src="./js/Api.js?id=1"></script>
 <script src="./js/jquery-3.4.1.min.js"></script>
 <script src="./js/bootstrap.min.js"></script>
 <script src="./js/masonry.pkgd.min.js"></script>
 <script src="./js/imagesloaded.pkgd.min.js"></script>
-<script src="./js/Common.js"></script>
-<link rel="stylesheet" href="./css/dialog.css"/>
+<script src="./js/Common.js?id=1"></script>
+<script src="./js/jquery.base64.js"></script>
+<link rel="stylesheet" href="./css/dialog.css" />
 <script type="text/javascript" src="./js/dialog.min.js"></script>
 <script type="text/javascript" src="./js/Toast.js"></script>
 <script type="text/javascript" src="./js/LanguageOpt.js?id=2"></script>
 <!-- Plugin CSS -->
-<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet"/>
+<link type="text/css" href="./css/OverlayScrollbars.min.css" rel="stylesheet" />
 <!-- Plugin JS -->
 <script type="text/javascript" src="./js/jquery.overlayScrollbars.min.js"></script>
 
 <link href="./css/video-js.min.css" rel="stylesheet">
 <script src="./js/video.min.js"></script>
-
 <script src="./js/pinch-zoom.js"></script>
+<script src="./js/FigureDetect.js"></script>
+<script src="./js/baidumap.js"></script>
 <style type="text/css">
-    .video-js .vjs-volume-panel
-    {
+    .video-js .vjs-volume-panel {
         display: none !important;
     }
-    .video-js .vjs-big-play-button 
-    {
+
+    .video-js .vjs-big-play-button {
         display: none !important;
     }
-    .mediaitem { 
+
+    .vjs-volume-menu-button {
+        display: none !important;
+    }
+
+    .vjs-fullscreen-control {
+        display: none !important;
+    }
+    .mediaitem {
         position: relative;
         width: 98%;
         height: 7vh;
-        border-bottom:#e9e8e8 1px solid;
+        border-bottom: #e9e8e8 1px solid;
         margin: 0 auto;
         line-height: 7vh;
         white-space: nowrap;
 
     }
-    .mediaitemtitle
-    {
+
+    .mediaitemtitle {
         width: 13vh;
     }
+
     .vjs-big-play-button {
-    left: 50% !important;
-    top: 50% !important;
-    margin-left: -2em;
-    margin-top: -1.3em;
+        left: 50% !important;
+        top: 50% !important;
+        margin-left: -2em;
+        margin-top: -1.3em;
     }
-    video{
-        width: 100%; 
-        height: 100%; 
+
+    video {
+        width: 100%;
+        height: 100%;
         object-fit: fill;
     }
-    .MediaItemImage{
-	width: 100%;
-	height: 100%;
-	background-image: url(./img/background.png);
-    background-size: 100% 100%;
-}
-    #imgid
-    {
-    width: 100%;
-	height: 100%;
-	margin: 0 auto;
-	background-repeat:no-repeat;
-	background-size: 100% 100%;
-	background-position: center;
-}
-    </style>
+
+    .MediaItemImage {
+        width: 100%;
+        height: 100%;
+        background-image: url(./img/background.png);
+        background-size: 100% 100%;
+    }
 
 
+    .MediaItemImage>img {
+        width: 100%;
+        height: 100%;
+        margin: 0 auto;
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+        background-position: center;
+    }
+
+    .pinch-zoom-container {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .contentDiv {
+        overflow: hidden;
+    }
+</style>
 <script>
-    var ServerApi = new API("http://" + window.location.host);
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var DeviceApi = new API("");
-    var mPlayer = null;
-  
-    $(document).ready(function()
+    let g_selectDevNames = GetSelectDeviceString();
+    var g_mySwiper = null;
+    var g_iTouchTimerSec = 0;
+    //"{\"id\":\"%s\",\"w\":\"%s\",\"h\":\"%s\",\"dur\":\"%s\",\"mtype\":\"%s\",
+    // \"msize\":\"%s\",\"maddr\":\"%s\",\"device\":\"%s\",\"paitime\":\"%s\",\"weizhi\":\"%s\",\"location\":\"%s\",\"addtime\":\"%s\",\"favorite\":\"%d\",\"hasextra\":\"%s\"}"
+    var g_selectitem = null;
+    var g_overlayScrollbars;
+
+    var g_showContainerHeight = 0;
+    function ListenKeyBoard()
     {
-        FigureDetect($('.MediaItemImage'), function() {
-        // alert('长按触发了！');
-        if(g_extraurl.length > 0)
-        {
-            g_playextra = true;
-            ReSetContainer();
-        }
-        }, 1000, function(type){
-            if(type == "prev")
+        $(document).keydown(function(event) {
+            if(event.key === "Delete" || event.keyCode === 46) 
             {
-                console.log("上一个");
-                DeviceApi.device.previtem();
+                // 在这里执行删除键触发时的操作
+                console.log('左键被按下');
+                let iPageCount = g_mySwiper.slides.length;
+                for (let i = 0; i < iPageCount; ++i) 
+                {
+                    let item = $(g_mySwiper.slides[i]);
+                    if (item.attr("itemid") != g_selectitem.itemid) 
+                    {
+                        DeleteMediaItem();
+                        break;
+                    }
+                }
             }
-            else
-            {
-                console.log("下一个");
-                DeviceApi.device.nextitem();
-            }
-        }, 50);
-        FigureDetect($('.MediaItemVideo'), function() {
-        
-        }, 1000, function(type){
-            if(type == "prev")
-            {
-                console.log("上一个");
-                DeviceApi.device.previtem();
-            }
-            else
-            {
-                console.log("下一个");
-                DeviceApi.device.nextitem();
-            }
-        }, 50);
-        setTimeout(() => {
-            //SetInfo(9, 1,'http://192.168.110.12:80/media/2024/1736471891851.jpg','http://192.168.110.12:80/media/.media/2024/1736471891851_jpg.jpg','http://192.168.110.12:80/media/.media_ex/2024/1736471891851_jpg.mp4', 3000,4000,'2024-08-30 09:50:35','西藏自治区拉萨市城关区八角西街7号', '', '2025-01-10 09:18:12', '4.2MB', '0','0', 'M2007J17C');    
-        }, 500);
-        InitLanguage();
+        });
+    }
+    $(document).ready(function () {
         DisableContextMenu();
-        $('body').overlayScrollbars({ scrollbars:{autoHide:'scroll'}});
-        $(".favorite").click(function(){
-            var favorite = $(".favorite").attr("favorite");
-            DeviceApi.device.favorite(favorite);
-            //$(this).find('img').eq(0).attr("src", "./img/favorite.png");
-        });
-        $(".cover").click(function(){
-            var cover = $(".cover").attr("cover");
-            DeviceApi.device.cover(cover);
-            //$(this).find('img').eq(0).attr("src", "./img/favorite.png");
-        });
-        $(".mediaitemdel").click(function(){
-            ShowConfirm(LanguageText("确认"), LanguageText("删除后将永远丢失该媒体的存储,请确认!"), 1, LanguageText("按钮确定"), function(){
-            DeviceApi.device.confirm("1");
-        }, LanguageText("按钮取消"), function(){
-            //DeviceApi.device.confirm("0");
-            UnSetToast();
-        });
-        });
+        g_overlayScrollbars = $('.swiperMain').overlayScrollbars({ scrollbars: { autoHideDelay: 800, dragScrolling: true } }).overlayScrollbars();
+        //InitSwiper(118, "sda4", 0);
+        // InitItem('2025/1745802746496.mp4', 'year', 20, 0, '');
+        // InitItem('2025/1745802746496.mp4', 'year', 16, 0, '');
+        // setTimeout(() => {
+        //     RefreshCurItem();
+        // }, 1000);
+        RunInit();
+        ListenKeyBoard();
+        setInterval(() => {
+            if (null == g_mySwiper) {
+                return;
+            }
+            if ($(g_mySwiper.navigation.nextEl[0]).hasClass("hide")) {
+                return;
+            }
+            if (Date.now() / 1000 - g_iTouchTimerSec > 3) {
+                HideSwiperNav();
+            }
+        }, 1000);
     });
-    var g_selectGroupIds="";
-    function RequestGroupNamesFromItemID(itemid)
-    {
-        var str = "{\"action\":\"{0}\",\"id\":{1}}".format("groupnamesfromitemid", itemid);
-        ServerApi.request.groupdetail(str,function(data,textStatus,jqXHR)
-        {
+    function HideSwiperNav() {
+        $(g_mySwiper.navigation.nextEl[0]).addClass('hide');
+        $(g_mySwiper.navigation.prevEl[0]).addClass('hide');
+    }
+    function ShowSwiperNav() {
+        $(g_mySwiper.navigation.nextEl[0]).removeClass('hide');
+        $(g_mySwiper.navigation.prevEl[0]).removeClass('hide');
+    }
+
+    function InitSwiper() {
+        g_mySwiper = new Swiper('.swiper', {
+            direction: 'horizontal', // 垂直切换选项
+            hashNavigation: true,
+            // 如果需要前进后退按钮
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            keyboard: {
+                    enabled: true,
+                    onlyInViewport: false,
+                },
+            on: {
+                init: function (swiper) {
+                    g_mySwiper = swiper;
+                    RequestItem(g_itemid, true);
+                },
+                touchStart: function (swiper, event) {
+                    // console.log("touchStart");
+                    if(true == IsPc())
+                    {
+                        var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                        const customEvent = $.Event('mousedown', {originalEvent: event});
+                        $(activeSlide).find(".MediaItemImage").eq(0).trigger(customEvent);
+                    }
+                    g_iTouchTimerSec = Date.now() / 1000;
+                    ShowSwiperNav();
+                },
+                touchMove: function (swiper, event) {
+                    // console.log("touchMove");
+                    if(true == IsPc())
+                    {
+                        var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                        const customEvent = $.Event('mousemove', {originalEvent: event});
+                        $(activeSlide).find(".MediaItemImage").eq(0).trigger(customEvent);
+                    }
+                    g_iTouchTimerSec = Date.now() / 1000;
+                },
+                touchEnd: function (swiper, event) {
+                    // console.log("touchEnd");
+                    if(true == IsPc())
+                    {
+                        var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                        const customEvent = $.Event('mouseup', {originalEvent: event});
+                        $(activeSlide).find(".MediaItemImage").eq(0).trigger(customEvent);
+                    }
+                    g_iTouchTimerSec = Date.now() / 1000;
+                },
+                transitionEnd: function () {
+                    g_iTouchTimerSec = Date.now() / 1000;
+                    if (g_mySwiper.slides.length == 0) {
+                        g_selectitem = null;
+                        return;
+                    }
+                    var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                    let itemid = parseInt($(activeSlide).attr("itemid"));
+                    console.log("-----" + g_selectitem.id + "------------");
+                    $(".swiper").css("height", $(activeSlide).find(".contentDiv").eq(0).height()+"px");
+                    if (g_selectitem.id == itemid) {
+                        return;
+                    }
+                    RequestItem(itemid, false);
+                }
+            }
+        });
+    }
+    function SetNextItem(item) {
+        let itemid = item.id;
+        console.log("SetNextItem:" + itemid);
+        var html = $(".itemtemplate").html();
+        var itemDiv = $(html);
+        itemDiv.attr("itemid", itemid);
+        itemDiv.addClass("item" + itemid);
+        g_mySwiper.appendSlide(itemDiv.prop("outerHTML"));
+        itemDiv = $(".item" + itemid);
+        SetInfo(itemDiv, item);
+    }
+    function SetPrevItem(item) {
+        let itemid = item.id;
+        console.log("SetPrevItem:" + itemid);
+        var html = $(".itemtemplate").html();
+        var itemDiv = $(html);
+        itemDiv.attr("itemid", itemid);
+
+        itemDiv.addClass("item" + itemid);
+        g_mySwiper.addSlide(0, itemDiv.prop("outerHTML"));
+        itemDiv = $(".item" + itemid);
+        SetInfo(itemDiv, item);
+    }
+    function SetCurItem(item) {
+        let itemid = item.id;
+        console.log("SetCurItem:" + itemid);
+        if ($(".item" + itemid).length == 0) {
+            var html = $(".itemtemplate").html();
+            var itemDiv = $(html);
+            itemDiv.attr("itemid", itemid);
+            itemDiv.addClass("item" + itemid);
+
+            g_mySwiper.appendSlide(itemDiv.prop("outerHTML"));
+        }
+        var itemDiv = $(".item" + itemid);
+        SetInfo(itemDiv, item);
+    }
+    function AssembleItems(jsonRoot) {
+        let hasPrev = jsonRoot.hasOwnProperty("prev");
+        let hasNext = jsonRoot.hasOwnProperty("next");
+        if (g_mySwiper.slides.length == 0) {
+            g_selectitem = jsonRoot["cur"];
+            DeviceApi.device.selectitemchange(JSON.stringify(g_selectitem));
+            SetCurItem(jsonRoot["cur"]);
+            if (true == hasPrev) {
+                SetPrevItem(jsonRoot["prev"]);
+            }
+            if (true == hasNext) {
+                SetNextItem(jsonRoot["next"]);
+            }
+            if (g_mySwiper.slides.length == 3) {
+                g_mySwiper.slideTo(1, 0, false);
+            }
+            else {
+                if (true == hasPrev) {
+                    g_mySwiper.slideTo(1, 0, false);
+                }
+                else if (true == hasNext) {
+                    g_mySwiper.slideTo(0, 0, false);
+                }
+                else {
+                    g_mySwiper.slideTo(0, 0, false);
+                }
+            }
+            CheckMedia();
+            return;
+        }
+        let curItemID = jsonRoot["cur"]["id"];
+        if (curItemID == g_selectitem.id) {
+            return;
+        }
+        g_selectitem = jsonRoot["cur"];
+        DeviceApi.device.selectitemchange(JSON.stringify(g_selectitem));
+        let curindex = -1;
+        for (let i = 0; i < g_mySwiper.slides.length; ++i) {
+            let item = $(g_mySwiper.slides[i]);
+            if (item.attr("itemid") == curItemID) {
+                curindex = i;
+                break;
+            }
+        }
+        console.log("curindex:" + curindex);
+        if (curindex == 1) {
+            if (g_mySwiper.slides.length == 3) {
+                console.log("当前在中间不处理");
+                return;
+            }
+        }
+        if (curindex == 0) {
+            //往右滑动->
+            if (false == hasPrev) {
+                console.log("hasPrev直接返回");
+                return;
+            }
+
+            //删除最后一个 增加前面一个
+            if (g_mySwiper.slides.length == 3) {
+                console.log("删除最后一个");
+                DestoryMedia(g_mySwiper.slides.length - 1);
+                g_mySwiper.removeSlide(g_mySwiper.slides.length - 1);
+            }
+            console.log("增加前面一个");
+            SetPrevItem(jsonRoot["prev"]);
+        }
+        else if (curindex == 2 || curindex == 1) {
+            //往左滑动<-
+            if (false == hasNext) {
+                console.log("hasNext直接返回");
+                return;
+            }
+            //console.log("删除第一个 增加后面一个");
+            if (g_mySwiper.slides.length == 3) {
+                console.log("删除第一个");
+                DestoryMedia(0);
+                g_mySwiper.removeSlide(0);
+            }
+            console.log("增加后面一个");
+            SetNextItem(jsonRoot["next"]);
+        }
+    }
+    var g_cover = "";
+    var g_year = 0;
+    var g_month = 0;
+    var g_day = 0;
+    var g_location = "";
+    var g_type = "";
+    var g_itemid = 0;
+    var g_gid = 0;
+    function InitItem(cover, type, itemid, gid, location) {
+        g_cover = cover;
+        g_type = type;
+        g_gid = gid;
+        g_location = location;
+        var str = "{\"action\":\"{0}\",\"itemid\":{1},\"devnames\":\"{2}\",\"type\":\"{3}\",\"gid\":{4},\"year\":{5},\"month\":{6},\"day\":{7},\"location\":\"{8}\"}".format(
+            "itemdetail", itemid, "", "", 0, 0, 0, 0, "");
+        ServerApi.request.itemdetail(str, function (data, textStatus, jqXHR) {
             console.log(data);
             var jsonRoot = JSON.parse(data);
-            if(jsonRoot["status"] !=1)
-            {
-                $(".suoshufenzuvalue").html(LanguageText("未知"));
+            if (jsonRoot["status"] != 1) {
+                return;
+            }
+            let item = jsonRoot.cur;
+            var date = new Date(item.paitime * 1000);
+            if (g_type == "recent" || g_type == "favorite" || g_type == "group") {
+
+            }
+            else if (g_type == "year") {
+                g_year = date.getFullYear();
+            }
+            else if (g_type == "month") {
+                g_year = date.getFullYear();
+                g_month = date.getMonth() + 1;
+            }
+            else if (g_type == "day") {
+                g_year = date.getFullYear();
+                g_month = date.getMonth() + 1;
+                g_day = date.getDate();
+            }
+            else if (g_type == "location") {
+                g_year = date.getFullYear();
+            }
+            RequestItem(item.id, false);
+        });
+    }
+
+    function RequestItem(itemid, resetall) {
+        g_itemid = itemid;
+        if (null == g_mySwiper) {
+            InitLanguage();
+            InitSwiper();
+            return;
+        }
+
+        var str = "{\"action\":\"{0}\",\"itemid\":{1},\"devnames\":\"{2}\",\"type\":\"{3}\",\"gid\":{4},\"year\":{5},\"month\":{6},\"day\":{7},\"location\":\"{8}\"}".format(
+            "itemdetail", itemid, g_selectDevNames, g_type, g_gid, g_year, g_month, g_day, g_location);
+        ServerApi.request.itemdetail(str, function (data, textStatus, jqXHR) {
+            console.log(data);
+            var jsonRoot = JSON.parse(data);
+            if (true == resetall) {
+                for (let i = 0; i < g_mySwiper.slides.length; ++i) {
+                    DestoryMedia(i);
+                }
+                g_mySwiper.removeAllSlides();
+            }
+            AssembleItems(jsonRoot);
+            CheckMedia();
+        }, function () {
+            console.log("request error");
+        });
+    }
+    function InitLanguage() {
+        $(".fenbianlvlabel").html(LanguageText("分辨率:"));
+        $(".mediasizelabel").html(LanguageText("媒体大小:"));
+        $(".mediadurationlabel").html(LanguageText("持续时间:"));
+        $(".mediadevicenamelabel").html(LanguageText("设备名称:"));
+        $(".mediasynctimelabel").html(LanguageText("同步时间:"));
+        $(".mediagrouplabel").html(LanguageText("所属分组:"));
+        $(".mediapaitimelabel").html(LanguageText("拍摄时间:"));
+        $(".mediapaiaddrlabel").html(LanguageText("拍摄地点:"));
+        $(".paishedidian").html(LanguageText("获取中..."));
+        $(".mediaremovelabel").html(LanguageText("删 除"));
+    }
+    function RequestGroupNamesFromItemID(itemDiv, itemid) {
+        var str = "{\"action\":\"{0}\",\"id\":{1}}".format("groupnamesfromitemid", itemid);
+        ServerApi.request.groupdetail(str, function (data, textStatus, jqXHR) {
+            console.log(data);
+            var jsonRoot = JSON.parse(data);
+            if (jsonRoot["status"] != 1) {
+                $(itemDiv).find(".suoshufenzuvalue").eq(0).html(LanguageText("未知"));
                 return;
             }
             var GroupNames = "";
-            g_selectGroupIds = "";
-            for(var i = 0; i < jsonRoot["groups"].length; ++i)
-            {
-                if(GroupNames.length == 0)
-                {
+            let selectGroupIds = "";
+            for (var i = 0; i < jsonRoot["groups"].length; ++i) {
+                if (GroupNames.length == 0) {
                     GroupNames = jsonRoot["groups"][i].name;
-                    g_selectGroupIds = jsonRoot["groups"][i].id;
+                    selectGroupIds = jsonRoot["groups"][i].id;
+                }
+                else {
+                    GroupNames += "&";
+                    GroupNames += jsonRoot["groups"][i].name;
+                    selectGroupIds += "&";
+                    selectGroupIds += jsonRoot["groups"][i].id;
+                }
+            }
+            $(itemDiv).find(".suoshufenzuvalue").eq(0).attr("selectgroupids", selectGroupIds);
+            if (GroupNames.length == 0) {
+                $(itemDiv).find(".suoshufenzuvalue").eq(0).html(LanguageText("未分组"));
+            }
+            else {
+                $(itemDiv).find(".suoshufenzuvalue").eq(0).html(GroupNames);
+            }
+        });
+    }
+    
+    function ResetAllPage(itemid) {
+        let iPageCount = g_mySwiper.slides.length;
+        let iNewItemID = -1;
+        for (let i = iPageCount - 1; i > 0; --i) {
+            let item = $(g_mySwiper.slides[i]);
+            console.log("Scan: " + item.attr("itemid") + " " + itemid);
+            if (item.attr("itemid") != itemid) {
+                iNewItemID = item.attr("itemid");
+                break;
+            }
+        }
+        console.log("iNewItemID: " + iNewItemID);
+        if (iNewItemID == -1) {
+            //没有了
+            DeviceApi.device.closewindow();
+            return;
+        }
+        RequestItem(iNewItemID, true);
+    }
+    function RefreshCurItem() {
+        if (null == g_selectitem) {
+            return;
+        }
+        var str = "{\"action\":\"{0}\",\"itemid\":{1},\"devnames\":\"{2}\",\"type\":\"{3}\",\"gid\":{4},\"year\":{5},\"month\":{6},\"day\":{7},\"location\":\"{8}\"}".format("itemdetail",
+            g_selectitem.id, "", "", 0, 0, 0, 0, "");
+        ServerApi.request.itemdetail(str, function (data, textStatus, jqXHR) {
+            console.log(data);
+            var jsonRoot = JSON.parse(data);
+            if (jsonRoot["status"] != 1) {
+                return;
+            }
+            let item = jsonRoot.cur;
+            var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+            var date = new Date(item.paitime * 1000);
+            var dateTime = date.toLocaleString();
+            $(activeSlide).find(".paisheshijian").eq(0).html(dateTime);
+            let location = item.location.length == 0?LanguageText("待定位"):item.location;
+            $(activeSlide).find(".paishedidian").eq(0).html(location);
+            RequestGroupNamesFromItemID(activeSlide, item.id);
+        });
+    }
+    let g_MediaObjectMap = new Map();
+    function CheckMedia() {
+        let keys = Array.from(g_MediaObjectMap.keys());
+        for (let i = 0; i < keys.length; ++i) {
+            let value = g_MediaObjectMap.get(keys[i]);
+            let isVideo = typeof value.play === 'function';
+            if (true == isVideo) {
+                value.pause();
+            }
+        }
+        keys = Array.from(g_MediaExtraMap.keys());
+        for (let i = 0; i < keys.length; ++i) {
+            let value = g_MediaExtraMap.get(keys[i]);
+            value.pause();
+        }
+        g_overlayScrollbars.scroll({ x: 0, y: 0 });
+        ResizeContent();
+        var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+        let itemid = parseInt($(activeSlide).attr("itemid"));
+        console.log("select " + itemid);
+        if (g_selectitem.mtype == 2) {
+            console.log("Video");
+            if (false == g_MediaObjectMap.has(itemid)) {
+                let width = $(activeSlide).find(".mediacontent").eq(0).width();
+                let height = $(activeSlide).find(".mediacontent").eq(0).height();
+                let player = videojs("player" + itemid, {}, function onPlayerReady() {
+                    g_MediaObjectMap.set(itemid, player);
+                    player.play().then(() => {
+                        console.log('Video is playing successfully.');
+                    }).catch(error => {
+                        if (error.name === 'NotAllowedError') {
+                            console.log('An error occurred:' + error.name);
+                        }
+                    });
+                });
+                player.width(width);
+                player.height(height);
+                player.poster(GetThumbUrl(g_selectitem.maddr));
+                player.ready(function () {
+                    const progressBar = player.controlBar.progressControl.el();
+                    // 鼠标移入时高亮
+                    progressBar.addEventListener('mouseenter', (e) => {
+                        g_mySwiper.allowTouchMove = false;
+                    });
+                    // 鼠标移出时恢复
+                    progressBar.addEventListener('mouseleave', (e) => {
+                        g_mySwiper.allowTouchMove = true;
+                    });
+                    let src = GetUrl(g_selectitem.maddr);
+                    console.log(src);
+                    player.src(src);
+                });
+            }
+            else {
+                let player = g_MediaObjectMap.get(itemid);
+                player.play();
+            }
+        }
+        else {
+            console.log("image");
+            if (false == g_MediaObjectMap.has(itemid)) {
+                let el = $(activeSlide).find(".MediaItemImage > img").eq(0).get(0);
+                pinZoom = new PinchZoom(el, { draggableUnzoomed: false });
+                g_MediaObjectMap.set(itemid, pinZoom);
+            }
+            else {
+                let pinZoom = g_MediaObjectMap.get(itemid);
+                pinZoom.zoomOutAnimation();
+            }
+            if (g_selectitem.hasextra == 1) {
+                PlayExtraVideo($(activeSlide), g_selectitem.maddr);
+            }
+        }
+        ShowSwiperNav();
+    }
+    function DestoryMedia(index) {
+        var Slide = g_mySwiper.slides[index];
+        let itemid = parseInt($(Slide).attr("itemid"));
+        if (true == g_MediaExtraMap.has(itemid)) {
+            console.log("delete extraplayer");
+            let player = g_MediaExtraMap.get(itemid);
+            g_MediaExtraMap.delete(itemid);
+            player.pause();
+            player.dispose();
+            player = null;
+        }
+        if ($(Slide).find(".mediacontent").eq(0).attr("mtype") == 2) {
+            if (true == g_MediaObjectMap.has(itemid)) {
+                let player = g_MediaObjectMap.get(itemid);
+                g_MediaObjectMap.delete(itemid);
+                player.pause();
+                player.dispose();
+                player = null;
+            }
+        }
+        else {
+            if (true == g_MediaObjectMap.has(itemid)) {
+                let pinZoom = g_MediaObjectMap.get(itemid);
+                g_MediaObjectMap.delete(itemid);
+                pinZoom.destroy();
+                pinZoom = null;
+            }
+        }
+    }
+    let g_MediaExtraMap = new Map();
+    function PlayExtraVideo(itemDiv, addr) {
+        let itemid = parseInt($(itemDiv).attr("itemid"));
+        if (true == g_MediaExtraMap.has(itemid)) {
+                let player = g_MediaExtraMap.get(itemid);
+                player.currentTime(0);
+                player.play();
+                return;
+            }
+        setTimeout(() => {
+            var Slide = g_mySwiper.slides[g_mySwiper.activeIndex];
+            let iactivetemid = parseInt($(Slide).attr("itemid"));
+            if (iactivetemid != itemid) {
+                console.log("activeitemid:" + iactivetemid + "  " + itemid);
+                return;
+            }
+            console.log("new extraplayer");
+            let width = $(itemDiv).find(".mediacontent").eq(0).width();
+            let height = $(itemDiv).find(".mediacontent").eq(0).height();
+            let play = videojs("player" + itemid, { controls: false }, function onPlayerReady() {
+                this.src(GetExtraUrl(addr));
+                console.log(GetExtraUrl(addr));
+                this.on("canplaythrough", function () {
+                    this.play();
+                });
+                this.on("playing", function () {
+                    console.log("playing");
+                    console.log($(Slide));
+                    $(Slide).find(".MediaItemVideo").eq(0).removeClass("hidden");
+                    $(Slide).find(".MediaItemImage").eq(0).addClass("hidden");
+                });
+                this.on("ended", function () {
+                    $(Slide).find(".MediaItemVideo").eq(0).addClass("hidden");
+                    $(Slide).find(".MediaItemImage").eq(0).removeClass("hidden");
+                });
+            });
+            play.width(width);
+            play.height(height);
+            play.poster(GetThumbUrl(addr));
+            g_MediaExtraMap.set(itemid, play);
+        }, 1000);
+    }
+    function InitVideo(itemid, addr, extra)
+    {
+        console.log(itemid + "   " + addr + "   " + extra);
+        let itemDiv = $(".item" + itemid);
+        let width = $(itemDiv).find(".mediacontent").eq(0).width();
+        let height = $(itemDiv).find(".mediacontent").eq(0).height();
+        let player = videojs("player" + itemid, { controls: false }, function onPlayerReady() {
+                
+                // this.on('timeupdate', function() {
+                //     console.log("timeupdate");
+                //     var Slide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                //     let iactivetemid = parseInt($(Slide).attr("itemid"));
+                //     if(iactivetemid != itemid)
+                //     {
+                //         player.pause();
+                //     }
+                // });
+                var Slide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                let iactivetemid = parseInt($(Slide).attr("itemid"));
+                if(iactivetemid != itemid)
+                {
+                    player.pause();
                 }
                 else
                 {
-                    GroupNames += "&";
-                    GroupNames += jsonRoot["groups"][i].name;
-                    g_selectGroupIds += "&";
-                    g_selectGroupIds += jsonRoot["groups"][i].id;
+                    this.play();
+                }
+                if(1 == extra)
+                {
+                    this.src(GetExtraUrl(addr));
+                    console.log(GetExtraUrl(addr));
+                    this.on("playing", function () {
+                        console.log("playing");
+                        var curSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                        $(curSlide).find(".MediaItemVideo").eq(0).removeClass("hidden");
+                        $(curSlide).find(".MediaItemImage").eq(0).addClass("hidden");
+                    });
+                    this.on("ended", function () {
+                        var curSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                        $(curSlide).find(".MediaItemVideo").eq(0).addClass("hidden");
+                        $(curSlide).find(".MediaItemImage").eq(0).removeClass("hidden");
+                    });
+                    } 
+                else
+                {
+                    player.controls(true);
+                    this.src(GetUrl(addr));
+                    console.log(GetUrl(addr));
+                    this.on("canplaythrough", function () 
+                    {
+                        console.log(itemid + "canplaythrough");
+                        
+                    });
+                    this.ready(function () {
+                    const progressBar = this.controlBar.progressControl.el();
+                        // 鼠标移入时高亮
+                        progressBar.addEventListener('mouseenter', (e) => {
+                            g_mySwiper.allowTouchMove = false;
+                        });
+                        // 鼠标移出时恢复
+                        progressBar.addEventListener('mouseleave', (e) => {
+                            g_mySwiper.allowTouchMove = true;
+                        });
+                    });
                 }
             }
-            if(GroupNames.length == 0)
-            {
-                $(".suoshufenzuvalue").html(LanguageText("未分组"));
-            }
-            else
-            {
-                $(".suoshufenzuvalue").html(GroupNames);
-            }
-        });
-    }
-var g_PinchZoom;
-var g_picscale = 0;
-var g_picoriginalheight = 0;
-var g_mediatype = 0;
-var g_extraurl = "";
-var g_playextra = false;
-$(window).on('resize', function() {
-    if(g_picscale == 0)
-    {
-        return;
-    }
-    var iScreenWidth = $(document.body).width();
-    var iMediaContentHeight = g_picoriginalheight * g_picscale;
-    SetContainer(iScreenWidth, iMediaContentHeight);
-});
-function SetContainer(containerwidth, containerheight)
-{
-    var iMaxHeight = $(document.body).height();
-    if(g_mediatype == 1)
-    {
-        //图片需要留点空隙 否则无法滚动看详情，与图片的缩放相冲突了
-        iMaxHeight -= $(".mediaitem").eq(0).height();
-    }
-    if(containerheight > iMaxHeight)
-    {
-        containerheight = iMaxHeight;
-    }
-    if(null != mPlayer)
-    {
-        mPlayer.width(containerwidth);
-        mPlayer.height(containerheight);
-    }
-    $(".mediacontent").css("width", containerwidth + "px");
-    $(".mediacontent").css("height", containerheight + "px");
-    $(".mediacontent > .MediaItemImage").css("width", containerwidth + "px");
-    $(".mediacontent > .MediaItemImage").css("height", containerheight + "px");
-}
-function ReSetContainer()
-{
-    if(true == g_playextra)
-    {
-        $(".MediaItemVideo").removeClass("hidden");
-        $(".MediaItemImage").addClass("hidden");
-        mPlayer.play();
-    }
-    else
-    {
-        $(".MediaItemVideo").addClass("hidden");
-        $(".MediaItemImage").removeClass("hidden");
-    }
-}
-
-// 长按事件处理程序
-function FigureDetect(element, longPresscallBack, duration, swipecallback, swipewidth) 
-{
-  let touchStart, timeout,downtime;
-  element.on('touchstart', function(event) {
-    console.log("touchstart");
-    downtime = Date.now();
-    touchStart = event.originalEvent.changedTouches[0].clientX;
-    timeout = setTimeout(function() {
-        longPresscallBack();
-    }, duration);
-  });
- 
-  element.on('touchmove', function(event) {
-    console.log("touchmove");
-    // 如果移动超过一定距离，则不触发长按
-    var curX = event.originalEvent.changedTouches[0].clientX;
-    if (Math.abs(curX - touchStart) > 10) 
-    {
-      clearTimeout(timeout);
-    }
-  });
- 
-  element.on('touchend', function(event) {
-    console.log("touchend");
-    clearTimeout(timeout);
-    console.log(event);
-    var curX = event.originalEvent.changedTouches[0].clientX;
-    if (curX - touchStart > swipewidth) 
-    {
-        if((Date.now() - downtime) > 200)
-        {
-            return;
-        }
-        swipecallback("prev");
-    }
-    if (touchStart - curX > swipewidth) 
-    {
-        if((Date.now() - downtime) > 200)
-        {
-            return;
-        }
-        swipecallback("next");
-    }
-  });
-
-  element.on('mousedown', function(e) {
-    downtime = Date.now();
-    console.log("mousedown");
-    touchStart = e.pageX;
-    timeout = setTimeout(function() 
-    {
-        longPresscallBack();
-    }, duration);
-  });
- 
-  element.on('mousemove', function(e) {
-    console.log("mousemove");
-    // 如果移动超过一定距离，则不触发长按
-    if (Math.abs(e.pageX - touchStart) > 10) 
-    {
-      clearTimeout(timeout);
-    }
-  });
- 
-  element.on('mouseup', function(e) {
-    console.log("mouseup");
-    clearTimeout(timeout);
-    if (e.pageX - touchStart > swipewidth) 
-    {
-        if((Date.now() - downtime) > 200)
-        {
-            return;
-        }
-        swipecallback("prev");
-    }
-    if (touchStart - e.pageX > swipewidth) 
-    {
-        if((Date.now() - downtime) > 200)
-        {
-            return;
-        }
-        swipecallback("next");
-    }
-  });
-}
-function PlayExtraVideo(thumb, containerwidth, containerheight)
-{
-    if(true == g_playextra)
-    {
-        $(".MediaItemVideo").removeClass("hidden");
-        $(".MediaItemImage").addClass("hidden");
-        $(".vjs-volume-menu-button").css("display", "none");
-        $(".vjs-fullscreen-control").css("display", "none");
-        $(".vjs-control-bar").css("display", "none");
-        $(".vjs-loading-spinner").css("display", "none");
-        
-        mPlayer = videojs("videoid",{},function onPlayerReady() {
-            // videojs.log("播放器已经准备好了!");
-            this.on("ended", function () {
-                g_playextra = false;
-                ReSetContainer();
-            })
-        });
-        mPlayer.width(containerwidth);
-        mPlayer.height(containerheight);
-        mPlayer.poster(thumb);
-        //http://47.104.165.97:8080/media/2020/VID_20200428_162537_1.mp4
-        mPlayer.ready(function(){
-        mPlayer.src(g_extraurl); /*动态设置video.js播放的地址。*/
-        
-        mPlayer.play();
-    });
-    }
-}
-function SetInfo(id, mediatype, url, thumb, extraurl, width, height, paitime, location, dur, synctime,msize,favorite,cover,name)
-{
-    g_extraurl = extraurl;
-    if(g_extraurl.length > 0)
-    {
-        g_playextra = true;
-    }
-    RequestGroupNamesFromItemID(id);
-    $(".contentDiv").removeClass("hidden");
-    $(".fenbianlv").html(width + " X " + height);
-    $(".favorite").attr("favorite", favorite);
-    if(favorite == "1")
-    {
-        $(".favorite").find('img').eq(0).attr("src", "./img/favorite.png");
-    }
-    else
-    {
-        $(".favorite").find('img').eq(0).attr("src", "./img/nofavorite.png");
-    }
-    $(".cover").attr("cover", cover);
-    if(cover == "1")
-    {
-        $(".cover").find('img').eq(0).attr("src", "./img/cover.png");
-    }
-    else
-    {
-        $(".cover").find('img').eq(0).attr("src", "./img/nocover.png");
-    }
-
-    $(".mediaitemdur").html(dur);
-
-    $(".paisheshijian").html(paitime);
-    $(".mediaitemsize").html(msize);
-    $(".mediaitemsynctime").html(synctime);
-    $(".mediaitemname").html(name);
-    if(location == ""||location=="未知")
-    {
-        SetPlayAddr(LanguageText("未知"));
-    }
-    else if(location == "待定位")
-    {
-        SetPlayAddr(LanguageText("待定位"));
-    }
-    else
-    {
-        SetPlayAddr(location);
-    }
-    
-    if(mediatype == 1)
-    {
-        
-        $(".chixushijian").addClass("hidden");
-        $(".MediaItemImage").removeClass("hidden");
-        $(".MediaItemVideo").addClass("hidden");
-        $(".MediaItemImage > img").attr("src",  url);
-        if(null == g_PinchZoom)
-        {
-            let el = document.querySelector('#imgid');
-            g_PinchZoom = new PinchZoom(el, {
-                draggableUnzoomed:false
-            });
-        }
-    }
-    else
-    {
-        $(".chixushijian").removeClass("hidden");
-
-        $(".MediaItemVideo").removeClass("hidden");
-        $(".MediaItemImage").addClass("hidden");
-
-        $(".vjs-volume-menu-button").css("display", "none");
-        $(".vjs-fullscreen-control").css("display", "none");
-        
-        mPlayer = videojs("videoid",{},function onPlayerReady() {
-            // videojs.log("播放器已经准备好了!");
-            this.on("ended", function () {
-                mPlayer.play();
-            })
-        }
         );
-        // mPlayer.width(iScreenWidth);
-        // mPlayer.height(iMediaContentHeight);
-        mPlayer.poster(thumb);
-        //http://47.104.165.97:8080/media/2020/VID_20200428_162537_1.mp4
-        mPlayer.ready(function(){
-        mPlayer.src(url); /*动态设置video.js播放的地址。*/
-        mPlayer.play();
-        });
-    }
-    var iScreenWidth = $(document.body).width();
-    g_picscale = (iScreenWidth*1.0)/width;
-    g_picoriginalheight = height;
-    g_mediatype = mediatype;
-    var iMediaContentHeight = height*g_picscale;
-    
-    SetContainer(iScreenWidth, iMediaContentHeight); 
-    setTimeout(() => 
-    {
-        //延时一下 不然照片显示不出来
-        if(true == g_playextra)
+        player.width(width);
+        player.height(height);
+        player.poster(GetThumbUrl(addr));
+        if(1 == extra)
         {
-            PlayExtraVideo(url, iScreenWidth, iMediaContentHeight);
-            $("#imghasextra").removeClass("hidden");
+            g_MediaExtraMap.set(itemid, player);
         }
         else
         {
-            $("#imghasextra").addClass("hidden");
+            g_MediaObjectMap.set(itemid, player);
         }
-    }, 500);
-}
-  
-function StopPlay()
-{
-    if(null != mPlayer)
-    {
-        mPlayer.pause();
     }
-}
+    var g_supportGps = IsSupportGps();
+    function SetPlayAddr(itemdiv, location, weizhi) 
+    {
+        addr = LanguageText(location);
+        $(itemdiv).find(".paishedidian").eq(0).html(addr);
+        if(false == g_supportGps)
+        {
+            $(itemdiv).find(".playaddrdetail").eq(0).addClass("hidden");
+            $(itemdiv).find(".playaddr").eq(0).removeClass("canclick");
+            return;
+        }
+        $(itemdiv).find(".playaddr").eq(0).off('click');
+        $(itemdiv).find(".playaddr").eq(0).click(function () 
+        {
+            let json = {};
+            json["id"] = $(itemdiv).attr("itemid");
+            json["weizhi"] = weizhi;
+            json["location"] = location;
+            DeviceApi.device.gpsaddress(JSON.stringify(json));
+        });
+    }
+    function SetInfo(itemDiv, item) {
+        let itemid = item.id;
+        let width = item.w;
+        let height = item.h;
+        let dur = item.dur;
+        let mediatype = item.mtype;
+        let favorite = item.favoritetime > 0?1:0;
+        let paitime = item.paitime;
+        let msize = item.msize;
+        let synctime = item.addtime;
+        let name = item.device;
+        let location = item.location;
+        let cover = item.maddr == g_cover ? 1 : 0;
+        $(itemDiv).find(".contentDiv").eq(0).removeClass("hidden");
+        $(itemDiv).find(".fenbianlv").eq(0).html(width + " X " + height);
+        $(itemDiv).find(".favorite").eq(0).attr("favorite", favorite);
+        if (favorite == 1) {
+            $(itemDiv).find(".favorite").eq(0).find('img').eq(0).attr("src", "./img/favorite.png");
+        }
+        else {
+            $(itemDiv).find(".favorite").eq(0).find('img').eq(0).attr("src", "./img/nofavorite.png");
+        }
+        
+        if (item.pinnedtime > 0)
+        {
+            $(itemDiv).find(".pinned").eq(0).attr("pinned", "1");
+            $(itemDiv).find(".pinned").eq(0).find('img').eq(0).attr("src", "./img/pinnedselected.png");
+        }
+        else {
+            $(itemDiv).find(".pinned").eq(0).attr("pinned", "0");
+            $(itemDiv).find(".pinned").eq(0).find('img').eq(0).attr("src", "./img/nopinned.png");
+        }
+        $(itemDiv).find(".cover").eq(0).attr("cover", cover);
+        $(itemDiv).find(".cover").eq(0).attr("coveraddr", item.maddr);
+        if (cover == 1) {
+            $(itemDiv).find(".cover").eq(0).find('img').eq(0).attr("src", "./img/cover.png");
+        }
+        else {
+            $(itemDiv).find(".cover").eq(0).find('img').eq(0).attr("src", "./img/nocover.png");
+        }
 
-function SetPlayAddr(addr)
-{
-    $(".paishedidian").html(addr);
-    $(".playaddr").click(function(){
-                        DeviceApi.device.gpsaddress();
-                    });
-}
+        $(itemDiv).find(".mediaitemdur").eq(0).html(SecToTime(dur));
+        var date = new Date(paitime * 1000);
+        var dateTime = date.toLocaleString();
+        $(itemDiv).find(".paisheshijian").eq(0).html(dateTime);
+        $(itemDiv).find(".mediaitemsize").eq(0).html(SizeToString(msize));
+        date = new Date(synctime * 1000);
+        dateTime = date.toLocaleString();
+        $(itemDiv).find(".mediaitemsynctime").eq(0).html(dateTime);
+        $(itemDiv).find(".mediaitemname").eq(0).html(name);
+        RequestGroupNamesFromItemID(itemDiv, itemid);
+        setTimeout(function () {
+            GetAddr(itemDiv, item.weizhi, location, SetPlayAddr);
+        }, 1);
+        // if (location == "")
+        // {
+        //     SetPlayAddr(itemDiv, LanguageText("待定位"));
+        // }
+        // else 
+        // {
+        //     SetPlayAddr(itemDiv, location);
+        // }
+        $(itemDiv).find(".mediacontent").eq(0).attr("mtype", mediatype);
+        let bNeedInitVideo = false;
+        if (mediatype == 1) {
+            $(itemDiv).find(".imghasextra").eq(0).addClass("hidden");
+            $(itemDiv).find(".chixushijian").eq(0).addClass("hidden");
+            $(itemDiv).find(".MediaItemImage").eq(0).removeClass("hidden");
+            $(itemDiv).find(".MediaItemVideo").eq(0).addClass("hidden");
+            $(itemDiv).find(".MediaItemImage > img").eq(0).attr("src", GetUrl(item.maddr));
+            if (item.hasextra == 1) {
+                console.log("has extra");
+                $(itemDiv).find(".imghasextra").eq(0).removeClass("hidden");
+                let html = '<video id="player{0}" style="width:100%;height:100%;" objectFit="cover" webkit-playsinline="true" playsinline="true"  class="video-js vjs-default-skin" class="video-js vjs-default-skin" width="100" height="100" controls data-setup="{}"></video>'.format(itemid);
+                console.log(html);
+                $(itemDiv).find(".MediaItemVideo").eq(0).attr("url", GetUrl(item.maddr));
+                $(itemDiv).find(".mediacontent > .MediaItemVideo").eq(0).append(html);
+                $(itemDiv).attr("addr", item.maddr);
+                LongPressDetect($(itemDiv).find(".MediaItemImage").eq(0), function () {
+                    PlayExtraVideo($(itemDiv), item.maddr);
+                }, 1000);
+                bNeedInitVideo = true;
+            }
+        }
+        else {
+            $(itemDiv).find(".imghasextra").eq(0).addClass("hidden");
+            $(itemDiv).find(".chixushijian").eq(0).removeClass("hidden");
+            $(itemDiv).find(".MediaItemVideo").eq(0).removeClass("hidden");
+            $(itemDiv).find(".MediaItemImage").eq(0).addClass("hidden");
+            let html = '<video id="player{0}" style="width:100%;height:100%;" objectFit="cover" webkit-playsinline="true" playsinline="true"  class="video-js vjs-default-skin" class="video-js vjs-default-skin" width="100" height="100" controls data-setup="{}"></video>'.format(itemid);
+            console.log(html);
+            $(itemDiv).find(".MediaItemVideo").eq(0).attr("url", GetUrl(item.maddr));
+            $(itemDiv).find(".mediacontent > .MediaItemVideo").eq(0).append(html);
+            $(itemDiv).find(".vjs-volume-menu-button").eq(0).css("display", "none");
+            $(itemDiv).find(".vjs-fullscreen-control").eq(0).css("display", "none");
+            // $("#player" + itemid).attr("poster", GetThumbUrl(item.maddr));
+            console.log($("#player" + itemid));
+            bNeedInitVideo = true;
+        }
+        var iScreenWidth = $(document.body).width();
+        scale = (iScreenWidth * 1.0) / width;
+        var iMediaContentHeight = height * scale;
+        SetContainer(itemDiv, iScreenWidth, iMediaContentHeight);
 
-function SetFavorite(favorite, strTips)
-{
-    $(".favorite").attr("favorite", favorite);
-    if(favorite == 1)
-    {
-        $(".favorite").find('img').eq(0).attr("src", "./img/favorite.png");
-    }
-    else
-    {
-        $(".favorite").find('img').eq(0).attr("src", "./img/nofavorite.png");
-    }
-    Toast(strTips);
-}
+        if(true == bNeedInitVideo)
+        {
+            InitVideo(itemid, item.maddr, item.hasextra);
+        }
 
-function SetCover(Cover, strTips)
-{
-    $(".cover").attr("cover", Cover);
-    if(Cover == 1)
-    {
-        $(".cover").find('img').eq(0).attr("src", "./img/cover.png");
-    }
-    else
-    {
-        $(".cover").find('img').eq(0).attr("src", "./img/nocover.png");
-    }
-    Toast(strTips);
-}
+        $(itemDiv).find(".favorite").eq(0).click(function () {
+            var favorite = $(itemDiv).find(".favorite").eq(0).attr("favorite");
+            favorite = favorite == 0 ? 1 : 0;
+            var json = {};
+            json["action"] = "mediafavorite";
+            json["id"] = g_selectitem.id;
+            json["favorite"] = favorite;
+            ServerApi.request.mediafavorite(JSON.stringify(json), function (data, textStatus, jqXHR) {
+                var jsonRoot = JSON.parse(data);
+                if (jsonRoot["status"] != 1) {
+                    Toast(LanguageText("系统错误!"));
+                    return;
+                }
+                $(itemDiv).find(".favorite").eq(0).attr("favorite", favorite);
+                if (favorite == 1) {
+                    Toast(LanguageText("添加喜欢成功!"));
+                    $(itemDiv).find(".favorite").eq(0).find('img').eq(0).attr("src", "./img/favorite.png");
+                }
+                else {
+                    Toast(LanguageText("取消喜欢成功!"));
+                    $(itemDiv).find(".favorite").eq(0).find('img').eq(0).attr("src", "./img/nofavorite.png");
+                }
+                let json = {};
+                json["id"] = g_selectitem.id;
+                json["favorite"] = favorite;
+                console.log(JSON.stringify(json));
+                DeviceApi.device.favorite(JSON.stringify(json));
+            });
+        });
+        $(itemDiv).find(".pinned").eq(0).click(function () {
+            var pinned = $(itemDiv).find(".pinned").eq(0).attr("pinned");
+            pinned = pinned == 0 ? 1 : 0;
+            var json = {};
+            json["action"] = "setmediapinned";
+            json["id"] = g_selectitem.id;
+            json["pinned"] = pinned;
+            ServerApi.request.setmediapinned(JSON.stringify(json), function (data, textStatus, jqXHR) {
+                var jsonRoot = JSON.parse(data);
+                if (jsonRoot["status"] != 1) {
+                    Toast(LanguageText("系统错误!"));
+                    return;
+                }
+                $(itemDiv).find(".pinned").eq(0).attr("pinned", pinned);
+                if (pinned == 1) {
+                    Toast(LanguageText("置顶成功!"));
+                    $(itemDiv).find(".pinned").eq(0).find('img').eq(0).attr("src", "./img/pinnedselected.png");
 
-function ChooseTimeClick(item)
-{
-    DeviceApi.device.updatetime();
-}
-function UpdatePaiSheShiJian(paitime)
-{
-    $(".paisheshijian").html(paitime);
-}
-function UpdatePaiSheDiDian(addr)
-{
-    $(".paishedidian").html(addr);
-}
-function SuoShuFenZuTimeClick(item)
-{
-    DeviceApi.device.updatefenzu("" + g_selectGroupIds);
-}
-function InitLanguage()
-{
-    $(".fenbianlvlabel").html(LanguageText("分辨率:"));
-    $(".mediasizelabel").html(LanguageText("媒体大小:"));
-    $(".mediadurationlabel").html(LanguageText("持续时间:"));
-    $(".mediadevicenamelabel").html(LanguageText("设备名称:"));
-    $(".mediasynctimelabel").html(LanguageText("同步时间:"));
-    $(".mediagrouplabel").html(LanguageText("所属分组:"));
-    $(".mediapaitimelabel").html(LanguageText("拍摄时间:"));
-    $(".mediapaiaddrlabel").html(LanguageText("拍摄地点:"));
-    $(".paishedidian").html(LanguageText("获取中..."));
-    $(".mediaremovelabel").html(LanguageText("删 除"));
-}
+                }
+                else {
+                    Toast(LanguageText("取消置顶成功!"));
+                    $(itemDiv).find(".pinned").eq(0).find('img').eq(0).attr("src", "./img/nopinned.png");
+                }
+                let json = {};
+                json["id"] = g_selectitem.id;
+                json["pinned"] = pinned;
+                console.log(JSON.stringify(json));
+                DeviceApi.device.mediapinchange(JSON.stringify(json));
+                
+            });
+        });
+        $(itemDiv).find(".cover").eq(0).click(function () {
+            var cover = $(itemDiv).find(".cover").eq(0).attr("cover");
+            cover = cover == 1 ? 0 : 1;
+            var coveraddr = "";
+            var json = {};
+            json["action"] = "setcover";
+            if (cover == 1) {
+                coveraddr = $(itemDiv).find(".cover").eq(0).attr("coveraddr");
+            }
+            json["coveraddr"] = coveraddr;
+            ServerApi.request.setcover(JSON.stringify(json), function (data, textStatus, jqXHR) {
+                var jsonRoot = JSON.parse(data);
+                if (jsonRoot["status"] != 1) {
+                    Toast(LanguageText("系统错误!"));
+                    return;
+                }
+
+                $(itemDiv).find(".cover").eq(0).attr("cover", cover);
+                if (cover == 1) {
+                    g_cover = coveraddr;
+                    Toast(LanguageText("添加设备封面成功!"));
+                    $(itemDiv).find(".cover").eq(0).find('img').eq(0).attr("src", "./img/cover.png");
+                }
+                else {
+                    g_cover = "";
+                    Toast(LanguageText("取消设备封面成功!"));
+                    $(itemDiv).find(".cover").eq(0).find('img').eq(0).attr("src", "./img/nocover.png");
+                }
+                let json = {};
+                json["id"] = g_selectitem.id;
+                json["cover"] = cover;
+                console.log(JSON.stringify(json));
+                DeviceApi.device.cover(JSON.stringify(json));
+            });
+        });
+    }
+
+    function SetContainer(itemDiv, containerwidth, containerheight) {
+        var iMaxHeight = $(document.body).height();
+        if (g_selectitem.mtype == 1) {
+            //图片需要留点空隙 否则无法滚动看详情，与图片的缩放相冲突了
+            iMaxHeight -= $(itemDiv).find(".mediaitem").eq(0).height();
+        }
+        if (containerheight > iMaxHeight) {
+            containerheight = iMaxHeight;
+        }
+        $(itemDiv).find(".mediacontent").eq(0).css("width", containerwidth + "px");
+        $(itemDiv).find(".mediacontent").eq(0).css("height", containerheight + "px");
+        $(itemDiv).find(".mediacontent > .MediaItemImage").eq(0).css("width", containerwidth + "px");
+        $(itemDiv).find(".mediacontent > .MediaItemImage").eq(0).css("height", containerheight + "px");
+        $(itemDiv).find(".mediacontent > .MediaItemVideo").eq(0).css("width", containerwidth + "px");
+        $(itemDiv).find(".mediacontent > .MediaItemVideo").eq(0).css("height", containerheight + "px");
+        g_showContainerHeight = containerheight;
+    }
+    function SuoShuFenZuTimeClick(item) {
+        console.log(g_selectitem.id);
+        let selectgroupids = $(item).find(".suoshufenzuvalue").eq(0).attr("selectgroupids");
+        if (selectgroupids.length == 0) {
+            console.log("Group empty");
+        }
+        else {
+            console.log("selectgroupids");
+        }
+        let json = {};
+        json["id"] = g_selectitem.id;
+        json["maddr"] = g_selectitem.maddr;
+        json["mtype"] = g_selectitem.mtype;
+        json["device"] = g_selectitem.device;
+        json["groupids"] = selectgroupids;
+        console.log(JSON.stringify(json));
+        DeviceApi.device.updatefenzu(JSON.stringify(json));
+    }
+    function ChooseTimeClick(item) {
+        let json = {};
+        json["id"] = g_selectitem.id;
+        json["mtype"] = g_selectitem.mtype;
+        json["paitime"] = g_selectitem.paitime;
+        console.log(JSON.stringify(json));
+        DeviceApi.device.updatetime(JSON.stringify(json));
+    }
+    function Release() {
+        g_mySwiper.removeAllSlides();
+    }
+    $(window).on('resize', function () {
+        ResizeContent();
+    });
+    function ResizeContent() {
+        if (null == g_mySwiper) {
+            return;
+        }
+        var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+        var iScreenWidth = $(document.body).width();
+        scale = (iScreenWidth * 1.0) / g_selectitem.w;
+        var iMediaContentHeight = g_selectitem.h * scale;
+        SetContainer(activeSlide, iScreenWidth, iMediaContentHeight);
+    }
+    function UpdatePaiSheDiDian(id, weizhi, location)
+    {
+        if(id == g_selectitem.id)
+        {
+            g_selectitem.weizhi = weizhi;
+            g_selectitem.location = location;
+        }
+    }
+    function DeleteMediaItem()
+    {
+        g_mySwiper.disable();
+        ShowConfirm(LanguageText("确认"), LanguageText("删除后将永远丢失该媒体的存储,请确认!"), 1, LanguageText("按钮确定"), function () {
+                var json = {};
+                json["action"] = "delmediaitem";
+                json["id"] = g_selectitem.id;
+                ServerApi.request.delmediaitem(JSON.stringify(json), function (data, textStatus, jqXHR) {
+                    g_mySwiper.enable();
+                    var jsonRoot = JSON.parse(data);
+                    if (jsonRoot["status"] != 1) {
+                        Toast(LanguageText("系统错误!"));
+                        return;
+                    }
+                   
+                    let json = {};
+                    json["id"] = g_selectitem.id;
+                    json["mtype"] = g_selectitem.mtype;
+                    json["favorite"] = g_selectitem.favoritetime>0?1:0;
+                    json["paitime"] = g_selectitem.paitime;
+                    json["addtime"] = g_selectitem.addtime;
+                    console.log(JSON.stringify(json));
+                    DeviceApi.device.deleteitem(JSON.stringify(json));
+                    
+                    let iPageCount = g_mySwiper.slides.length;
+                    if (iPageCount == 1) {
+                        //关闭窗口
+                        DeviceApi.device.closewindow();
+                        return;
+                    }
+                    ResetAllPage(g_selectitem.id);
+                }, function (xhr, textStatus) {
+                g_mySwiper.enable();
+            });
+            }, LanguageText("按钮取消"), function () {
+                //DeviceApi.device.confirm("0");
+                UnSetToast();
+                g_mySwiper.enable();
+            });
+    }
+    function PlayShiKuang(shikuangimg)
+    {
+        let item = $(shikuangimg).closest(".swiper-slide");
+        console.log($(item));
+        let addr = $(item).attr("addr");
+        PlayExtraVideo(item, addr);
+    }
 </script>
-<body>
-    <div class="contentDiv hidden">
-        <img id="imghasextra" class="hidden" src="../img/shikuang.png" style="position: absolute; z-index: 100;width: 30px;height: 30px;"/>
-        <div class="mediacontent" style="width: 100%; height: 100%;">
-            <div class="MediaItemImage hidden">
-                <img id="imgid" />
-            </div>
-            <div class="MediaItemVideo hidden">
-                <video id="videoid" webkit-playsinline="true" playsinline="true"  class="video-js vjs-default-skin" width="100" height="100" controls poster="../img/background.png"  data-setup="{}">
-                </video>
-            </div>
-        </div>
-        
-        <div class="mediaitem layout_flex ">
-            <div class="layout-left mediaitemtitle fenbianlvlabel">分辨率:</div>
-            <div class="layout-middle fenbianlv"></div>
-            <div class="layout-right" style="margin-right: 2.3vh; margin-top: 1.5vh; width: 3vh;height:3vh;">
-                <div class="favorite canclick" style="position: relative; width: 100%; height: 100%; ">
-                    <img style="position:absolute;width:100%; height:100%;" src="../img/nofavorite.png" style="width: 100%; height: 100%;scale: fit;"/>
-                </div>
-            </div>
-        </div>
 
-        <div class="mediaitem layout_flex ">
-            <div class="layout-left mediaitemtitle mediasizelabel">媒体大小:</div>
-            <div class="layout-middle mediaitemsize">4.8M</div>
-            <div class="layout-right" style="margin-right: 2.3vh; margin-top: 1.5vh; width: 3vh;height:3vh;">
-                <div class="cover canclick" style="position: relative; width: 100%; height: 100%; ">
-                    <img style="position:absolute;width:100%; height:100%;" src="../img/nocover.png" style="width: 100%; height: 100%;scale: fit;"/>
-                </div>
+<body style="position: relative;">
+    <div style="position: absolute; top: 0;width: 100%;height: 100%;">
+        <div class="swiper-button-prev hide"></div>
+        <div class="swiper-button-next hide"></div>
+    </div>
+    <div class="swiperMain" style="width: 100%;height: 100%; overflow: scroll;">
+        <div class="swiper">
+            <div class="swiper-wrapper">
             </div>
-        </div>
-        
-        <div class="mediaitem chixushijian layout_flex hidden">
-            <div class="layout-left mediaitemtitle mediadurationlabel">持续时间:</div>
-            <div class="layout-middle mediaitemdur">4S</div>
-        </div>
-        
-        <div class="mediaitem shebeimingcheng layout_flex ">
-            <div class="layout-left mediaitemtitle mediadevicenamelabel">设备名称:</div>
-            <div class="layout-middle mediaitemname">HM 2A</div>
-        </div>
-
-        <div class="mediaitem synctime layout_flex ">
-            <div class="layout-left mediaitemtitle mediasynctimelabel">同步时间:</div>
-            <div class="layout-middle mediaitemsynctime">2020-05-08 11:00:00</div>
-        </div>
-
-
-        <div class="mediaitem suoshufenzu layout_flex  canclick" onclick="SuoShuFenZuTimeClick(this)">
-            <div class="layout-left mediaitemtitle mediagrouplabel">所属分组:</div>
-            <div class="layout-middle suoshufenzuvalue"></div>
-            <div class="layout-right" style="margin-right: 3vh; margin-top: 1.8vh; width: 1.5vh;height: 2.5vh;">
-                <div class="suoshufenzudetail" style="position: relative; width: 100%; height: 100%; ">
-                    <img style="position:absolute;width:100%; height:100%;" src="../img/more.png" style="width: 100%; height: 100%;scale: fit;"/>
-                </div>
-            </div>
-        </div>
-
-        <div class="mediaitem layout_flex canclick" onclick="ChooseTimeClick(this)">
-            <div class="layout-left mediaitemtitle mediapaitimelabel">拍摄时间:</div>
-            <div class="layout-middle paisheshijian"></div>
-            <div class="layout-right" style="margin-right: 3vh; margin-top: 1.8vh; width: 1.5vh;height: 2.5vh;">
-                <div class="mediatimedetail" style="position: relative; width: 100%; height: 100%; ">
-                    <img style="position:absolute;width:100%; height:100%;" src="../img/more.png" style="width: 100%; height: 100%;scale: fit;"/>
-                </div>
-            </div>
-        </div>
-
-        <div class="mediaitem playaddr layout_flex canclick">
-            <div class="layout-left mediaitemtitle mediapaiaddrlabel">拍摄地点:</div>
-            <div class="layout-middle paishedidian">获取中...</div>
-            <div class="layout-right" style="margin-right: 3vh; margin-top: 1.8vh; width: 1.5vh;height: 2.5vh;">
-                <div class="playaddrdetail" style="position: relative; width: 100%; height: 100%; ">
-                    <img style="position:absolute;width:100%; height:100%;" src="../img/more.png" style="width: 100%; height: 100%;scale: fit;"/>
-                </div>
-            </div>
-        </div>
-        <div style="width: 100%; height: 10vh;text-align: center; margin-top: 2vh;">
-            <div class="mediaitemdel canclick mediaremovelabel" style="width:20vh; height: 7vh; background-color:#d9534f; border: #d43f3a 1px solid; margin: 0 auto; border-radius: 4px; color:white; font-size: 2.5vh; text-align: center;line-height: 7vh;">删 除</div>
-
         </div>
     </div>
+    <div class="hidden itemtemplate">
+        <div class="swiper-slide" >
+            <div class="contentDiv hidden">
+                <img class="imghasextra hidden canclick" src="../img/shikuang.png"
+                    style="position: absolute; z-index: 100;width: 30px;height: 30px;" onclick="PlayShiKuang(this)"/>
+                <div class="mediacontent" style="width: 100%; height: 100%;">
+                    <div class="MediaItemImage hidden">
+                        <img style="width: 100%;height: 100%;" />
+                    </div>
+                    <div class="MediaItemVideo hidden">
+                        <!-- <video id="videoid" webkit-playsinline="true" playsinline="true"
+                            class="video-js vjs-default-skin" width="100" height="100" controls
+                            poster="../img/background.png" data-setup="{}">
+                        </video> -->
+                    </div>
+                </div>
+
+                <div class="mediaitem layout_flex ">
+                    <div class="layout-left mediaitemtitle fenbianlvlabel">分辨率:</div>
+                    <div class="layout-middle fenbianlv"></div>
+                    <div class="layout-right" style="margin-right: 2.3vh; margin-top: 1.5vh; width: 3vh;height:3vh;">
+                        <div class="pinned canclick" style="position: relative; width: 100%; height: 100%; ">
+                            <img style="position:absolute;width:100%; height:100%;" src="../img/nopinned.png"
+                                style="width: 100%; height: 100%;scale: fit;" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mediaitem layout_flex ">
+                    <div class="layout-left mediaitemtitle mediasizelabel">媒体大小:</div>
+                    <div class="layout-middle mediaitemsize">4.8M</div>
+                    <div class="layout-right" style="margin-right: 2.3vh; margin-top: 1.5vh; width: 3vh;height:3vh;">
+                        <div class="cover canclick" style="position: relative; width: 100%; height: 100%; ">
+                            <img style="position:absolute;width:100%; height:100%;" src="../img/nocover.png"
+                                style="width: 100%; height: 100%;scale: fit;" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mediaitem shebeimingcheng layout_flex ">
+                    <div class="layout-left mediaitemtitle mediadevicenamelabel">设备名称:</div>
+                    <div class="layout-middle mediaitemname">HM 2A</div>
+                    <div class="layout-right" style="margin-right: 2.3vh; margin-top: 1.5vh; width: 3vh;height:3vh;">
+                        <div class="favorite canclick" style="position: relative; width: 100%; height: 100%; ">
+                            <img style="position:absolute;width:100%; height:100%;" src="../img/nofavorite.png"
+                                style="width: 100%; height: 100%;scale: fit;" />
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="mediaitem chixushijian layout_flex hidden">
+                    <div class="layout-left mediaitemtitle mediadurationlabel">持续时间:</div>
+                    <div class="layout-middle mediaitemdur">4S</div>
+                </div>
+
+                <div class="mediaitem synctime layout_flex ">
+                    <div class="layout-left mediaitemtitle mediasynctimelabel">同步时间:</div>
+                    <div class="layout-middle mediaitemsynctime">2020-05-08 11:00:00</div>
+                </div>
+
+                <div class="mediaitem suoshufenzu layout_flex  canclick" onclick="SuoShuFenZuTimeClick(this)">
+                    <div class="layout-left mediaitemtitle mediagrouplabel">所属分组:</div>
+                    <div class="layout-middle suoshufenzuvalue"></div>
+                    <div class="layout-right" style="margin-right: 3vh; margin-top: 1.8vh; width: 1.5vh;height: 2.5vh;">
+                        <div class="suoshufenzudetail" style="position: relative; width: 100%; height: 100%; ">
+                            <img style="position:absolute;width:100%; height:100%;" src="../img/more.png"
+                                style="width: 100%; height: 100%;scale: fit;" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mediaitem layout_flex canclick" onclick="ChooseTimeClick(this)">
+                    <div class="layout-left mediaitemtitle mediapaitimelabel">拍摄时间:</div>
+                    <div class="layout-middle paisheshijian"></div>
+                    <div class="layout-right" style="margin-right: 3vh; margin-top: 1.8vh; width: 1.5vh;height: 2.5vh;">
+                        <div class="mediatimedetail" style="position: relative; width: 100%; height: 100%; ">
+                            <img style="position:absolute;width:100%; height:100%;" src="../img/more.png"
+                                style="width: 100%; height: 100%;scale: fit;" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mediaitem playaddr layout_flex canclick">
+                    <div class="layout-left mediaitemtitle mediapaiaddrlabel">拍摄地点:</div>
+                    <div class="layout-middle paishedidian">获取中...</div>
+                    <div class="layout-right" style="margin-right: 3vh; margin-top: 1.8vh; width: 1.5vh;height: 2.5vh;">
+                        <div class="playaddrdetail" style="position: relative; width: 100%; height: 100%; ">
+                            <img style="position:absolute;width:100%; height:100%;" src="../img/more.png"
+                                style="width: 100%; height: 100%;scale: fit;" />
+                        </div>
+                    </div>
+                </div>
+                <div style="width: 100%; height: 10vh;text-align: center; margin-top: 2vh;">
+                    <div class="mediaitemdel canclick mediaremovelabel" onclick="DeleteMediaItem(this)"
+                        style="width:20vh; height: 7vh; background-color:#d9534f; border: #d43f3a 1px solid; margin: 0 auto; border-radius: 4px; color:white; font-size: 2.5vh; text-align: center;line-height: 7vh;">
+                        删 除</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
+
 </html>

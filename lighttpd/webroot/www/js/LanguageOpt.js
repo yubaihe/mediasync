@@ -17,6 +17,10 @@ function AssembleLanguage(jsonRoot, languageIndex)
         }
     }
 }
+function GetLanguageID()
+{
+    return localStorage.getItem("languageid");
+}
 function SwitchLanguage(languageID)
 {
     localStorage.setItem("languageid", languageID);
@@ -35,6 +39,7 @@ function LanguageText(strText)
     if(mLanguageIndex < 0)
     {
         var languagecontent = $.parseJSON(localStorage.getItem("languagecontent"));
+        console.log(languagecontent);
         if(null == languagecontent)
         {
             return strText;
@@ -57,21 +62,22 @@ function LanguageText(strText)
 function SetLanguageInfo(languagecontent, languageid)
 {
     console.log("==============================");
-    console.log($.base64.decode(languagecontent));
+    console.log("relech 12" + $.base64.decode(languagecontent));
     localStorage.setItem("languagecontent", $.base64.decode(languagecontent));
     localStorage.setItem("languageid", languageid);
 }
-function InitLanguage()
-{
-    $.ajax({
-        url: "../js/language.js",
-        type: "GET",
-        dataType: "text",
-        success: function (data)
-        {
-            console.log(data);
-            var jsonRoot = $.parseJSON(data);
-            AssembleLanguage(jsonRoot);
-        }
-    });
-}
+// function InitLanguage()
+// {
+//     alert("InitLanguage");
+//     $.ajax({
+//         url: "../js/language.js",
+//         type: "GET",
+//         dataType: "text",
+//         success: function (data)
+//         {
+//             console.log(data);
+//             var jsonRoot = $.parseJSON(data);
+//             AssembleLanguage(jsonRoot);
+//         }
+//     });
+// }

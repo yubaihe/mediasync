@@ -38,7 +38,7 @@
     .erweimadiv img {display:block; margin:auto;}
 </style>
 <script>
-    var ServerApi = new API("http://" + window.location.host);
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var g_prevClickTime = new Date().getTime();
     var g_ClickCount = 0;
     function AddItem(k, v)
@@ -47,7 +47,18 @@
         var itemDiv = $(html);
  
         itemDiv.find(".itemkey").eq(0).html(k);
-        itemDiv.find(".itemvalue").eq(0).html(v);
+        if(v == LanguageText("不支持"))
+        {
+            itemDiv.find(".itemvalue").eq(0).html('<span style="color:#F56C6C">' + v + '</span>');
+        }
+        else if(v == LanguageText("支持"))
+        {
+            itemDiv.find(".itemvalue").eq(0).html('<span style="color:#67C23A">' + v + '</span>');
+        }
+        else
+        {
+            itemDiv.find(".itemvalue").eq(0).html(v);
+        }
 
         itemDiv.removeClass("itemtemplate");
         itemDiv.removeClass("hidden");
@@ -105,7 +116,7 @@
             g_QRCode = new QRCode(document.getElementById("erweimadiv"), options);
         }
         var value = "{0};{1};{2};{3};{4}".format(g_devno, g_space, g_wifi, g_eth, g_mac);
-        console.log(value);
+        //console.log(value);
         g_QRCode.makeCode(value + new Date().getTime()); 
    }
    var g_devno;
@@ -119,7 +130,7 @@
         var str = "{\"action\":\"aboutdevice\"}";
         ServerApi.request.aboutdevice(str, function(data, textStatus, jqXHR)
         {
-            console.log(data);
+            //console.log(data);
             var jsonRoot = JSON.parse(data);
             JSON.parse(data, function(k, v) {
                     //console.log("key:" + k + " value:" + v);
@@ -149,6 +160,18 @@
                             AddItem(LanguageText("无线网络"), LanguageText("支持"));
                         }
                     }
+                    if("hotpot" == k)
+                    {
+                        g_wifi = v;
+                        if(v == 0)
+                        {
+                            AddItem(LanguageText("热点模式"), LanguageText("不支持"));
+                        }
+                        else
+                        {
+                            AddItem(LanguageText("热点模式"), LanguageText("支持"));
+                        }
+                    }
                     if("eth" == k)
                     {
                         g_eth = v;
@@ -170,7 +193,7 @@
                         }
                         else
                         {
-                            AddItem("Samba", LanguageText("支持"));
+                            AddItem("Samba", "V" + v);
                         }
                     }
                     if("mac" == k)
@@ -206,9 +229,9 @@
     </div>
     
 
-    <div class="itemtemplate hidden" style="width: 100%; height: 8vh; line-height: 8vh; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
+    <div class="itemtemplate hidden" style="width: 100%; height: 8vh; display: flex; align-items: center; position: relative; border-bottom:1px solid #e9e8e8; font-size: 1.5rem;">
         <span class="itemkey" style="display: inline-block;">关于设备</span>
-        <div class="itemvalue" style="float: right;"> </div>
+        <div class="itemvalue" style="position: absolute;right: 0;"> </div>
     </div>
 
     <div class="erweimatemplate hidden erweimadiv" style=" text-align: center; height: 30vh; margin-right: 1rem; margin-top: 1rem;">

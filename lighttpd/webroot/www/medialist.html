@@ -16,7 +16,7 @@
 <script src="./js/imagesloaded.pkgd.min.js"></script>
 <script src="./js/Common.js?id=3"></script>
 <script src="./js/LanguageOpt.js"></script>
-
+<script src="./js/clearcache.js"></script>
 <link rel="stylesheet" href="./css/dialog.css"/>
 <script type="text/javascript" src="./js/dialog.min.js"></script>
 <script type="text/javascript" src="./js/Toast.js"></script>
@@ -42,9 +42,11 @@
     }
     </style>
     <script>
-    var ServerApi = new API("http://" + window.location.host);
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
     var DeviceApi = new API("");
- 
+    // window.onerror = function(message, source, lineno, colno, error) {
+    //             console.log(message + ' at ' + source + ':' + lineno + ':' + colno);
+    //         };
 
     function RecentRemove(iType)
     {
@@ -89,13 +91,15 @@
         var str = "{\"action\":\"yearlist\",\"devnames\":\"{0}\"}".format(GetSelectDeviceString());
         ServerApi.request.yearlist(str,function(data,textStatus,jqXHR)
         {
+            $(".divmain").html("");
             var jsonRoot = JSON.parse(data);
-            if(jsonRoot["status"] != "1")
+            if(jsonRoot["status"] != 1)
             {
                 //DeviceApi.device.toast("未查询到媒体数据!");
                 $(".nodatadiv").removeClass("hidden");
                 return;
             }
+            AddBackup();
             AddGroup();
             AddRecent();
             
@@ -132,13 +136,13 @@
                     $(".year_" + jsonRoot.year).find(".cover").eq(0).attr("src", GetPic(jsonRoot.cover));
                 });
 
-                var str = "{\"action\":\"yearinfo\",\"year\":\"{0}\",\"devnames\":\"{1}\"}".format(yearArray[i], GetSelectDeviceString());
+                var str = "{\"action\":\"yearinfo\",\"year\":{0},\"devnames\":\"{1}\"}".format(yearArray[i], GetSelectDeviceString());
                 ServerApi.request.yearinfo(str,function(data,textStatus,jqXHR)
                 {
                     //alert(data);
                     console.log(data);
                     var jsonRoot = JSON.parse(data);
-                    if(jsonRoot["status"] != "1")
+                    if(jsonRoot["status"] != 1)
                     {
                         return;
                     }
@@ -191,7 +195,7 @@
             //alert(data);
             console.log(data);
             var jsonRoot = JSON.parse(data);
-            if(jsonRoot["status"] != "1")
+            if(jsonRoot["status"] != 1)
             {
                 return;
             }
@@ -217,7 +221,49 @@
         {
         });
     }
-
+    function AddBackup()
+    {
+        var html = $(".folditemtemplate").prop("outerHTML");
+        var itemDiv = $(html);
+        itemDiv.removeClass("folditemtemplate");
+        //itemDiv.removeClass("hidden");
+        itemDiv.attr("year", "backup");
+        itemDiv.click(function(){
+            DeviceApi.device.backup();
+            });
+        itemDiv.addClass("backup");
+        itemDiv.find(".year").eq(0).html(LanguageText("备份列表"));
+        itemDiv.find(".year").eq(0).removeClass("hidden");
+        $(".divmain").append(itemDiv);
+        
+        itemDiv.find(".cover").eq(0).attr("src", "./img/mediabackup.png");
+        itemDiv.find(".cover").eq(0).removeClass("cover");
+        $(".backup").find(".year").eq(0).addClass("hidden");
+        
+        var str = "{\"action\":\"backupfolds\",\"start\":0,\"limit\":1}";
+        console.log(str);
+        ServerApi.request.backupfolds(str, function(data,textStatus,jqXHR)
+        {
+            //alert(data);
+            console.log(data);
+            var jsonRoot = JSON.parse(data);
+            if(jsonRoot["status"] != 1)
+            {
+                return;
+            }
+            if(jsonRoot.storetotal > 0)
+            {
+                itemDiv.removeClass("hidden");
+                $(".backup").find(".yearname").eq(0).html(LanguageText("备份列表"));
+                $(".backup").find(".yeardetail").eq(0).html(LanguageText("备份数({0})").format(jsonRoot.storetotal));
+                $(".backup").find(".yearwithdetail").eq(0).removeClass("hidden");
+                $(".backup").find(".yearwithdetail").eq(0).removeClass("hidden");
+                $(".backup").find(".year").eq(0).addClass("hidden");
+            }
+        },function(xhr,textStatus)
+        {
+        });
+    }
     function AddGroup()
     {
         var html = $(".folditemtemplate").prop("outerHTML");
@@ -264,10 +310,9 @@
 
     function ReSet()
     {
-        $(".divmain").html("");
+        console.log("Reset");
         Init();
     }
-
     $(document).ready(function()
     {
         DisableContextMenu();
@@ -276,6 +321,24 @@
         document.body.addEventListener('touchstart',function(){});
         Init();
     });
+    function ClearCache()
+    {
+        if(true == IsClearCacheRunning())
+        {
+            return;
+        }
+        var tipContent = LanguageText("该操作会重置设备的相关计数，中途请<span style='color:red'>不要断电</span>，否则请<span style='color:#1B9AF7'>重新执行</span>磁盘整理操作!");
+        ShowConfirm(LanguageText("磁盘整理"), tipContent, 1,
+        LanguageText("按钮确定"), 
+        function(){
+            ClearCacheStart(DeviceApi);
+        }, 
+        LanguageText("按钮取消"), 
+        function()
+        {
+            UnSetToast();
+        });
+    }
 </script>
 <body>
     <div class="nodatadiv hidden" style="position:absolute;text-align: center;  width: 100%; height: 100%;display:flex;align-items:center; justify-content:center;">

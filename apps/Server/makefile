@@ -8,65 +8,62 @@ COMMIT="$(shell git log --pretty=format:"%h" -1)" # git提交号
 BRANCH="$(strip $(BRANCHNAME))-$(COMMIT)"
 BUILDDATE = "$(shell date '+%F %T')"
 
-
 LDFLAGS = -lm
-
-CFLAGS  += -g -Wall  -MD -fPIE -fno-stack-protector -Wno-format-overflow\
-		-DBRANCH="\$(BRANCH)\" -DBUILDDATE="\$(BUILDDATE)\" \
-		-I$(ROOTDIR)/include/sqlite3 \
-		-I$(ROOTDIR)/include/json-c/ \
-
-STATICLIB = -lpthread $(ROOTDIR)/libs/libsqlite3.a \
-			$(ROOTDIR)/libs/libjson-c.a 
-			
-ifeq ($(LIBDLPATH)/libdl.so, $(wildcard $(LIBDLPATH)/libdl.so))
-STATICLIB += $(LIBDLPATH)/libdl.so
+ifneq (,$(filter $(BUILDTYPE),DEBUG))
+	CFLAGS = -g
 else
-STATICLIB += -ldl
+	CFLAGS = 
 endif
+CFLAGS  += -std=gnu++11 -Wall -MD -fPIE -fpermissive -fno-stack-protector -Wno-conversion-null \
+		-DBRANCH="\$(BRANCH)\" -DBUILDDATE="\$(BUILDDATE)\" \
+		-I$(ROOTDIR)/include/nlohmannjson \
+		-I$(ROOTDIR)/include/nlohmannjson/nlohmann \
+		-I$(ROOTDIR)/include/Common \
+		-I$(ROOTDIR)/include/dbus\
+		-I$(ROOTDIR)/include/sqlite \
+		-I$(ROOTDIR)/include/curl \
+		-I./Util \
+		-I./BroadCast \
+		-I./DataBase \
+		-I.
 
-ifeq ($(memcheck), y)
-SOURCE += memwatch.c 
-CFLAGS += -DMEMWATCH -DMW_STDIO 
-endif
+STATICLIB = -lpthread -L$(ROOTDIR)/libs/ -lsqlite3 -lcurl -ldbus-1 -lcommon 
+			
 
-####################################################################################################
+# ifeq ($(LIBDLPATH)/libdl.so, $(wildcard $(LIBDLPATH)/libdl.so))
+# STATICLIB += $(LIBDLPATH)/libdl.so
+# else
+# STATICLIB += -ldl
+# endif
 .PHONY: clean install
-#SOURCE +=  $(shell find . -name "*.c")
-SOURCE +=  md5.c Base64Coding.c stdafx.c RelechQueue.c RelechList.c RelechMap.c Tools.c FileUtil.c \
-			MediaScanDriver.c DataBaseDriver.c DataBaseMedia.c DataBaseDevice.c DataBaseMediaJiShu.c DataBaseUserInfo.c ConnectBroadCast.c \
-			ConnectBroadCastMessage.c ConnectServer.c ConnectServerMessage.c HttpFileServer.c NetWorkUtil.c NetWorkDriver.c DataBaseCover.c \
-			 DataBaseGroup.c DataBaseGroupItems.c ClearCache.c main.c  \
-#SOURCE = test2.c\
 ####################################################################################################
-OBJS = $(SOURCE:%.c=obj.$(TARGET)/%.o)
-DEPS = $(SOURCE:%.c=obj.$(TARGET)/%.d)
+SOURCE +=  $(wildcard $(addsuffix /*.cpp, Util ) )
+SOURCE +=  $(wildcard $(addsuffix /*.cpp, DataBase ) )
+SOURCE +=  $(wildcard $(addsuffix /*.cpp, BroadCast ) )
+SOURCE += stdafx.cpp Config.cpp BroadCastServer.cpp ConnectServer.cpp ConnectServerMessage.cpp ClearCache.cpp MediaScan.cpp GpsManager.cpp main.cpp  
+####################################################################################################
 
+OBJS = $(SOURCE:%.cpp=obj.$(TARGET)/%.o)
+DEPS = $(SOURCE:%.cpp=obj.$(TARGET)/%.d)
 default:
+	rm -rf memwatch.log
 	make $(TARGET)
-	
-$(TARGET): $(OBJS)
-	$(CC) obj.$(TARGET)/*.o $(LDFLAGS) $(STATICLIB) -o $@
 
-obj.$(TARGET)/%.o: %.c
-	@mkdir -p obj.$(TARGET)
-	$(CC) $(CFLAGS) $(APPFLAGS) $(LDFLAGS) -c -o $@ $<
+$(TARGET): $(OBJS)
+	$(CXX) $(OBJS) $(LDFLAGS) $(STATICLIB) -o $@
+
+obj.$(TARGET)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CFLAGS) $(LDFLAGS)  -c -o $@ $<
 
 ####################################################################################################
 clean:
 	rm -rf obj.$(TARGET)
 	rm -rf $(TARGET)
-	rm -rf $(ROOTDIR)/apps/Server
-#	rm -rf /home/relech/share/media/**
-#	rm -rf /tmp/mediasync
-#	rm -rf mediasync.db 
+	rm -rf $(ROOTDIR)/apps/$(TARGET)
 install:
-	@mkdir $(ROOTDIR)/apps/Server -p
-	@cp Server $(ROOTDIR)/apps/Server/
-	@cp Config.json $(ROOTDIR)/apps/Server/
-	@sed -i 's:/home/relech/share/:$(ROOTDIR):g' $(ROOTDIR)/apps/Server/Config.json
-	@cp $(ROOTDIR)/apps/Server/Config.json $(ROOTDIR)/apps/Server/Config_default.json
-	@sed -i 's:/dev/sda1:/dev/devnodename:g' $(ROOTDIR)/apps/Server/Config_default.json
-	
-
+	@mkdir $(ROOTDIR)/apps/$(TARGET) -p
+	@cp $(TARGET) $(ROOTDIR)/apps/$(TARGET)/
+	@cp Config.json $(ROOTDIR)/apps/$(TARGET)/
+	@sed -i 's:/home/relech/share/:$(ROOTDIR):g' $(ROOTDIR)/apps/$(TARGET)/Config.json
 	

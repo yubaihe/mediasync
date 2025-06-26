@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<link rel="stylesheet" href="css/Common.css" />
+<link rel="stylesheet" href="css/swiper-bundle.min.css">
+<script src="js/swiper-bundle.min.js"></script>
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="./js/jquery.base64.js"></script>
+<script src="js/Api.js"></script>
+<!-- Plugin CSS -->
+<link type="text/css" href="css/OverlayScrollbars.min.css" rel="stylesheet" />
+<!-- Plugin JS -->
+<script type="text/javascript" src="js/jquery.overlayScrollbars.min.js"></script>
+<link rel="stylesheet" href="css/bootstrap.min.css" />
+<link rel="stylesheet" href="css/bootstrap-theme.min.css" />
+<link rel="stylesheet" href="css/animate.css" />
+<script src="js/bootstrap.min.js"></script>
+<script src="js/masonry.pkgd.min.js"></script>
+<script src="js/imagesloaded.pkgd.min.js"></script>
+<script src="js/Common.js"></script>
+<!-- <script type="text/javascript" src="http://api.map.baidu.com/api?v=3.0&ak="></script> -->
+<link rel="stylesheet" href="css/dialog.css" />
+<script type="text/javascript" src="js/dialog.min.js"></script>
+<script type="text/javascript" src="js/Toast.js"></script>
+<script src="js/LanguageOpt.js"></script>
+<link href="./css/video-js.min.css" rel="stylesheet">
+<script src="js/video.min.js"></script>
+<script src="./js/pinch-zoom.js"></script>
+<script src="./js/baidumap.js"></script>
+
+<style type="text/css">
+    .hide {
+        opacity: 0 !important;
+        transition: opacity 0.3s;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .mediaitem {
+        width: 98%;
+        height: 7vh;
+        border-bottom: #e9e8e8 1px solid;
+        margin: 0 auto;
+        line-height: 7vh;
+
+    }
+
+    .mediaitemtitle {
+        width: 12vh;
+    }
+
+    .vjs-big-play-button {
+        left: 50% !important;
+        top: 50% !important;
+        margin-left: -2em;
+        margin-top: -1.3em;
+    }
+
+    video {
+        width: 100%;
+        height: 100%;
+        object-fit: fill;
+    }
+
+    .paishedidian {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .pinch-zoom-container {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .contentDiv {
+        overflow: hidden;
+    }
+</style>
+<script>
+    var ServerApi = new API(window.location.protocol + "//" + window.location.host);
+    var DeviceApi = new API("");
+    var g_mySwiper = null;
+    var g_iTouchTimerSec = 0;
+    var g_selectitem = 0;
+    var g_foldname = "";
+    var g_overlayScrollbars;
+
+
+    function ListenKeyBoard()
+    {
+        $(document).keydown(function(event) {
+            if(event.key === "Delete" || event.keyCode === 46) 
+            {
+                // 在这里执行删除键触发时的操作
+                console.log('左键被按下');
+                let iPageCount = g_mySwiper.slides.length;
+                for (let i = 0; i < iPageCount; ++i) 
+                {
+                    let item = $(g_mySwiper.slides[i]);
+                    if (item.attr("itemid") != g_selectitem.itemid) 
+                    {
+                        DeleteMediaItem(item);
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        InitLanguage();
+        g_overlayScrollbars = $('.swiperMain').overlayScrollbars({ scrollbars: { autoHideDelay: 800, dragScrolling: true } }).overlayScrollbars();
+        // InitSwiper(530,"hello");
+        RunInit();
+        ListenKeyBoard();
+        setInterval(() => {
+            if (null == g_mySwiper) {
+                return;
+            }
+            if ($(g_mySwiper.navigation.nextEl[0]).hasClass("hide")) {
+                return;
+            }
+            if (Date.now() / 1000 - g_iTouchTimerSec > 3) {
+                HideSwiperNav();
+            }
+        }, 1000);
+    });
+
+    function InitLanguage() {
+        $(".fenbianlvlabel").html(LanguageText("分辨率:"));
+        $(".mediapaitimelabel").html(LanguageText("拍摄时间:"));
+        $(".mediapaiaddrlabel").html(LanguageText("拍摄地点:"));
+        $(".paishedidian").html(LanguageText("获取中..."));
+        $(".mediaremovelabel").html(LanguageText("删 除"));
+        $(".mediasizelabel").html(LanguageText("媒体大小:"));
+        $(".mediadurationlabel").html(LanguageText("持续时间:"));
+    }
+    function ShowSwiperNav() {
+        $(g_mySwiper.navigation.nextEl[0]).removeClass('hide');
+        $(g_mySwiper.navigation.prevEl[0]).removeClass('hide');
+    }
+    function HideSwiperNav() {
+        $(g_mySwiper.navigation.nextEl[0]).addClass('hide');
+        $(g_mySwiper.navigation.prevEl[0]).addClass('hide');
+    }
+    function GetBackupFile(fold, file) {
+        return "backup/" + fold + "/" + file;
+    }
+    function SetNextItem(item) {
+        let itemid = item.itemid;
+        console.log("SetNextItem:" + itemid);
+        var html = $(".itemtemplate").html();
+        var itemDiv = $(html);
+        itemDiv.attr("itemid", itemid);
+        itemDiv.addClass("item" + itemid);
+        g_mySwiper.appendSlide(itemDiv.prop("outerHTML"));
+        itemDiv = $(".item" + itemid);
+        SetInfo(itemDiv, item.mtype, GetBackupFile(item.fold, item.file), item.width, item.height, item.createtime, item.weizhi, item.location, item.size, item.duration);
+    }
+    function SetPrevItem(item) {
+        let itemid = item.itemid;
+        console.log("SetPrevItem:" + itemid);
+        var html = $(".itemtemplate").html();
+        var itemDiv = $(html);
+        itemDiv.attr("itemid", itemid);
+
+        itemDiv.addClass("item" + itemid);
+        g_mySwiper.addSlide(0, itemDiv.prop("outerHTML"));
+        itemDiv = $(".item" + itemid);
+        SetInfo(itemDiv, item.mtype, GetBackupFile(item.fold, item.file), item.width, item.height, item.createtime, item.weizhi, item.location, item.size, item.duration);
+    }
+    function SetCurItem(item) {
+        let itemid = item.itemid;
+        if ($(".item" + itemid).length == 0) {
+            var html = $(".itemtemplate").html();
+            var itemDiv = $(html);
+            itemDiv.attr("itemid", itemid);
+            itemDiv.addClass("item" + itemid);
+
+            g_mySwiper.appendSlide(itemDiv.prop("outerHTML"));
+        }
+        var itemDiv = $(".item" + itemid);
+        SetInfo(itemDiv, item.mtype, GetBackupFile(item.fold, item.file), item.width, item.height, item.createtime, item.weizhi, item.location, item.size, item.duration);
+    }
+    function AssembleItems(jsonRoot) {
+        let hasPrev = jsonRoot.hasOwnProperty("prev");
+        let hasNext = jsonRoot.hasOwnProperty("next");
+        if (g_mySwiper.slides.length == 0) {
+            g_selectitem = jsonRoot["cur"];
+            SetCurItem(jsonRoot["cur"]);
+            if (true == hasPrev) {
+                SetPrevItem(jsonRoot["prev"]);
+            }
+            if (true == hasNext) {
+                SetNextItem(jsonRoot["next"]);
+            }
+            if (g_mySwiper.slides.length == 3) {
+                g_mySwiper.slideTo(1, 0, false);
+            }
+            else {
+                if (true == hasPrev) {
+                    g_mySwiper.slideTo(1, 0, false);
+                }
+                else if (true == hasNext) {
+                    g_mySwiper.slideTo(0, 0, false);
+                }
+                else {
+                    g_mySwiper.slideTo(0, 0, false);
+                }
+            }
+            CheckMedia();
+            return;
+        }
+        let curItemID = jsonRoot["cur"]["itemid"];
+        if (curItemID == g_selectitem.itemid) {
+            return;
+        }
+        console.log(jsonRoot);
+        g_selectitem = jsonRoot["cur"];
+        let curindex = -1;
+        for (let i = 0; i < g_mySwiper.slides.length; ++i) {
+            let item = $(g_mySwiper.slides[i]);
+            if (item.attr("itemid") == curItemID) {
+                curindex = i;
+                break;
+            }
+        }
+        console.log("curindex:" + curindex);
+        if (curindex == 1) {
+            if (g_mySwiper.slides.length == 3) {
+                console.log("当前在中间不处理");
+                CheckMedia();
+                return;
+            }
+        }
+        if (curindex == 0) {
+            //往右滑动->
+            if (false == hasPrev) {
+                console.log("hasPrev直接返回");
+                CheckMedia();
+                return;
+            }
+
+            //删除最后一个 增加前面一个
+            if (g_mySwiper.slides.length == 3) {
+                console.log("删除最后一个");
+                DestoryMedia(g_mySwiper.slides.length - 1);
+                g_mySwiper.removeSlide(g_mySwiper.slides.length - 1);
+            }
+            console.log("增加前面一个");
+            SetPrevItem(jsonRoot["prev"]);
+        }
+        else if (curindex == 2 || curindex == 1) {
+            //往左滑动<-
+            if (false == hasNext) {
+                console.log("hasNext直接返回");
+                CheckMedia();
+                return;
+            }
+            //console.log("删除第一个 增加后面一个");
+            if (g_mySwiper.slides.length == 3) {
+                console.log("删除第一个");
+                DestoryMedia(0);
+                g_mySwiper.removeSlide(0);
+            }
+            console.log("增加后面一个");
+            SetNextItem(jsonRoot["next"]);
+        }
+        CheckMedia();
+    }
+    function Refresh() {
+        LoadItem(g_selectitem.itemid, true);
+    }
+    function LoadItem(itemid, resetall) {
+        let json = {};
+        json["action"] = "backupfolditemdetail";
+        json["itemid"] = itemid;
+        console.log(JSON.stringify(json));
+        ServerApi.request.backupfolditemdetail(JSON.stringify(json), function (data, textStatus, jqXHR) {
+            console.log(data);
+            var jsonRoot = JSON.parse(data);
+            if (true == resetall) {
+                for (let i = 0; i < g_mySwiper.slides.length; ++i) {
+                    DestoryMedia(i);
+                }
+
+                g_mySwiper.removeAllSlides();
+            }
+            AssembleItems(jsonRoot);
+            DeviceApi.device.backupswitchitem(JSON.stringify(jsonRoot["cur"]));
+        }, function (xhr, textStatus) {
+        });
+    }
+    function InitSwiper(itemid, flodname) {
+        g_foldname = flodname;
+        LoadBaiduMapScript(function () {
+            g_mySwiper = new Swiper('.swiper', {
+                direction: 'horizontal', // 垂直切换选项
+                hashNavigation: true,
+                // 如果需要前进后退按钮
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                },
+                keyboard: {
+                        enabled: true,
+                        onlyInViewport: false,
+                    },
+                on: {
+                    init: function (swiper) {
+                        g_mySwiper = swiper;
+                        LoadItem(itemid, false);
+                        HideSwiperNav();
+                    },
+                    touchStart: function (swiper, event) {
+                        g_iTouchTimerSec = Date.now() / 1000;
+                        ShowSwiperNav();
+                    },
+                    touchMove: function (swiper, event) {
+                        g_iTouchTimerSec = Date.now() / 1000;
+                    },
+                    touchEnd: function (swiper, event) {
+                        g_iTouchTimerSec = Date.now() / 1000;
+                    },
+                    transitionEnd: function () {
+                        g_iTouchTimerSec = Date.now() / 1000;
+                        if (g_mySwiper.slides.length == 0) {
+                            g_selectitem = null;
+                            return;
+                        }
+                        var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+                        let itemid = parseInt($(activeSlide).attr("itemid"));
+                        console.log("-----" + g_selectitem.itemid + "------------");
+                        if (g_selectitem.itemid == itemid) {
+                            return;
+                        }
+                        LoadItem(itemid, false);
+                        //console.log("CheckMedia 111111");
+                        // setTimeout(() => {
+                        //     CheckMedia();
+                        // }, 3000);
+
+                    }
+                }
+            });
+        });
+    }
+    let g_MediaObjectMap = new Map();
+    function CheckMedia() {
+        console.log("~~~~CheckMedia~~~");
+        let keys = Array.from(g_MediaObjectMap.keys());
+        console.log(keys);
+        for (let i = 0; i < keys.length; ++i) {
+            let value = g_MediaObjectMap.get(keys[i]);
+            let isVideo = typeof value.play === 'function';
+            if (true == isVideo) {
+                console.log("Video pause");
+                value.pause();
+            }
+        }
+        g_overlayScrollbars.scroll({ x: 0, y: 0 });
+        var activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+        let itemid = parseInt($(activeSlide).attr("itemid"));
+        console.log(g_selectitem);
+        if (g_selectitem.mtype == 2) {
+            console.log("Video");
+            if (false == g_MediaObjectMap.has(itemid)) {
+                let width = $(activeSlide).find(".mediacontent").eq(0).width();
+                let height = $(activeSlide).find(".mediacontent").eq(0).height();
+                let player = videojs("player" + itemid);
+                player.width(width);
+                player.height(height);
+                player.ready(function () {
+                    const progressBar = player.controlBar.progressControl.el();
+                    // 鼠标移入时高亮
+                    progressBar.addEventListener('mouseenter', (e) => {
+                        console.log("mouseenter");
+                        g_mySwiper.allowTouchMove = false;
+                    });
+                    // 鼠标移出时恢复
+                    progressBar.addEventListener('mouseleave', (e) => {
+                        console.log("mouseleave");
+                        g_mySwiper.allowTouchMove = true;
+                    });
+                    console.log("player ready");
+                    let url = $(activeSlide).find(".MediaItemVideo").eq(0).attr("url");
+                    let src = window.location.protocol + "//" + window.location.host + "/" + url;
+                    player.src(src);
+                    player.play().then(() => {
+                        console.log('Video is playing successfully.');
+                    }).catch(error => {
+                        if (error.name === 'NotAllowedError') {
+                            console.log('An error occurred:' + error.name);
+                        }
+                    });
+                });
+                g_MediaObjectMap.set(itemid, player);
+                let keys = Array.from(g_MediaObjectMap.keys());
+                console.log(keys);
+            }
+            else {
+                let player = g_MediaObjectMap.get(itemid);
+                player.play();
+            }
+        }
+        else {
+            console.log("image");
+            if (false == g_MediaObjectMap.has(itemid)) {
+                let el = $(activeSlide).find(".MediaItemImage > img").eq(0).get(0);
+                pinZoom = new PinchZoom(el, { draggableUnzoomed: false });
+                g_MediaObjectMap.set(itemid, pinZoom);
+            }
+            else {
+                let pinZoom = g_MediaObjectMap.get(itemid);
+                pinZoom.zoomOutAnimation();
+            }
+        }
+        ShowSwiperNav();
+    }
+    function DestoryMedia(index) {
+        console.log("~~~~DestoryMedia~~~" + index);
+        var Slide = g_mySwiper.slides[index];
+        let itemid = parseInt($(Slide).attr("itemid"));
+        if ($(Slide).find(".mediacontent").eq(0).attr("mtype") == 2) {
+            if (true == g_MediaObjectMap.has(itemid)) {
+                let player = g_MediaObjectMap.get(itemid);
+                g_MediaObjectMap.delete(itemid);
+                player.pause();
+                player.dispose();
+                player = null;
+            }
+        }
+        else {
+            if (true == g_MediaObjectMap.has(itemid)) {
+                let pinZoom = g_MediaObjectMap.get(itemid);
+                g_MediaObjectMap.delete(itemid);
+                pinZoom.destroy();
+                pinZoom = null;
+            }
+        }
+    }
+    var g_supportGps = IsSupportGps();
+    function SetPlayAddr(itemdiv, location, weizhi) {
+        addr = LanguageText(location);
+        $(itemdiv).find(".paishedidian").eq(0).html(addr);
+        if(false == g_supportGps)
+        {
+            $(itemdiv).find(".playaddrdetail").eq(0).addClass("hidden");
+            $(itemdiv).find(".playaddrdetail").eq(0).removeClass("canclick");
+            return;
+        }
+        $(itemdiv).find(".playaddr").eq(0).off('click');
+        $(itemdiv).find(".playaddr").eq(0).click(function () 
+        {
+            let json = {};
+            json["id"] = $(itemdiv).attr("itemid");
+            json["weizhi"] = weizhi;
+            json["location"] = location;
+            DeviceApi.device.gpsaddress(JSON.stringify(json));
+        });
+    }
+
+    function SetInfo(itemdiv, mediatype, url, width, height, paitime, weizhi, location, size, duration) {
+        var iScreenWidth = $(document.body).width();
+        var scale = (iScreenWidth * 1.0) / width;
+        var iMediaContentHeight = height * scale;
+        if (iMediaContentHeight > $(document.body).height()) {
+            iMediaContentHeight = $(document.body).height();
+        }
+        $(itemdiv).find(".mediaitemdel").eq(0).attr("itemid", itemdiv.attr("itemid"));
+        $(itemdiv).find(".mediacontent").eq(0).css("width", iScreenWidth + "px");
+        $(itemdiv).find(".mediacontent").eq(0).css("height", iMediaContentHeight + "px");
+        $(itemdiv).find(".mediacontent > .MediaItemImage").eq(0).css("width", iScreenWidth + "px");
+        $(itemdiv).find(".mediacontent > .MediaItemImage").eq(0).css("height", iMediaContentHeight + "px");
+        $(itemdiv).find(".mediasize").eq(0).html(SizeToStringkb(size));
+        $(itemdiv).find(".fenbianlv").eq(0).html(width + " X " + height);
+        $(itemdiv).find(".paisheshijian").eq(0).html(paitime);
+        setTimeout(function () {
+            GetAddr(itemdiv, weizhi, location, SetPlayAddr);
+        }, 1);
+        $(itemdiv).find(".mediacontent").eq(0).attr("mtype", mediatype);
+        if (mediatype == 1) {
+            $(itemdiv).find(".mediaduration").parent().addClass("hidden");
+            $(itemdiv).find(".MediaItemImage").eq(0).removeClass("hidden");
+            $(itemdiv).find(".MediaItemVideo").eq(0).addClass("hidden");
+
+            $(itemdiv).find(".MediaItemImage > img").eq(0).attr("src", url);
+        }
+        else {
+            $(itemdiv).find(".MediaItemVideo").eq(0).removeClass("hidden");
+            $(itemdiv).find(".MediaItemImage").eq(0).addClass("hidden");
+            $(itemdiv).find(".MediaItemVideo").eq(0).attr("url", url);
+            $(itemdiv).find(".mediaduration").eq(0).html(SecToTime(duration));
+            let itemid = $(itemdiv).attr("itemid");
+            let html = '<video id="player{0}" style="width:100%;height:100%" webkit-playsinline="true" playsinline="true"  class="video-js vjs-default-skin" class="video-js vjs-default-skin" width="100" height="100" controls data-setup="{}"></video>'.format(itemid);
+            console.log(html);
+            $(itemdiv).find(".mediacontent > .MediaItemVideo").eq(0).append(html);
+            $(itemdiv).find(".vjs-volume-menu-button").eq(0).css("display", "none");
+            $(itemdiv).find(".vjs-fullscreen-control").eq(0).css("display", "none");
+            console.log(url);
+            console.log(itemid);
+            var files = url.split("/");
+            var mediaaddr = GetBackupThumbPic(g_foldname, files[files.length - 1]);
+            $("#player" + itemid).attr("poster", mediaaddr);
+        }
+        SetContainer(itemdiv, mediatype, iScreenWidth, iMediaContentHeight);
+    }
+    function SetContainer(itemdiv, mediatype, containerwidth, containerheight) {
+        var iMaxHeight = $(document.body).height();
+        if (mediatype == 1) {
+            //图片需要留点空隙 否则无法滚动看详情，与图片的缩放相冲突了
+            iMaxHeight -= $(itemdiv).find(".mediaitem").eq(0).height();
+        }
+        if (containerheight > iMaxHeight) {
+            containerheight = iMaxHeight;
+        }
+        $(itemdiv).find(".mediacontent").eq(0).css("width", containerwidth + "px");
+        $(itemdiv).find(".mediacontent").eq(0).css("height", containerheight + "px");
+
+        $(itemdiv).find(".mediacontent > .MediaItemImage").eq(0).css("width", containerwidth + "px");
+        $(itemdiv).find(".mediacontent > .MediaItemImage").eq(0).css("height", containerheight + "px");
+        $(itemdiv).find(".mediacontent > .MediaItemVideo").eq(0).css("width", containerwidth + "px");
+        $(itemdiv).find(".mediacontent > .MediaItemVideo").eq(0).css("height", containerheight + "px");
+    }
+    function ResetAllPage(itemid) {
+        let iPageCount = g_mySwiper.slides.length;
+        let iNewItemID = -1;
+        for (let i = iPageCount - 1; i > 0; --i) {
+            let item = $(g_mySwiper.slides[i]);
+            console.log("Scan: " + item.attr("itemid") + " " + itemid);
+            if (item.attr("itemid") != itemid) {
+                iNewItemID = item.attr("itemid");
+                break;
+            }
+        }
+        console.log("iNewItemID: " + iNewItemID);
+        if (iNewItemID == -1) {
+            //没有了
+            DeviceApi.device.closewindow();
+            return;
+        }
+        LoadItem(parseInt(iNewItemID), true);
+    }
+    function EnableSwipe()
+    {
+        g_mySwiper.allowSlideNext = true;
+        g_mySwiper.allowSlidePrev = true;
+    }
+    // function EnableSwipe()
+    // {
+    //     g_mySwiper.allowSlideNext = false;
+    //     g_mySwiper.allowSlidePrev = false;
+    // }
+    function DeleteMediaItem(item) {
+        let itemid = $(item).attr("itemid");
+        console.log(itemid);
+        g_mySwiper.disable();
+        ShowConfirm(LanguageText("确认"), LanguageText("删除后将永远丢失该媒体的存储,请确认!"), 1, LanguageText("按钮确定"), function () {
+            let json = {};
+            json["action"] = "backupuploaditemdel";
+            json["itemid"] = parseInt(itemid);
+            ServerApi.request.backupuploaditemdel(JSON.stringify(json), function (data, textStatus, jqXHR) {
+                g_mySwiper.enable();
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                UnSetToast();
+                if (jsonRoot["status"] != 1) {
+                    return;
+                }
+                DeviceApi.device.backupdeleteitem(itemid + "");
+                let iPageCount = g_mySwiper.slides.length;
+                if (iPageCount == 1) {
+                    //关闭窗口
+                    DeviceApi.device.closewindow();
+                    return;
+                }
+                ResetAllPage(itemid);
+            }, function (xhr, textStatus) {
+                g_mySwiper.enable();
+            });
+        }, LanguageText("按钮取消"), function () {
+            g_mySwiper.enable();
+            UnSetToast();
+        });
+    }
+let g_synctimerid = null;
+let g_requesttime = 0;
+function ToSyncPrecent()
+{
+    g_requesttime = new Date().getTime();
+    let activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+    let itemid = parseInt($(activeSlide).attr("itemid"));
+    let json = {};
+    json["action"] = "synctodeviceprecent";
+    json["itemid"] = itemid;
+    ServerApi.request.synctodeviceprecent(JSON.stringify(json), function (data, textStatus, jqXHR) {
+                var jsonRoot = JSON.parse(data);
+                g_requesttime = 0;
+                if(1 != jsonRoot["status"])
+                {
+                    if(null != g_synctimerid)
+                    {
+                        clearInterval(g_synctimerid);
+                        g_synctimerid = null;
+                    }
+                    g_mySwiper.enable();
+                    Toast(LanguageText("同步失败!"));
+                    return;
+                }
+                if(100 == jsonRoot["precent"])
+                {
+                    if(null != g_synctimerid)
+                    {
+                        clearInterval(g_synctimerid);
+                        g_synctimerid = null;
+                    }
+                    g_mySwiper.enable();
+                    if("media exist" != jsonRoot["error"])
+                    {
+                        DeviceApi.device.backupfilesync(itemid + "");
+                    }
+                    Toast(LanguageText("同步成功!"));
+                    return;
+                }
+                SetToast(LanguageText("正在同步:") + jsonRoot["precent"] + "%");
+            }, function (xhr, textStatus) {
+                g_requesttime = 0;
+                g_mySwiper.enable();
+                UnSetToast();
+                Toast(LanguageText("同步失败!"));
+            });
+}
+function ToSync()
+{
+    g_mySwiper.disable();
+    ShowConfirm(LanguageText("确认"), LanguageText("请确认是否需要同步到设备？"), 1, LanguageText("按钮确定"), function () {
+            let activeSlide = g_mySwiper.slides[g_mySwiper.activeIndex];
+            let itemid = parseInt($(activeSlide).attr("itemid"));
+            let json = {};
+            json["action"] = "synctodevice";
+            json["itemid"] = parseInt(itemid);
+            ServerApi.request.synctodevice(JSON.stringify(json), function (data, textStatus, jqXHR) {
+                console.log(data);
+                var jsonRoot = JSON.parse(data);
+                if(1 != jsonRoot["status"])
+                {
+                    g_mySwiper.enable();
+                    Toast(LanguageText("同步失败!"));
+                    return;
+                }
+                if(null != g_synctimerid)
+                {
+                    clearInterval(g_synctimerid);
+                    g_synctimerid = null;
+                }
+                SetToast(LanguageText("正在同步:") + jsonRoot["precent"] + "%");
+                g_synctimerid = setInterval(() => {
+                    if(g_requesttime != 0 && new Date().getTime() - g_requesttime < 5000)
+                    {
+                        return;
+                    }
+                    ToSyncPrecent();
+                });
+            }, function (xhr, textStatus) {
+                g_mySwiper.enable();
+                UnSetToast();
+                Toast(LanguageText("同步失败!"));
+            });
+        }, LanguageText("按钮取消"), function () {
+            g_mySwiper.enable();
+            UnSetToast();
+        });
+}
+</script>
+
+<body style="position: relative;">
+    <div style="position: absolute; top: 0;width: 100%;height: 100%;">
+        <div class="swiper-button-prev hide"></div>
+        <div class="swiper-button-next hide"></div>
+    </div>
+    <div class="swiperMain" style="width: 100%;height: 100%; overflow: scroll;">
+        <div class="swiper">
+            <div class="swiper-wrapper">
+            </div>
+        </div>
+    </div>
+    <div class="hidden itemtemplate">
+        <div class="swiper-slide">
+            <div class="mediacontent" style="width: 100%; height: 50%;">
+                <div class="MediaItemImage hidden">
+                    <img style="width: 100%;height: 100%;" src="../img/background.png" />
+                </div>
+                <div class="MediaItemVideo hidden">
+                    <!-- 加载的时候就被解析了 再改id也没有用了 所以这里使用代码动态加载的方式 看 setinfo 函数 
+                    <video  webkit-playsinline="true" playsinline="true"  class="video-js vjs-default-skin" class="video-js vjs-default-skin" width="100" height="100" controls data-setup="{}">
+                    </video> -->
+                </div>
+            </div>
+            <div class="mediaitem layout_flex ">
+                <div class="layout-left mediaitemtitle fenbianlvlabel">分辨率:</div>
+                <div class="layout-middle fenbianlv"></div>
+            </div>
+            <div class="mediaitem layout_flex ">
+                <div class="layout-left mediaitemtitle mediapaitimelabel">拍摄时间:</div>
+                <div class="layout-middle paisheshijian"></div>
+            </div>
+            <div class="mediaitem layout_flex ">
+                <div class="layout-left mediaitemtitle mediasizelabel">媒体大小:</div>
+                <div class="layout-middle mediasize"></div>
+            </div>
+            <div class="mediaitem layout_flex ">
+                <div class="layout-left mediaitemtitle mediadurationlabel">持续时间:</div>
+                <div class="layout-middle mediaduration"></div>
+            </div>
+            <div class="mediaitem playaddr layout_flex canclick">
+                <div class="layout-left mediaitemtitle mediapaiaddrlabel">拍摄地点:</div>
+                <div class="layout-middle paishedidian">获取中...</div>
+                <div class="layout-right" style="margin-right: 3vh; margin-top: 1.8vh; width: 1.5vh;height: 2.5vh;">
+                    <div class="playaddrdetail" style="position: relative; width: 100%; height: 100%; ">
+                        <img style="position:absolute;width:100%; height:100%;" src="../img/more.png"
+                            style="width: 100%; height: 100%;scale: fit;" />
+                    </div>
+                </div>
+            </div>
+            <div style="width: 100%; height: 10vh;text-align: center; margin-top: 3vh;">
+                <div class="mediaitemdel canclick mediaremovelabel" onclick="DeleteMediaItem(this)"
+                    style="width:20vh; height: 7vh; background-color:#d9534f; border: #d43f3a 1px solid; margin: 0 auto; border-radius: 4px; color:white; font-size: 2.5vh; text-align: center;line-height: 7vh;">
+                    删 除</div>
+            </div>
+        </div>
+    </div>
+    <div class="ShowIgnorePage" onclick="ToSync()" style="width: 5vh;height: 5vh;margin: 3vh; cursor: pointer; background-image:url('../img/tosync.png'); background-repeat: no-repeat; background-size: 100% 100%; position: fixed;right: 0;bottom: 0;z-index: 100;"></div>
+</body>
+
+</html>

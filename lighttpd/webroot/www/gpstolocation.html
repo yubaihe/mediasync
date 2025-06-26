@@ -16,73 +16,34 @@
 <script src="./js/imagesloaded.pkgd.min.js"></script>
 <script src="./js/Common.js?id=3"></script>
 <script src="./js/baidumap.js"></script>
+
+<script src="js/LanguageOpt.js"></script>
+<link rel="stylesheet" href="css/dialog.css"/>
+<script type="text/javascript" src="js/dialog.min.js"></script>
+<script type="text/javascript" src="js/Toast.js"></script>
 <script>
 var DeviceApi = new API("");
-
-function GetAddr(addr)
+var ServerApi = new API(window.location.protocol + "//" + window.location.host);
+function GetLocation(addr)
 {
+    console.log("GetLocation:"+ addr);
     LoadBaiduMapScript(function(){
-        var array = addr.split("-");
-        if(array.length == 2)
-        {
-            if(array[0] == "B")
-            {
-                var gps = array[1].split("&");
-                var BdPoint = new BMap.Point(gps[0],gps[1]);
-                var myGeo = new BMap.Geocoder({extensions_town: true});      
-                // 根据坐标得到地址描述    
-                myGeo.getLocation(BdPoint, function(result){  
-                    if (result.address != 0)
-                    {      
-                        DeviceApi.device.gpsaddress(result.address);
-                    }      
-                    else
-                    {
-                        DeviceApi.device.gpsaddress("未知");
-                    }
-                });
-            }
-        }
-        else
-        {
-            var gps = addr.split("&");
-            var ggPoint = new BMap.Point(gps[0],gps[1]);
-            var translateCallback = function (data)
-            {
-                if(data.status === 0) 
-                {
-                    var myGeo = new BMap.Geocoder({extensions_town: true});      
-                    // 根据坐标得到地址描述    
-                    myGeo.getLocation(data.points[0], function(result)
-                    {  
-                        if (result.address != 0)
-                        {      
-                            DeviceApi.device.gpsaddress(result.address);
-                        }      
-                        else
-                        {
-                            DeviceApi.device.gpsaddress("未知");
-                        }
-                    });
-                }
-                else
-                {
-                    DeviceApi.device.gpsaddress("未知");
-                }
-            }
-            var convertor = new BMap.Convertor();
-            var pointArr = [];
-            pointArr.push(ggPoint);
-            convertor.translate(pointArr, 1, 5, translateCallback);
-        }
-    
-        console.log(array);
+        GetAddr(null, addr, "", function(itemdiv, location, bdgps){
+            DeviceApi.device.gpsaddress(location);
+        });
     });
     
 }
-//GetAddr("118.000000&32.000000");
+$(document).ready(function()
+{
+    // setTimeout(() => {
+    //     Toast("asdfasd");
+    // }, 3000);
+    
+});
+// GetAddr("118.000000&32.000000");
 </script>
 <body>
-    
+    <div></div>
 </body>
 </html>

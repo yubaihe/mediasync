@@ -62,31 +62,34 @@ input
 var gBaiDuMap;
 var gHide = true;
 var DeviceApi = new API("");
-function SetLocationWithAddr(location)
+var ServerApi = new API(window.location.protocol + "//" + window.location.host);
+function SetLocationWithAddr(addr, setlocation)
 {
     console.log("SetLocationWithAddr");
-    if(location.length == 0)
+    if(addr.length == 0)
     {
-        location = "0&0";
+        addr = "0.000000&0.000000";
     }
-    var array = location.split("-");
-    if(array.length == 2)
+    GetGps(addr, function(gps, gpsbd, location)
     {
-        if(array[0] == "B")
+        gBaiDuMap.centerAndZoom(GpsToBdPoint(gpsbd), 15);
+        g_location = location;
+        if(location != setlocation)
         {
-            var gps = array[1].split("&");
-            SetBaiDuLocation(gps[0], gps[1]);
+            if(typeof g_BMapAutocomplete  != "undefined")
+            {
+                g_BMapAutocomplete.setInputValue(location);
+            }
+            
+            var szBuffer = "{\"addr\":\"{0}\",\"location\":\"{1}\"}".format(gpsbd, location);
+            DeviceApi.device.gpsupdate(szBuffer);
         }
-    }
-    else
-    {
-        var gps = location.split("&");
-        SetGpsLocation(gps[0], gps[1]);
-    }
+    });
 }
+var g_location;
 
 var g_InitReady = false;
-function SetLocation(location)
+function SetLocation(addr, location)
 {
     LoadBaiduMapScript(function(){
         try {
@@ -100,11 +103,11 @@ function SetLocation(location)
                     InitContent();
                 }
             });
-            SetLocationWithAddr(location);
+            SetLocationWithAddr(addr, location);
             // SetLocation("B-118.957520&32.065876");
             
         } catch (error) {
-            alert(error);
+           // alert(error);
             $("body").html("");
             $("body").load("errorpage.html", "type=nonet", function(){
                         SetNoNetIcon();
@@ -113,47 +116,6 @@ function SetLocation(location)
     });
 }
 
-function SetGpsLocation(long, latuide)
-{
-    console.log("SetGpsLocation");
-  var ggPoint = new BMap.Point(long, latuide);
-          var translateCallback = function (data){
-              console.log(data);
-            if(data.status === 0) {
-                SetLocation2(data.points[0]);
-            }
-          }
-  
-    var convertor = new BMap.Convertor();
-    var pointArr = [];
-    pointArr.push(ggPoint);
-    convertor.translate(pointArr, 1, 5, translateCallback);
-}
-
-function SetBaiDuLocation(long, latuide)
-{
-    var bdPoint = new BMap.Point(long, latuide);
-    SetLocation2(bdPoint);
-}
-
-var g_addr;
-function SetLocation2(location) 
-{
-    console.log(location);
-    var myGeo = new BMap.Geocoder({extensions_town: true});      
-    // 根据坐标得到地址描述    
-    myGeo.getLocation(new BMap.Point(location.lng, location.lat), function(result)
-    {      
-        console.log(result);
-        if (result)
-        {
-            //var addr = result.addressComponents.province + result.addressComponents.city + result.addressComponents.district;
-            var addr = result.address;
-            gBaiDuMap.centerAndZoom(result.point, 15);
-            g_addr = addr;
-        }      
-    });
-}
 
 function SetLocation2WithReport(location)
 {
@@ -166,10 +128,12 @@ function SetLocation2WithReport(location)
         if (result)
         {
             //var addr = result.addressComponents.province + result.addressComponents.city + result.addressComponents.district;
-            var addr = result.address;
-            var szBuffer = "{\"long\":\"{0}\",\"lat\":\"{1}\",\"addr\":\"{2}\"}".format(location.lng, location.lat, addr);
+            // var szBuffer = "{\"long\":\"{0}\",\"lat\":\"{1}\",\"addr\":\"{2}\"}".format(location.lng, location.lat, addr);
+            // DeviceApi.device.gpsupdate(szBuffer);
+            var szBuffer = "{\"addr\":\"{0}\",\"location\":\"{1}\"}".format("B-" + location.lng.toFixed(6) + "&" + location.lat.toFixed(6), result.address);
+            console.log(szBuffer);
             DeviceApi.device.gpsupdate(szBuffer);
-            g_BMapAutocomplete.setInputValue(addr);
+            g_BMapAutocomplete.setInputValue(result.address);
         }      
     });
 }
@@ -231,7 +195,7 @@ function InitContent()
             myValue = value.province + value.city
                     + value.district + value.street
                     + value.business;
-            console.log(e);
+                    console.log(e);
             setPlace(myValue);
         });
    
@@ -239,7 +203,7 @@ function InitContent()
             var center = gBaiDuMap.getCenter(); // 获取地图中心点
             SetLocation2WithReport(center);  // 这里的this就是map实例
         });
-        g_BMapAutocomplete.setInputValue(g_addr);
+        g_BMapAutocomplete.setInputValue(g_location);
     }
     catch(error)
     {
@@ -254,7 +218,7 @@ $(document).ready(function()
 {
     DisableContextMenu();
     // setTimeout(() => {
-    //     SetLocation("B-118.957520&32.065876");
+    //     SetLocation("118.957520&32.065876");
     // }, 1);
 });
 

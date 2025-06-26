@@ -7,6 +7,8 @@ sudo apt-get install gcc
 sudo apt-get install cmake
 sudo apt-get install g++
 sudo apt-get install yasm 
+sudo apt-get install autoreconf
+sudo apt-get install libtool
 ```
 
 # 2.拉代码
@@ -20,31 +22,45 @@ git clone git@github.com:yubaihe/mediasync.git
 
 # 3.编译
 
-```
+```shell
 cd mediasync
-source ./initenv.sh LINUX /home/relech/syncmedia/
+# 初始化环境变量
+source ./initenv.sh DOCKER /home/relech/mediasync/
+# 编译
 make
+# 将编译的临时文件删除掉
+rm -rf $ROOTDIR/**
+# 将打包文件移动到目的目录
+cp package/install/** $ROOTDIR -R
+
 ```
 
-# 4.修改配置项
-
-![](./config.png)
-
-# 5.运行
+# 4.运行
 
 ```shell
-#设置环境变量
-#需要以root权限运行
-export ROOTDIR=/home/relech/syncmedia/
-#启动
+# 把启动脚本拷贝进目的目录
+cp package/startup/docker.sh $ROOTDIR/start.sh
+# 添加可执行权限并执行脚本
+chmod +x $ROOTDIR/start.sh
 $ROOTDIR/start.sh
-#停止
-$ROOTDIR/stop.sh
+```
+
+# 5.支持samba访问
+
+```shell
+sudo vi /etc/samba/smb.conf 
+# 增加
+include = /home/relech/mediasync/samba/lib/smbmedia.conf
+
+/home/relech/mediasync 这个需要修改为实际的地址
+
+重启
+sudo systemctl restart smbd
 ```
 
 # 6.使用介绍
 
-> [使用介绍](http://www.yubaihe.net/privacy/myg/help.html)
+> [使用介绍](http://www.yubaihe.net/function/homepage.html)
 
 # 7.发行
 

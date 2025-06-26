@@ -7,24 +7,42 @@ function GetUrlParam(name)
 }
 
 
-function SetCookie(name,value)
-{
-    var Days = 3650;
-    var exp = new Date();
-    exp.setTime(exp.getTime() + Days*24*60*60*1000);
-    document.cookie = name + "="+ escape (value) + ";expires=" + exp.toGMTString();
-}
 
-//读取cookies
-function GetCookie(name)
-{
-    var arr,reg=new RegExp("(^| )"+name+"=([^;]*)(;|$)");
+function SetCookie(name, value, options = {}) {
+    const defaultOptions = {
+        days: 3650,
+        path: '/',
+        sameSite: 'Strict',
+        secure: false,
+        domain: undefined
+    };
  
-    if(arr=document.cookie.match(reg))
+    const opts = { ...defaultOptions, ...options };
+    const exp = new Date();
+    exp.setDate(exp.getDate() + opts.days);
  
-        return unescape(arr[2]);
-    else
-        return null;
+    let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
+    cookieString += `; expires=${exp.toUTCString()}`;
+    cookieString += `; path=${opts.path}`;
+    
+    if (opts.domain) cookieString += `; domain=${opts.domain}`;
+    if (opts.sameSite) cookieString += `; SameSite=${opts.sameSite}`;
+    if (opts.secure) cookieString += '; Secure';
+ 
+    document.cookie = cookieString;
+    console.log('Set Cookie:', document.cookie);
+}
+ 
+// 增强版Cookie获取
+function GetCookie(name) {
+    const cookies = document.cookie.split('; ');
+    for (const cookie of cookies) {
+        const [cookieName, cookieValue] = cookie.split('=');
+        if (cookieName === encodeURIComponent(name)) {
+            return decodeURIComponent(cookieValue);
+        }
+    }
+    return null;
 }
 
 //删除cookies
@@ -148,7 +166,16 @@ function GetPic(pic)
     retPic += ".jpg";
     return retPic;
 }
-
+function GetBackupThumbPic(name, file)
+{
+    var names = file.split("\.");
+    var end = names[names.length - 1];
+    var start = file.substr(0, file.length - end.length - 1);
+    var retPic = start + "_" + end;
+    retPic += ".jpg";
+    let url = "backup/.media/{0}/{1}".format(name, retPic);
+    return url;
+}
 function SecToTime(iSec)
 {
     var iDays = parseInt(iSec / 86400);//转换天数
@@ -262,11 +289,85 @@ function FilterInput(value)
     var reg = new RegExp("[`\"/#:*<>?|\\\\ ]", "g");
     value = value.toString().replace(reg,""); 
     return $.trim(value);
-   
 }
-
-
 function Transform(value)
 {
     return value.replaceAll('"','\\"');
+}
+
+function GetUrl(str)
+{
+    var url = "media/";
+    url += str;
+    return url;
+}
+function GetExtraUrl(str)
+{
+    let array = str.split(".");
+    let url = "media/.media_ex/";
+    let tmpUrl = "";
+    for(let i = 0; i < array.length - 1; ++i)
+    {
+        tmpUrl += array[i];
+        tmpUrl += ".";
+    }
+    if(tmpUrl.length > 0)
+    {
+        tmpUrl = tmpUrl.slice(0, -1) + "_";
+    }
+    tmpUrl += array[array.length - 1];
+    tmpUrl += ".mp4";
+    url += tmpUrl;
+    return url;
+}
+function GetThumbUrl(str)
+{
+    console.log("abcd:" + str);
+    let array = str.split(".");
+    var url = "media/.media/";
+    url += array[0];
+    url += "_";
+    url += array[1];
+    url += ".";
+    url += "jpg";
+    console.log(url);
+    return url;
+}
+function Calculate1vh() 
+{
+    return window.innerHeight * 0.01;
+}
+window.onerror = function(message, source, lineno, colno, error) {
+    console.log("Global error caught:");
+    console.log(`Message: ${message}`);
+    console.log(`Source: ${source}`);
+    console.log(`Line: ${lineno}`);
+    console.log(`Column: ${colno}`);
+    console.log(`Error object:`, error);
+    return false; // 返回false防止默认的错误处理机制（例如显示一个堆栈跟踪）
+};
+function RunInit()
+{
+    var initfunction = GetUrlParam("init");
+    if(initfunction == null)
+    {
+        return;
+    }
+    let InitFun = $.base64.decode(initfunction);
+    eval(InitFun);
+}
+
+function IsSupportGps()
+{
+    const AK = GetCookie("baiduak");
+    console.log("AK:" + AK);
+    if(null == AK || AK.length == 0)
+    {
+        return false;
+    }
+    return true;
+}
+function IsPc()
+{
+  return window.matchMedia('(pointer: fine), (hover: hover)').matches;
 }
