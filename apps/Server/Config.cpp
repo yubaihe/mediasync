@@ -256,6 +256,12 @@ string CConfig::GetUploadRoot()
     string strUploadRoot = Server::CCommonUtil::StringFormat("%s.media_tmp/", strStore.c_str());
     return strUploadRoot;
 }
+string CConfig::GetTempRoot()
+{
+    string strRet = GetUploadRoot();
+    strRet.append("temp/");
+    return strRet;
+}
 string CConfig::GetExtraRoot()
 {
     ConfigStore store = GetStore();

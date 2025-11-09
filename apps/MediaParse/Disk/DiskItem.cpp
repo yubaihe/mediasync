@@ -63,6 +63,10 @@ BOOL CDiskItem::Parse(const char* pszDevName)
     m_strDev = pszDevName;
     m_strLabel = CCommonUtil::ExecuteCmd("blkid -o value -s LABEL /dev/%s | tr -d '\n'", pszDevName);
     m_strUuid = CCommonUtil::ExecuteCmd("blkid -o value -s UUID /dev/%s  | tr -d '\n'", pszDevName);
+    if(m_strLabel.length() == 0)
+    {
+        m_strLabel = m_strUuid;
+    }
     EnterCriticalSection(&m_Section);
     m_eStatus = DISKITEMSTATUS_SYNC;
     LeaveCriticalSection(&m_Section);
@@ -373,4 +377,8 @@ BOOL CDiskItem::IsExit()
 {
     //printf("CDiskItem::IsExit:%s :%d\n", m_strDev.c_str(), m_bExit);
     return m_bExit;
+}
+size_t CDiskItem::GetIgnoreCount()
+{
+    return m_PhotoManager.GetIgnoreItemCount();
 }

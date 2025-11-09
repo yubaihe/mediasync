@@ -64,6 +64,7 @@ public:
     int GetInt(string strKey, int iDefault = 0);
     string GetString(string strKey, string strDefault = "");
     long GetLong(string strKey, long iDefault = 0);
+    int64_t GetInt64(string strKey, long iDefault = 0);
 private:
     int GetIndex(string strKey);
 private:

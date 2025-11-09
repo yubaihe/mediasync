@@ -194,6 +194,132 @@ BOOL CCommonUtil::ContainNetName(string strNetName)
     }
     return FALSE;
 }
+void CCommonUtil::ColorPrintf(COLORTYPE eColorType, const char* pszFormat, ...)
+{
+    char* pszLog = NULL;
+    int iCmdLen = 0;
+    va_list vArgList;
+    va_start (vArgList, pszFormat);
+    iCmdLen = vsnprintf(NULL, 0, pszFormat, vArgList) + 1;
+    va_end(vArgList);
+
+    va_start (vArgList, pszFormat); 
+    pszLog = (char*)malloc(iCmdLen);
+    memset(pszLog, 0, iCmdLen);
+    vsnprintf(pszLog, iCmdLen, pszFormat, vArgList);
+    va_end(vArgList);
+    BOOL bHasN = false;
+    if(pszLog[strlen(pszLog) - 1] == '\n')
+    {
+        memset(pszLog + strlen(pszLog) - 1, 0, 1);
+        bHasN = TRUE;
+    }
+    switch (eColorType)
+    {
+        case COLORTYPE_SUCCESS:
+        {
+            // 绿色文字（#00FF00）+ 淡蓝背景（#E3F2FD）
+            printf("\033[1;38;2;0;255;0;48;2;227;242;253m%s\033[0m", pszLog);
+            break;
+        }
+        case COLORTYPE_WARNING:
+        {
+            // 黄色文字（#FFFF00）+ 米白背景（#FFF8E1）
+            printf("\033[1;38;2;255;255;0;48;2;255;248;225m%s\033[0m", pszLog);
+            break;
+        }
+        case COLORTYPE_ERROR:
+        {
+            // 红色文字（#FF0000）+ 浅灰背景（#F0F0F0）
+            printf("\033[1;38;2;255;0;0;48;2;240;240;240m%s\033[0m", pszLog);
+            break;
+        }
+    }
+    if(TRUE == bHasN)
+    {
+        printf("\n");
+    }
+    free(pszLog);
+    pszLog = NULL;
+}
+uint64_t CCommonUtil::CurTimeSec()
+{
+    //long long iTimeLast;
+    //iTimeLast = time(NULL);     //总秒数  
+    time_t curMilSec;
+    time(&curMilSec);
+    return curMilSec;
+}
+BOOL CCommonUtil::CheckFoldEmpty(const char* pszFold)
+{
+    DIR* pDir = opendir(pszFold);
+    if(NULL == pDir)
+    {
+        return FALSE;
+    }
+    
+    int iFileCount = 0;
+    struct dirent* pEntry = NULL;
+    while ((pEntry = readdir(pDir)) != NULL) 
+    {
+        if (strcmp(pEntry->d_name, ".") != 0 && strcmp(pEntry->d_name, "..") != 0)
+        {
+            iFileCount++;
+            break;
+        }
+    }
+    closedir(pDir);
+    return iFileCount == 0?TRUE:FALSE;
+}
+BOOL CCommonUtil::RemoveFold(const char* pszFold, BOOL bForce/* = TRUE*/)
+{
+    int iLen = strlen(pszFold) + 20;
+    char* pszCommand = (char*)malloc(iLen);
+    memset(pszCommand, 0, iLen);
+    if(TRUE == bForce)
+    {
+        sprintf(pszCommand, "rm -rf \"%s\"", pszFold);
+    }
+    else
+    {
+        sprintf(pszCommand, "rmdir \"%s\"", pszFold);
+    }
+    printf("%s\n", pszCommand);
+    int iStatus = system(pszCommand);
+    free(pszCommand);
+    pszCommand = NULL;
+    return CheckCmdStatus(iStatus);
+}
+BOOL CCommonUtil::CheckCmdStatus(pid_t iStatus)
+{
+    if (-1 == iStatus)
+    {
+        printf("system error!");
+        return FALSE;
+    }
+    else
+    {
+        //printf("exit status value = [0x%x]\n", status);
+        if (WIFEXITED(iStatus))
+        {
+            if (0 == WEXITSTATUS(iStatus))
+            {
+                printf("run shell script successfully.\n");
+                return TRUE;
+            }
+            else
+            {
+                printf("run shell script fail, script exit code: %d\n", WEXITSTATUS(iStatus));
+                return FALSE;
+            }
+        }
+        else
+        {
+            printf("exit status = [%d]\n", WEXITSTATUS(iStatus));
+            return FALSE;
+        }
+    }
+}
 }
 
 

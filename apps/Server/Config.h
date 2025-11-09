@@ -76,6 +76,7 @@ public:
     string GetStoreRoot();
     string GetUploadRoot();
     string GetExtraRoot();
+    string GetTempRoot();
 
     ConfigUser GetUser();
     BOOL SetUser(ConfigUser user);

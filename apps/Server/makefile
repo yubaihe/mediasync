@@ -25,6 +25,7 @@ CFLAGS  += -std=gnu++11 -Wall -MD -fPIE -fpermissive -fno-stack-protector -Wno-c
 		-I./Util \
 		-I./BroadCast \
 		-I./DataBase \
+		-I$(ROOTDIR) \
 		-I.
 
 STATICLIB = -lpthread -L$(ROOTDIR)/libs/ -lsqlite3 -lcurl -ldbus-1 -lcommon 
@@ -40,7 +41,7 @@ STATICLIB = -lpthread -L$(ROOTDIR)/libs/ -lsqlite3 -lcurl -ldbus-1 -lcommon
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, Util ) )
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, DataBase ) )
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, BroadCast ) )
-SOURCE += stdafx.cpp Config.cpp BroadCastServer.cpp ConnectServer.cpp ConnectServerMessage.cpp ClearCache.cpp MediaScan.cpp GpsManager.cpp main.cpp  
+SOURCE += stdafx.cpp Config.cpp BroadCastServer.cpp ConnectServer.cpp ConnectServerMessage.cpp ClearCache.cpp MediaScan.cpp GpsManager.cpp main.cpp Butler.cpp
 ####################################################################################################
 
 OBJS = $(SOURCE:%.cpp=obj.$(TARGET)/%.o)

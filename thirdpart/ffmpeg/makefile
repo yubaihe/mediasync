@@ -1,16 +1,10 @@
 .PHONY: all clean install
-name=FFmpeg-n7.1.1
-configflags=
-ifneq (,$(filter $(PROJECTARC),QZS3))
-	configflags=--disable-asm --arch=ARM --target-os=linux --extra-cflags="-fPIC" --cross-prefix=arm-linux-gnueabihf- --enable-small --disable-runtime-cpudetect
-#	configflags+=--enable-small --disable-runtime-cpudetect
-else
-	configflags=
-endif
+name = ffmpeg-4.0.6
+configflags = --enable-gpl --enable-libx264 --enable-version3 --extra-cflags="-I$(ROOTDIR)/include/x264" --extra-ldflags="-L$(ROOTDIR)/libs -lx264"
+
 all:
 	@make clean
 	@tar -xvzf $(name).tar.gz
-#	@cd ./$(name);./configure --disable-asm --arch=ARM --target-os=linux --extra-cflags="-fPIC" --cross-prefix=arm-linux-gnueabihf- --enable-shared --prefix=$(shell pwd)/out || exit $$?;make || exit $$?;make install;
 	cd ./$(name);./configure $(configflags) --enable-shared  --prefix=$(shell pwd)/out || exit $$?;make || exit $$?;make install;
 	@echo "---------------ffmpeg finish----------------"
 install:
@@ -23,3 +17,4 @@ install:
 clean:
 	@[ -d ./$(name) ] &  rm -rf ./$(name)
 	@[ -d ./out ] &  rm -rf ./out
+

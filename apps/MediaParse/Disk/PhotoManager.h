@@ -17,6 +17,7 @@ public:
 	list<string> GetItems(int iStart, int iLimited);
 	list<string> GetItems2(int iStart, int iLimited);
 	int GetItemCount();
+	size_t GetIgnoreItemCount();
 	vector<string> GetAddr(int iItemIndex);
 	string GetFile(int iItemIndex);
 	string GetThumb(int iItemIndex);

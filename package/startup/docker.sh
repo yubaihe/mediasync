@@ -15,6 +15,12 @@ if ! grep -q "^${mediaconfigfile}$" "$smbconfigfile"; then
 else
     echo "not append"
 fi
+killall smbd
+killall smbd
+killall lighttpd
+killall MediaParse
+killall Server
+sudo pkill -f "${ROOTDIR}/bin/dbus-daemon"
 #start smbd
 smbd &
 nmbd &
@@ -23,4 +29,4 @@ $ROOTDIR/bin/dbus-daemon --config-file=${ROOTDIR}/bin/dbus-1/session.conf  --add
 mkdir $ROOTDIR/media/.media_tmp -p
 $ROOTDIR/lighttpd/sbin/lighttpd -f $ROOTDIR/lighttpd/config/lighttpd.conf
 $ROOTDIR/apps/MediaParse/MediaParse &
-$ROOTDIR/apps/Server/Server &
+exec $ROOTDIR/apps/Server/Server

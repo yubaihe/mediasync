@@ -8,6 +8,7 @@
 #include "Util/JsonUtil.h"
 #include "FileUtil.h"
 #include "GpsManager.h"
+#include "Butler.h"
 //ntp自动更新 
 //timedatectl status    查询状态
 //timedatectl set-ntp no   　　     关闭
@@ -80,6 +81,7 @@ int main(int iArgc, char* pszArgv[])
     //int iIndex = 0;
     //CMediaGpsTable gpsTable;
     //gpsTable.RemoveAll();
+    CButler::GetInstance();
     while (FALSE == g_exit)
     {
         sleep(3);
@@ -89,10 +91,11 @@ int main(int iArgc, char* pszArgv[])
         //     //iIndex = 100;
         //}
     }
+    CGpsManager::Release();
     CConfig::Release();
     CClearCache::Release();
     CMediaDb::Release();
-    CGpsManager::Release();
+    CButler::Release();
     curl_global_cleanup();
     return 1;
 }

@@ -46,6 +46,7 @@ public:
     void DeleteItem(int iItemIndex);
     void PrintItem(int iItemIndex);
     BOOL IsExit();
+    size_t GetIgnoreCount();
 private:
     static DWORD DiskItemProc(void* lpParameter);
     static DWORD MediaSyncProc(void* lpParameter);

@@ -15,6 +15,8 @@
 #include "Util/FileUtil.h"
 #include "BackupManager.h"
 #include "SyncToDeviceManager.h"
+#include "BackupTmpFoldMonitor.h"
+#include "TranscodeManager.h"
 void* g_pDbusContext = NULL;
 BOOL g_bExit = TRUE;
 CMessageHandler g_MessageHandler;
@@ -111,6 +113,8 @@ int main(int iArgc, char *pszArgsV[])
     int iMemUsage = CCpuDetect::GetInstance()->GetMemUsage();
     printf("Cpu count:%d\tCpu usage:%d\tMem usage:%d\n", iCpuCount, iCpuUage, iMemUsage);
     CDiskManager::GetInstance();
+    CBackupTmpFoldMonitor::GetInstance();
+
     signal(SIGINT, OnSystemSig); 
 	signal(SIGPIPE,  OnSignalHandler);
     g_pDbusContext = LibDbus_Init(DBUS_MEDIAPARSE, 10, MediaParse_OnDbusMessageHandler, NULL);
@@ -166,11 +170,14 @@ int main(int iArgc, char *pszArgsV[])
         {
             CDiskManager::GetInstance()->DevCheck();
             //将没有挂载的目录删除掉
-            RemoveEmptyMountNode();
+            //应该放到系统启动的脚本去删除
+            //RemoveEmptyMountNode();
             //备份目录清除缓存
             CBackupManager::GetInstance()->ClearCache();
             //同步到设备检查
             CSyncToDeviceManager::GetInstance()->ClearCache();
+            //解码模块定时清理
+            CTranscodeManager::GetInstance()->ClearCache();
         }
     }
     
@@ -179,6 +186,7 @@ int main(int iArgc, char *pszArgsV[])
     CCpuDetect::Release();
     CBackupManager::Release();
     CSyncToDeviceManager::Release();
+    CBackupTmpFoldMonitor::Release();
    // stty 命令来重置终端设置
    system("stty sane");
 

@@ -354,3 +354,16 @@ string CDiskManager::GetOriginalFile(const char* pszDevName, int iItemID)
     LeaveCriticalSection(&m_Section);
     return strRet;
 }
+size_t CDiskManager::GetIgnoreCount(const char* pszDevName)
+{
+    size_t iRet = 0;
+    EnterCriticalSection(&m_Section);
+    std::map<std::string, CDiskItem*>::iterator itor = m_pDiskItemMap.find(pszDevName);
+    if(itor != m_pDiskItemMap.end())
+    {
+        CDiskItem* pDiskItem = itor->second;
+        iRet = pDiskItem->GetIgnoreCount();
+    }
+    LeaveCriticalSection(&m_Section);
+    return iRet;
+}

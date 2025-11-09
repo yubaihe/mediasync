@@ -45,58 +45,64 @@ int CVideoParse::GetRotation(AVFormatContext* pContext)
             break;
         }
     }
-    if(FALSE == bGetRotation)
-    {
-        // 初始化解码器
-        AVCodecContext* pCodecContext = avcodec_alloc_context3(pDecoder);
-        AVCodecParameters* pCodecParameters = pContext->streams[iVideoStreamIndex]->codecpar;
-        avcodec_parameters_to_context(pCodecContext, pCodecParameters);
-        if (avcodec_open2(pCodecContext, pDecoder, nullptr) < 0)
-        {
-            printf("解码器初始化失败\n");
-            avcodec_free_context(&pCodecContext);
-            return 0;
-        }
-        AVPacket* pPacket = av_packet_alloc();
-        AVFrame* pSrcFrame = av_frame_alloc();
-        while (av_read_frame(pContext, pPacket) >= 0) 
-        {
-            if (pPacket->stream_index == iVideoStreamIndex && 
-                avcodec_send_packet(pCodecContext, pPacket) == 0 &&
-                avcodec_receive_frame(pCodecContext, pSrcFrame) == 0)
-                {
-                    AVFrameSideData* pFrameSideData = av_frame_get_side_data(pSrcFrame, AV_FRAME_DATA_DISPLAYMATRIX);  
-                    if (NULL != pFrameSideData && pFrameSideData->size >= 9 * sizeof(int32_t)) 
-                    {  
-                        int32_t* pMatrix = (int32_t *)pFrameSideData->data;   
-                        iRotation = av_display_rotation_get(pMatrix);
-                        bGetRotation = TRUE;
-                    }  
-                    if(FALSE == bGetRotation)
-                    {
-                        size_t iSize;  
-                        uint8_t* pSideData = av_packet_get_side_data(pPacket, AV_PKT_DATA_DISPLAYMATRIX, &iSize);  
-                        if (NULL != pSideData && iSize >= 9 * sizeof(int32_t)) 
-                        {  
-                            int32_t* pMatrix = (int32_t*)pSideData;  
-                            iRotation = av_display_rotation_get(pMatrix);
-                            bGetRotation = TRUE;
-                        }
-                    }
-                }
-                av_packet_unref(pPacket);
-                if(TRUE == bGetRotation)
-                {
-                    break;
-                }
-        }
-        av_packet_free(&pPacket);
-        av_frame_free(&pSrcFrame);
-        avcodec_flush_buffers(pCodecContext);
-        av_seek_frame(pContext, iVideoStreamIndex, -1, AVSEEK_FLAG_BACKWARD);
-        av_seek_frame(pContext, -1, -1, AVSEEK_FLAG_BACKWARD);
-        avcodec_free_context(&pCodecContext);
-    }
+    // if(FALSE == bGetRotation)
+    // {
+    //     // 初始化解码器
+    //     AVCodecContext* pCodecContext = avcodec_alloc_context3(pDecoder);
+    //     AVCodecParameters* pCodecParameters = pContext->streams[iVideoStreamIndex]->codecpar;
+    //     avcodec_parameters_to_context(pCodecContext, pCodecParameters);
+    //     if (avcodec_open2(pCodecContext, pDecoder, nullptr) < 0)
+    //     {
+    //         printf("解码器初始化失败\n");
+    //         avcodec_free_context(&pCodecContext);
+    //         return 0;
+    //     }
+    //     AVPacket* pPacket = av_packet_alloc();
+    //     AVFrame* pSrcFrame = av_frame_alloc();
+    //     int iFrameIndex = 0;
+    //     while (av_read_frame(pContext, pPacket) >= 0) 
+    //     {
+    //         iFrameIndex++;
+    //         if(iFrameIndex > 5)
+    //         {
+    //             break;
+    //         }
+    //         if (pPacket->stream_index == iVideoStreamIndex && 
+    //             avcodec_send_packet(pCodecContext, pPacket) == 0 &&
+    //             avcodec_receive_frame(pCodecContext, pSrcFrame) == 0)
+    //             {
+    //                 AVFrameSideData* pFrameSideData = av_frame_get_side_data(pSrcFrame, AV_FRAME_DATA_DISPLAYMATRIX);  
+    //                 if (NULL != pFrameSideData && pFrameSideData->size >= 9 * sizeof(int32_t)) 
+    //                 {  
+    //                     int32_t* pMatrix = (int32_t *)pFrameSideData->data;   
+    //                     iRotation = av_display_rotation_get(pMatrix);
+    //                     bGetRotation = TRUE;
+    //                 }  
+    //                 if(FALSE == bGetRotation)
+    //                 {
+    //                     size_t iSize;  
+    //                     uint8_t* pSideData = av_packet_get_side_data(pPacket, AV_PKT_DATA_DISPLAYMATRIX, &iSize);  
+    //                     if (NULL != pSideData && iSize >= 9 * sizeof(int32_t)) 
+    //                     {  
+    //                         int32_t* pMatrix = (int32_t*)pSideData;  
+    //                         iRotation = av_display_rotation_get(pMatrix);
+    //                         bGetRotation = TRUE;
+    //                     }
+    //                 }
+    //             }
+    //             av_packet_unref(pPacket);
+    //             if(TRUE == bGetRotation)
+    //             {
+    //                 break;
+    //             }
+    //     }
+    //     av_packet_free(&pPacket);
+    //     av_frame_free(&pSrcFrame);
+    //     avcodec_flush_buffers(pCodecContext);
+    //     av_seek_frame(pContext, iVideoStreamIndex, -1, AVSEEK_FLAG_BACKWARD);
+    //     av_seek_frame(pContext, -1, -1, AVSEEK_FLAG_BACKWARD);
+    //     avcodec_free_context(&pCodecContext);
+    // }
     return TRUE == bGetRotation ? abs(iRotation):0;
 }
 BOOL CVideoParse::Parse(const char* psz)

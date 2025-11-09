@@ -24,8 +24,9 @@ public:
     static BOOL CheckMagicFileExist(const char* pszPath);
     //2024-08-29T05:44:43.000000Z  ==> 2024-08-29 05:44:43
     static std::string TransTime(const char* pszInput);
-    static std::size_t GetFileSize(const char* pszFile);
+    static int64_t GetFileSize(const char* pszFile);
     static BOOL CheckFoldExist(const char* pszFold);
+    static BOOL CheckFoldEmpty(const char* pszFold);
     static BOOL RemoveFold(const char* pszFold, BOOL bForce = TRUE);
     static BOOL RemoveFile(const char* pszFile);
     static BOOL MoveFile(string strFrom, string strTo);
@@ -49,4 +50,5 @@ public:
     static time_t CurTimeMilSec();
     static int GetRandomNum(int iMax);
     static vector<string> GpsToVec(string strGps);
+    static string GetMd5(const char* psz);
 };

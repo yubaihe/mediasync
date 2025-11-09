@@ -6,6 +6,8 @@
 #include <sys/wait.h>
 #include "Dbus/libdbus.h"
 #include "JsonUtil.h"
+#include "md5.h"
+#include "Base64Coding.h"
 CCommonUtil::CCommonUtil()
 {
 
@@ -305,7 +307,7 @@ void CCommonUtil::ExecuteCmdWithOutReplay(const char* pszFormat, ...)
     free(pszCmd);
     pszCmd = NULL;
 } 
-std::size_t CCommonUtil::GetFileSize(const char* pszFile)
+int64_t CCommonUtil::GetFileSize(const char* pszFile)
 {
     struct stat statBuf;
     int rc = stat(pszFile, &statBuf);
@@ -319,6 +321,27 @@ std::size_t CCommonUtil::GetFileSize(const char* pszFile)
 BOOL CCommonUtil::CheckFoldExist(const char* pszFold)
 {
     return CCommonUtil::CheckFileExist(pszFold);
+}
+BOOL CCommonUtil::CheckFoldEmpty(const char* pszFold)
+{
+    DIR* pDir = opendir(pszFold);
+    if(NULL == pDir)
+    {
+        return FALSE;
+    }
+    
+    int iFileCount = 0;
+    struct dirent* pEntry = NULL;
+    while ((pEntry = readdir(pDir)) != NULL) 
+    {
+        if (strcmp(pEntry->d_name, ".") != 0 && strcmp(pEntry->d_name, "..") != 0)
+        {
+            iFileCount++;
+            break;
+        }
+    }
+    closedir(pDir);
+    return iFileCount == 0?TRUE:FALSE;
 }
 BOOL CCommonUtil::CheckCmdStatus(pid_t iStatus)
 {
@@ -363,6 +386,7 @@ BOOL CCommonUtil::RemoveFold(const char* pszFold, BOOL bForce/* = TRUE*/)
     {
         sprintf(pszCommand, "rmdir \"%s\"", pszFold);
     }
+    printf("%s\n", pszCommand);
     int iStatus = system(pszCommand);
     free(pszCommand);
     pszCommand = NULL;
@@ -400,25 +424,16 @@ std::string CCommonUtil::GetPath(const char* pszFile)
 
 std::string CCommonUtil::GetMime(const char* pszFile)
 {
+    if(FALSE == CheckFileExist(pszFile))
+    {
+        return "";
+    }
     char szCmd[300] = {0};
-    sprintf(szCmd, "file -i \"%s\"", pszFile);
-    //printf("%s\n", szCmd);
+    sprintf(szCmd, "file -b --mime-type \"%s\"", pszFile);
     std::string strMime = CCommonUtil::ExecuteCmd(szCmd);
-    int iFilterLen = strMime.length() - strlen(pszFile) - 1;
-    if(iFilterLen < 0)
-    {
-        return "";
-    }
-    strMime = strMime.substr(strlen(pszFile) + 1, iFilterLen);
-    strMime.erase(0, strMime.find_first_not_of(" "));
-    strMime.erase(strMime.find_last_not_of(" ") + 1);
-    std::vector<std::string> vec = CCommonUtil::StringSplit(strMime, ";");
-    if(vec.size() == 1)
-    {
-        return "";
-    }
-
-    return vec[0];
+    strMime.erase(std::remove(strMime.begin(), strMime.end(), '\n'), strMime.end());
+    //std::transform(strMime.begin(), strMime.end(), strMime.begin(), ::toupper);
+    return strMime;
 }
 
 BOOL CCommonUtil::IsMimeTypeImage(const char* pszMime)
@@ -642,4 +657,29 @@ vector<string> CCommonUtil::GpsToVec(string strGps)
         vecRet.push_back(gps[1]);
     }
     return vecRet;
+}
+
+string CCommonUtil::GetMd5(const char* psz)
+{
+    md5_state_t md5StateT;
+    md5_init(&md5StateT);
+    md5_append(&md5StateT, (const md5_byte_t *)psz, (int)strlen(psz));
+    md5_byte_t digest[16];
+    md5_finish(&md5StateT, digest);
+    char szMd5[33] = {0}, szHexBuffer[5] = {0};
+    for (size_t i = 0; i != 16; ++i)
+    {
+        if (digest[i] < 16)
+            sprintf(szHexBuffer, "0%x", digest[i]);
+        else
+            sprintf(szHexBuffer, "%x", digest[i]);
+        strcat(szMd5, szHexBuffer);
+    }
+    //printf("%s\n", szMd5String);
+    char szBase64[1024] = {0};
+    int iBufferLen = 1024;
+    base64_encode((unsigned char*)szMd5, 32, (unsigned char*)szBase64, &iBufferLen);
+    
+    string strRet(szBase64);
+    return strRet;
 }

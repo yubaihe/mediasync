@@ -155,6 +155,41 @@ BOOL CDbusUtil::BackupFoldSyncStart()
     }
     return TRUE;
 }
+int CDbusUtil::BackupFoldCount(BOOL& bError)
+{
+    bError = FALSE;
+    if(FALSE == CDbusUtil::ContainModule(DBUS_MEDIAPARSE))
+    {
+        return 0;
+    }
+    nlohmann::json json;
+    json["action"] = "backupfolds";
+    json["start"] = 0;
+    json["limit"] = 1;
+    string strRequest = Server::CJsonUtil::ToString(json);
+    char szRet[MAX_DBUSMESSAGE_LEN] = {0};
+    int iRetLen = MAX_DBUSMESSAGE_LEN;
+    BOOL bSend = LibDbus_SendSync(DBUS_MEDIAPARSE, 0x5007, (const char*)strRequest.c_str(), strRequest.length() + 1, szRet, &iRetLen);
+    if(FALSE == bSend)
+    {
+        bError = TRUE;
+        return 0;
+    }
+    nlohmann::json jsonRet;
+    BOOL bRet = Server::CJsonUtil::FromString(szRet, jsonRet);
+    if(FALSE == bRet)
+    {
+        bError = TRUE;
+        return 0;
+    }
+    if(0 == jsonRet["status"])
+    {
+        bError = TRUE;
+        return 0;
+    }
+    int iStoreTotal = jsonRet["storetotal"];
+    return iStoreTotal;
+}
  int CDbusUtil::BackupFoldSyncPrecent(BOOL& bError)
  {
     bError = FALSE;
@@ -200,6 +235,159 @@ BOOL CDbusUtil::BackupFoldSyncStart()
     json["gps"] = strGps;
     json["addr"] = strAddr;
 
+    string strRequest = Server::CJsonUtil::ToString(json);
+    char szRet[MAX_DBUSMESSAGE_LEN] = {0};
+    int iRetLen = MAX_DBUSMESSAGE_LEN;
+    BOOL bSend = LibDbus_SendSync(DBUS_MEDIAPARSE, 0x5007, (const char*)strRequest.c_str(), strRequest.length() + 1, szRet, &iRetLen);
+    if(FALSE == bSend)
+    {
+        return FALSE;
+    }
+    nlohmann::json jsonRet;
+    BOOL bRet = Server::CJsonUtil::FromString(szRet, jsonRet);
+    if(FALSE == bRet)
+    {
+        return FALSE;
+    }
+    if(0 == jsonRet["status"])
+    {
+        return FALSE;
+    }
+    return TRUE;
+ }
+ string CDbusUtil::GetMime(string strFile)
+ {
+    if(FALSE == CDbusUtil::ContainModule(DBUS_MEDIAPARSE))
+    {
+        return "";
+    }
+    nlohmann::json json;
+    json["action"] = "getfilemime";
+    json["file"] = strFile;
+
+    string strRequest = Server::CJsonUtil::ToString(json);
+    char szRet[MAX_DBUSMESSAGE_LEN] = {0};
+    int iRetLen = MAX_DBUSMESSAGE_LEN;
+    BOOL bSend = LibDbus_SendSync(DBUS_MEDIAPARSE, 0x5007, (const char*)strRequest.c_str(), strRequest.length() + 1, szRet, &iRetLen);
+    if(FALSE == bSend)
+    {
+        return "";
+    }
+    nlohmann::json jsonRet;
+    BOOL bRet = Server::CJsonUtil::FromString(szRet, jsonRet);
+    if(FALSE == bRet)
+    {
+        return "";
+    }
+    if(0 == jsonRet["status"])
+    {
+        return "";
+    }
+    return jsonRet["mime"];
+ }
+
+ string CDbusUtil::TranscodeStart(string strSrc, string strDest, int iItemID)
+ {
+    if(FALSE == CDbusUtil::ContainModule(DBUS_MEDIAPARSE))
+    {
+        return "";
+    }
+    nlohmann::json json;
+    json["action"] = "transfilestart";
+    json["file"] = strSrc;
+    json["dest"] = strDest;
+    json["itemid"] = iItemID;
+    string strRequest = Server::CJsonUtil::ToString(json);
+    char szRet[MAX_DBUSMESSAGE_LEN] = {0};
+    int iRetLen = MAX_DBUSMESSAGE_LEN;
+    BOOL bSend = LibDbus_SendSync(DBUS_MEDIAPARSE, 0x5007, (const char*)strRequest.c_str(), strRequest.length() + 1, szRet, &iRetLen);
+    if(FALSE == bSend)
+    {
+        return "";
+    }
+    nlohmann::json jsonRet;
+    BOOL bRet = Server::CJsonUtil::FromString(szRet, jsonRet);
+    if(FALSE == bRet)
+    {
+        return "";
+    }
+    if(0 == jsonRet["status"])
+    {
+        return "";
+    }
+    return jsonRet["identify"];
+ }
+
+ BOOL CDbusUtil::TranscodeStop(string strIdentify)
+ {
+    if(FALSE == CDbusUtil::ContainModule(DBUS_MEDIAPARSE))
+    {
+        return FALSE;
+    }
+    nlohmann::json json;
+    json["action"] = "transfilestop";
+    json["identify"] = strIdentify;
+    string strRequest = Server::CJsonUtil::ToString(json);
+    char szRet[MAX_DBUSMESSAGE_LEN] = {0};
+    int iRetLen = MAX_DBUSMESSAGE_LEN;
+    BOOL bSend = LibDbus_SendSync(DBUS_MEDIAPARSE, 0x5007, (const char*)strRequest.c_str(), strRequest.length() + 1, szRet, &iRetLen);
+    if(FALSE == bSend)
+    {
+        return FALSE;
+    }
+    nlohmann::json jsonRet;
+    BOOL bRet = Server::CJsonUtil::FromString(szRet, jsonRet);
+    if(FALSE == bRet)
+    {
+        return FALSE;
+    }
+    if(0 == jsonRet["status"])
+    {
+        return FALSE;
+    }
+    return TRUE;
+ }
+ BOOL CDbusUtil::TranscodePrecent(string strIdentify, DWORD& iDurSec, DWORD& iCurSec, int& iPrecent)
+ {
+    if(FALSE == CDbusUtil::ContainModule(DBUS_MEDIAPARSE))
+    {
+        return FALSE;
+    }
+    nlohmann::json json;
+    json["action"] = "transfileprecent";
+    json["identify"] = strIdentify;
+    string strRequest = Server::CJsonUtil::ToString(json);
+    char szRet[MAX_DBUSMESSAGE_LEN] = {0};
+    int iRetLen = MAX_DBUSMESSAGE_LEN;
+    BOOL bSend = LibDbus_SendSync(DBUS_MEDIAPARSE, 0x5007, (const char*)strRequest.c_str(), strRequest.length() + 1, szRet, &iRetLen);
+    if(FALSE == bSend)
+    {
+        return FALSE;
+    }
+    nlohmann::json jsonRet;
+    BOOL bRet = Server::CJsonUtil::FromString(szRet, jsonRet);
+    if(FALSE == bRet)
+    {
+        return FALSE;
+    }
+    if(0 == jsonRet["status"])
+    {
+        return FALSE;
+    }
+    iDurSec = jsonRet["dur"];
+    iCurSec = jsonRet["cur"];
+    iPrecent = jsonRet["precent"];
+    return TRUE;
+ }
+ BOOL CDbusUtil::TranscodeEnd(string strIdentify)
+ {
+    if(FALSE == CDbusUtil::ContainModule(DBUS_MEDIAPARSE))
+    {
+        return FALSE;
+    }
+    nlohmann::json json;
+    json["action"] = "transfileend";
+    json["identify"] = strIdentify;
     string strRequest = Server::CJsonUtil::ToString(json);
     char szRet[MAX_DBUSMESSAGE_LEN] = {0};
     int iRetLen = MAX_DBUSMESSAGE_LEN;

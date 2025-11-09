@@ -90,7 +90,7 @@ BOOL CMediaGpsTable::GetRecordFromGps(string strGps, MediaGpsItem& item)
         return FALSE;
     }
     
-    item = AssembleItems(itemList).front();
+    item = ItemsList.front();
     return TRUE;
 }
 BOOL CMediaGpsTable::GetRecordFromGps2(string strGps2, MediaGpsItem& item)
@@ -116,6 +116,14 @@ BOOL CMediaGpsTable::SetRecord(string strGps, string strGps2, string strLocation
     {
         MediaGpsItem item = {};
         BOOL bHasRecord = GetRecordFromGps(strGps, item);
+        if(strGps2.length() == 0)
+        {
+            strGps2 = item.strGps2;
+        }
+        if(strLocation.length() == 0)
+        {
+            strLocation = item.strLocation;
+        }
         string strSQL = Server::CCommonUtil::StringFormat("insert into %s (gps,gps2,gpslocation)values('%s','%s','%s')", TABLE_MEDIAGPS, strGps.c_str(), strGps2.c_str(), strLocation.c_str());
         if(TRUE == bHasRecord)
         {
@@ -130,6 +138,14 @@ BOOL CMediaGpsTable::SetRecord(string strGps, string strGps2, string strLocation
     {
         MediaGpsItem item = {};
         BOOL bHasRecord = GetRecordFromGps2(strGps, item);
+        if(strGps2.length() == 0)
+        {
+            strGps2 = item.strGps2;
+        }
+        if(strLocation.length() == 0)
+        {
+            strLocation = item.strLocation;
+        }
         string strSQL = Server::CCommonUtil::StringFormat("insert into %s (gps,gps2,gpslocation)values('%s','%s','%s')", TABLE_MEDIAGPS, "", strGps2.c_str(), strLocation.c_str());
         
         if(TRUE == bHasRecord)

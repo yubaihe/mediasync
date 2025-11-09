@@ -109,9 +109,16 @@ void CGpsManager::FilterUncheckGps()
 DWORD CGpsManager::GpsDetectProc(void* lpParameter)
 {
     CGpsManager* pGpsManager = (CGpsManager*)lpParameter;
+    time_t iFailedTimeSec = 0;
     while (FALSE == pGpsManager->m_bExit)
     {
         Sleep(1000);
+        time_t iLeft = Server::CTools::CurTimeSec() - iFailedTimeSec;
+        if(iLeft < 20)
+        {
+            //printf("Gps detec retry left:%ld sec\n", 10 - iLeft);
+            continue;
+        }
         if(pGpsManager->m_strBaiDuKey.length() == 0)
         {
             continue;
@@ -151,7 +158,15 @@ DWORD CGpsManager::GpsDetectProc(void* lpParameter)
         } 
         if(gpsItem.strLocation.length() == 0)
         {
-            pGpsManager->ReqeustGpsDetail(item);
+            if(FALSE == pGpsManager->ReqeustGpsDetail(item))
+            {
+                pGpsManager->m_pGpsList.push_front(item);
+                iFailedTimeSec = Server::CTools::CurTimeSec();
+            }
+        }
+        else
+        {
+            CMediaInfoTable::UpdateGpsWeiZhi(gpsItem.strGps, gpsItem.strGps2, gpsItem.strLocation);
         }
     }
     return 1;
@@ -169,7 +184,7 @@ size_t CGpsManager::RecvCallBack(char* pszData, size_t iDataSize, size_t iNmemb,
     }
     return iDataSize * iNmemb;
 }
-void CGpsManager::ReqeustGpsDetail(GpsItem item)
+BOOL CGpsManager::ReqeustGpsDetail(GpsItem item)
 {
     //http://api.map.baidu.com/reverse_geocoding/v3/?ak=您的AK&output=json&coordtype=wgs84ll&location=纬度,经度
     string strParam = "";
@@ -194,14 +209,14 @@ void CGpsManager::ReqeustGpsDetail(GpsItem item)
     }
     if(strParam.length() == 0)
     {
-        return ;
+        return FALSE;
     }
     printf("%s\n", strParam.c_str());
     string strUrl = Server::CCommonUtil::StringFormat("http://api.map.baidu.com/reverse_geocoding/v3/?%s", strParam.c_str());
     CURL* pCurl = curl_easy_init();
     if(NULL == pCurl)
     {
-        return;
+        return FALSE;
     }
     curl_easy_setopt(pCurl, CURLOPT_URL, strUrl.c_str());
     curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 10L);       // 总操作超时
@@ -213,25 +228,26 @@ void CGpsManager::ReqeustGpsDetail(GpsItem item)
     CURLcode res = curl_easy_perform(pCurl);
     if (res != CURLE_OK) 
     {
-        printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        printf("curl_easy_perform() failed: %s\tUrl:%s\n", curl_easy_strerror(res), strUrl.c_str());
         EnterCriticalSection(&m_Section);
         m_pGpsList.push_back(item);
         LeaveCriticalSection(&m_Section);
         curl_easy_cleanup(pCurl);
-        return;
+        return FALSE;
     }
     //printf("%s\n", strResponse.c_str());
+    PRINTWARNING("%s\n", strResponse.c_str());
     curl_easy_cleanup(pCurl);
-    ParseGpsDetail(item, strResponse);
+    return ParseGpsDetail(item, strResponse);
 }
-void CGpsManager::ParseGpsDetail(GpsItem item, string strGpsDetail)
+BOOL CGpsManager::ParseGpsDetail(GpsItem item, string strGpsDetail)
 {
     // {"status":0,"result":{"location":{"lng":118.75682754165996,"lat":32.05864509513405},"formatted_address":"江苏省南京市鼓楼区龙园东路","edz":{"name":""},"business":"虎踞路,凤凰西街,龙江","business_info":[{"name":"虎踞路","location":{"lng":118.7665861585196,"lat":32.05539093040219},"adcode":320106,"distance":173,"direction":"西"},{"name":"凤凰西街","location":{"lng":118.75436489171746,"lat":32.05337478850434},"adcode":320106,"distance":183,"direction":"北"},{"name":"龙江","location":{"lng":118.74718015441812,"lat":32.06012446430517},"adcode":320106,"distance":204,"direction":"东"}],"addressComponent":{"country":"中国","country_code":0,"country_code_iso":"CHN","country_code_iso2":"CN","province":"江苏省","city":"南京市","city_level":2,"district":"鼓楼区","town":"华侨路街道","town_code":"320106002","distance":"","direction":"","adcode":"320106","street":"龙园东路","street_number":""},"pois":[],"roads":[],"poiRegions":[],"sematic_description":"","formatted_address_poi":"","cityCode":315}}
     nlohmann::json jsonRoot;
     BOOL bRet = Server::CJsonUtil::FromString(strGpsDetail.c_str(), jsonRoot);
     if(FALSE == bRet)
     {
-        return;
+        return FALSE;
     }
     int iStatus = jsonRoot["status"];
     if(iStatus == 401)
@@ -241,12 +257,12 @@ void CGpsManager::ParseGpsDetail(GpsItem item, string strGpsDetail)
         EnterCriticalSection(&m_Section);
         m_pGpsList.push_back(item);
         LeaveCriticalSection(&m_Section);
-        return;
+        return FALSE;
     }
     if(0 != iStatus)
     {
         printf("===Error===%s==\n", strGpsDetail.c_str());
-        return;
+        return FALSE;
     }
     float dLongitude = jsonRoot["result"]["location"]["lng"];
     float dLatitude = jsonRoot["result"]["location"]["lat"];
@@ -297,6 +313,7 @@ void CGpsManager::ParseGpsDetail(GpsItem item, string strGpsDetail)
             break;
         }
     }
+    return TRUE;
 }
 void CGpsManager::AddDetectItem( GPSTYPE eGpsType, string strLongitude, string strLatitude,  int iItemID, GPSTAG eGpsTag)
 {

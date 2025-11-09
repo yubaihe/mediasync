@@ -30,4 +30,12 @@ BOOL CJsonUtil::FromString(std::string strJson, nlohmann::json& json)
 		return FALSE;
 	}
 }
+BOOL CJsonUtil::CheckKey(std::string strKey, nlohmann::json& json)
+{
+	if(json.contains(strKey.c_str()))
+	{
+		return TRUE;
+	}
+	return FALSE;
+}
 }

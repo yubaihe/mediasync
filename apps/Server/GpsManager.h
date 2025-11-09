@@ -41,8 +41,8 @@ public:
     BOOL ParseGps(string strGps, GPSTYPE* piGpsType, string* pstrLongitude = NULL, string* pstrLatitude = NULL);
 private:
     void FilterUncheckGps();
-    void ReqeustGpsDetail(GpsItem item);
-    void ParseGpsDetail(GpsItem item, string strGpsDetail);
+    BOOL ReqeustGpsDetail(GpsItem item);
+    BOOL ParseGpsDetail(GpsItem item, string strGpsDetail);
     static DWORD GpsDetectProc(void* lpParameter);
     static size_t RecvCallBack(char* pszData, size_t iDataSize, size_t iNmemb, std::string* pstrBuffer);
 private:

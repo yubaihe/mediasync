@@ -16,6 +16,7 @@ public:
     static string GetNewFileName(int iYear, string strFileName, string strPostFix);
     static string GetNewFileName2(int iYear, string strFileName, string strPostFix);
     static string GetNewFileName(string strPath);
+    static string GetNewFileName(string strPath, string strPostfix);
     static BOOL CreateFold(string strFold);
     static BOOL RemoveFile(string strFile);
     static BOOL RemoveFold(string strFold);
@@ -40,6 +41,7 @@ public:
     static string FileExNameFromFileName(string strThumbFileName);
     static string ReadLink(string strFileName);
     static BOOL IsSoftLink(string strFileName);
+    static std::string GetFileExtension(const string& filename);
 };
 
 

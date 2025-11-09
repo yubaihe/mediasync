@@ -46,7 +46,7 @@ BOOL CConnectServer::InitStore()
         exit(0);
         return FALSE;
     }
-    printf("Addr:%s Total:%ld Used:%ld\n", store.strAddr.c_str(), iTotal, iUsed);
+    printf("Addr:%s Total:%lld Used:%lld\n", store.strAddr.c_str(), iTotal, iUsed);
 
     string strStoreRoot = CConfig::GetInstance()->GetStoreRoot();
     printf("StoreRoot:%s\n", strStoreRoot.c_str());
@@ -66,13 +66,21 @@ BOOL CConnectServer::InitStore()
     {
         CFileUtil::CreateFold(strExtraRoot);
     }
-    string strTmpRoot = CConfig::GetInstance()->GetUploadRoot();
-    printf("ThumbRoot:%s\n", strTmpRoot.c_str());
-    if(FALSE == CFileUtil::CheckFileExist(strTmpRoot))
+    string strUploadRoot = CConfig::GetInstance()->GetUploadRoot();
+    printf("UploadRoot:%s\n", strUploadRoot.c_str());
+    if(FALSE == CFileUtil::CheckFileExist(strUploadRoot))
     {
-        CFileUtil::CreateFold(strTmpRoot);
+        CFileUtil::CreateFold(strUploadRoot);
     }
-    printf("media upload temp:%s\n", strTmpRoot.c_str());
+    printf("media upload :%s\n", strUploadRoot.c_str());
+    //这个文件相当于回收站
+    string strTempRoot = CConfig::GetInstance()->GetTempRoot();
+    printf("ThumbRoot:%s\n", strTempRoot.c_str());
+    if(FALSE == CFileUtil::CheckFileExist(strTempRoot))
+    {
+        CFileUtil::CreateFold(strTempRoot);
+    }
+    printf("media temp :%s\n", strTempRoot.c_str());
     return TRUE;
 }
 void CConnectServer::OnServerMessage(DbusContext* pContext, DBusMessage* pDBusMessage, int iCommandID, const char* pszMessage, int iMessageLen)

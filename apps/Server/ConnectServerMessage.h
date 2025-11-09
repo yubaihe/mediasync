@@ -55,7 +55,16 @@ private:
     string OnGpsLocation(nlohmann::json& jsonRoot);
     string OnSetBaiDuAk(nlohmann::json& jsonRoot);
     string OnSetMediaPinned(nlohmann::json& jsonRoot);
-    // string OnSetGpsParse(nlohmann::json& jsonRoot);
+    string OnMediaList(nlohmann::json& jsonRoot);
+    string GetHomeCover();
+    string OnGetHomeCover(nlohmann::json& jsonRoot);
+    string OnGetDevEnv(nlohmann::json& jsonRoot);
+    string OnThisDay(nlohmann::json& jsonRoot);
+    string OnGetMime(nlohmann::json& jsonRoot);
+    string OnTransFileStart(nlohmann::json& jsonRoot);
+    string OnTransFileStop(nlohmann::json& jsonRoot);
+    string OnTransFilePrecent(nlohmann::json& jsonRoot);
+    string OnTransFileFinish(nlohmann::json& jsonRoot);
 private:
     std::map<std::string, std::function<string(nlohmann::json&)>> m_ActionHandlerMap;
 };

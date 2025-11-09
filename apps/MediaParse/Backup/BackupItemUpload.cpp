@@ -70,14 +70,19 @@ string CBackupItemUpload::GetNewFileName(string strFold, MEDIATYPE eMediaType, s
 BOOL CBackupItemUpload::UploadItem(string strSrcFile, string strSrcThumbFile, string strDestFold)
 {
     printf("CBackupItemUpload::UploadItem\n");
+    //源文件
+    m_strOriginalFile = strSrcFile;
+    m_strThumbFile = strSrcThumbFile;
+    m_strFoldName = strDestFold;
     m_strErrorInfo = "";
     if(NULL != m_hUpload)
     {
         m_strErrorInfo = "transfering";
+        printf("transfering\n");
         return FALSE;
     }
-    m_iThumbSize = CCommonUtil::GetFileSize(strSrcThumbFile.c_str());
-    m_iOrigianlSize = CCommonUtil::GetFileSize(strSrcFile.c_str());
+    m_iThumbSize = CCommonUtil::GetFileSize(m_strThumbFile.c_str());
+    m_iOrigianlSize = CCommonUtil::GetFileSize(m_strOriginalFile.c_str());
     if(0 == m_iOrigianlSize || 0 == m_iThumbSize)
     {
         m_strErrorInfo = "No file find";
@@ -85,65 +90,8 @@ BOOL CBackupItemUpload::UploadItem(string strSrcFile, string strSrcThumbFile, st
         return FALSE;
     }
     m_iTotalSize = m_iThumbSize + m_iOrigianlSize;
-
-    //判断文件是否存在于表中
-    string strMd5 = CFileUtil::GetFileMd5(strSrcFile.c_str());
-    CBackupTable table;
-    BOOL bExist = table.CheckExist(strDestFold, strMd5);
-    if(TRUE == bExist)
-    {
-        m_iTransSize = m_iTotalSize;
-        //m_strErrorInfo = "has translated";
-        return TRUE;
-    }
-
-    string strDestFile = "";
-    string strDestThumbFile = "";
-    string strMimeType = CCommonUtil::GetMime(strSrcFile.c_str());
-    if (TRUE == CCommonUtil::IsMimeTypeImage(strMimeType.c_str()))
-    {
-        m_eMediaType = MEDIATYPE_IMAGE;
-        strDestFile = GetNewFileName(strDestFold, MEDIATYPE_IMAGE, strDestThumbFile);
-    }
-    else if (TRUE == CCommonUtil::IsMimeTypeVideo(strMimeType.c_str()))
-    {
-        m_eMediaType = MEDIATYPE_VIDEO;
-        strDestFile = GetNewFileName(strDestFold, MEDIATYPE_VIDEO, strDestThumbFile);
-    }
-    if(strDestFile.length() == 0 || strDestThumbFile.length() == 0)
-    {
-        m_strErrorInfo = "not support file";
-        return FALSE;
-    }
-    //目的文件名
-    m_strDestFileName = strDestFile;
-    //源文件
-    m_strOriginalFile = strSrcFile;
-    m_strThumbFile = strSrcThumbFile;
-    //备份文件
-    m_strBackupOriginalFile = CBackupManager::GetInstance()->GetBackupRoot(strDestFold);
-    if(FALSE == CCommonUtil::CheckFoldExist(m_strBackupOriginalFile.c_str()))
-    {
-        CCommonUtil::CreateFold(m_strBackupOriginalFile.c_str());
-    }
-    //备份源文件
-    m_strBackupOriginalFile.append(strDestFile);
-
-    m_strBackupThumbFile = CBackupManager::GetInstance()->GetBackupThumbRoot(strDestFold);
-    if(FALSE == CCommonUtil::CheckFoldExist(m_strBackupThumbFile.c_str()))
-    {
-        CCommonUtil::CreateFold(m_strBackupThumbFile.c_str());
-    }
-    //备份目的文件
-    m_strBackupThumbFile.append(strDestThumbFile);
-    //上传临时文件
-    m_strTmpOriginalFile = CCommonUtil::StringFormat("%s%s", g_strTempPath.c_str(), strDestFile.c_str());
-    m_strTmpThumbFile = CCommonUtil::StringFormat("%s%s", g_strTempPath.c_str(), strDestThumbFile.c_str());
-
-    printf("BackupOriginalFile:%s\n", m_strBackupOriginalFile.c_str());
-    printf("BackupThumbFile:%s\n", m_strBackupThumbFile.c_str());
+    
     m_iTransSize = 0;
-    m_strFoldName = strDestFold;
     m_hUpload = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BackupItemProc, this, 0, NULL);
     return TRUE;
 }
@@ -168,9 +116,16 @@ DWORD CBackupItemUpload::BackupItemProc(void* lpParameter)
     BOOL bRet = pBackupItemUpload->Backup();
     if(TRUE == bRet)
     {
-        CCommonUtil::MoveFile(pBackupItemUpload->m_strTmpThumbFile, pBackupItemUpload->m_strBackupThumbFile);
-        CCommonUtil::MoveFile(pBackupItemUpload->m_strTmpOriginalFile, pBackupItemUpload->m_strBackupOriginalFile);
-        bRet = pBackupItemUpload->Save();
+        if(0 == pBackupItemUpload->m_strErrorInfo.compare("has translated"))
+        {
+            pBackupItemUpload->m_strErrorInfo = "";
+        }
+        else
+        {
+            CCommonUtil::MoveFile(pBackupItemUpload->m_strTmpThumbFile, pBackupItemUpload->m_strBackupThumbFile);
+            CCommonUtil::MoveFile(pBackupItemUpload->m_strTmpOriginalFile, pBackupItemUpload->m_strBackupOriginalFile);
+            bRet = pBackupItemUpload->Save();
+        }
     }
     if(FALSE == bRet)
     {
@@ -234,9 +189,61 @@ BOOL CBackupItemUpload::Backup()
         m_strErrorInfo = CCommonUtil::StringFormat("No enough space left:%ldKB need:%ldkB\n", diskInfo.iTotal - diskInfo.iUsed, (m_iThumbSize + m_iOrigianlSize)/1024);
         return FALSE;
     }
+    //判断文件是否存在于表中
+    string strMd5 = CFileUtil::GetFileMd5(m_strOriginalFile.c_str());
+    CBackupTable table;
+    BOOL bExist = table.CheckExist(m_strFoldName, strMd5);
+    if(TRUE == bExist)
+    {
+        m_iTransSize = m_iTotalSize;
+        m_strErrorInfo = "has translated";
+        printf("has translated\n");
+        return TRUE;
+    }
+    string strDestFile = "";
+    string strDestThumbFile = "";
+    string strMimeType = CCommonUtil::GetMime(m_strOriginalFile.c_str());
+    if (TRUE == CCommonUtil::IsMimeTypeImage(strMimeType.c_str()))
+    {
+        m_eMediaType = MEDIATYPE_IMAGE;
+        strDestFile = GetNewFileName(m_strFoldName, MEDIATYPE_IMAGE, strDestThumbFile);
+    }
+    else if (TRUE == CCommonUtil::IsMimeTypeVideo(strMimeType.c_str()))
+    {
+        m_eMediaType = MEDIATYPE_VIDEO;
+        strDestFile = GetNewFileName(m_strFoldName, MEDIATYPE_VIDEO, strDestThumbFile);
+    }
+    if(strDestFile.length() == 0 || strDestThumbFile.length() == 0)
+    {
+        m_strErrorInfo = "not support file";
+        printf("not support file\n");
+        return FALSE;
+    }
+    //目的文件名
+    m_strDestFileName = strDestFile;
     
-    //写第一个文件
+    //备份文件
+    m_strBackupOriginalFile = CBackupManager::GetInstance()->GetBackupRoot(m_strFoldName);
+    if(FALSE == CCommonUtil::CheckFoldExist(m_strBackupOriginalFile.c_str()))
+    {
+        CCommonUtil::CreateFold(m_strBackupOriginalFile.c_str());
+    }
+    //备份源文件
+    m_strBackupOriginalFile.append(strDestFile);
+    m_strBackupThumbFile = CBackupManager::GetInstance()->GetBackupThumbRoot(m_strFoldName);
+    if(FALSE == CCommonUtil::CheckFoldExist(m_strBackupThumbFile.c_str()))
+    {
+        CCommonUtil::CreateFold(m_strBackupThumbFile.c_str());
+    }
+    //备份目的文件
+    m_strBackupThumbFile.append(strDestThumbFile);
+    //上传临时文件
+    m_strTmpOriginalFile = CCommonUtil::StringFormat("%s%s", g_strTempPath.c_str(), strDestFile.c_str());
+    m_strTmpThumbFile = CCommonUtil::StringFormat("%s%s", g_strTempPath.c_str(), strDestThumbFile.c_str());
 
+    printf("BackupOriginalFile:%s\n", m_strBackupOriginalFile.c_str());
+    printf("BackupThumbFile:%s\n", m_strBackupThumbFile.c_str());
+    //写第一个文件
     BOOL bSuccess = CopyFile(m_strThumbFile.c_str(), m_strTmpThumbFile.c_str());
     if(FALSE == bSuccess)
     {

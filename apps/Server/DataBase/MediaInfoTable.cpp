@@ -112,7 +112,7 @@ list<MediaInfoItem> CMediaInfoTable::AssembleItems(list<map<string, string>> Lis
             }
             else if(0 == strKey.compare("meitisize"))
             {
-                item.iMeiTiSize = atol(strValue.c_str());
+                item.iMeiTiSize = atoll(strValue.c_str());
             }
             else if(0 == strKey.compare("devicename"))
             {
@@ -181,7 +181,7 @@ MediaInfoItem CMediaInfoTable::GetItem(CDbCursor& cursor)
     item.strWeiZhi = cursor.GetString("weizhi");
     item.strLocation = cursor.GetString("location");
     item.iMediaType = cursor.GetInt("meititype");
-    item.iMeiTiSize = cursor.GetLong("meitisize");
+    item.iMeiTiSize = cursor.GetInt64("meitisize");
     item.strDeviceName = cursor.GetString("devicename");
     item.iWidth = cursor.GetInt("width");
     item.iHeight = cursor.GetInt("height");
@@ -247,7 +247,7 @@ BOOL CMediaInfoTable::AddItem(MediaInfoItem item)
     }
      CDbDriver* pDbDriver = LOCKMEDIADB
      BOOL bRet = pDbDriver->ExecuteSQL("insert into tbl_mediainfo(paishetime, year, month, day, md5num, weizhi, location, meititype, meitisize, devicename,width,height,duration,mediaaddr,addtime,hasextra,pinnedtime)values \
-												( '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '0')",  
+												( '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%ld', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '0')",  
     				item.iPaiSheTime, item.iYear, item.iMonth, item.iDay, item.strMd5Num.c_str(), item.strWeiZhi.c_str(), item.strLocation.c_str(), 
                     item.iMediaType, item.iMeiTiSize, item.strDeviceName.c_str(), item.iWidth, 
                     item.iHeight, item.iDuration, item.strAddr.c_str(), item.iAddTime, item.iHasExtra);
@@ -312,7 +312,7 @@ int CMediaInfoTable::GetRecentRecordCount(uint32_t iType, string strDevNames)
     }
     return atoi(List.front().c_str());
 }
-string CMediaInfoTable::GetRecentRecords(int iPage, int iLimit, string strDevNames)
+string CMediaInfoTable::GetRecentRecords(int iStart, int iLimit, string strDevNames)
 {
     int iCurTime = Server::CTools::CurTimeSec();
     int iLimitTime = iCurTime - 7*24*60*60;
@@ -320,11 +320,11 @@ string CMediaInfoTable::GetRecentRecords(int iPage, int iLimit, string strDevNam
     CDbDriver* pDbDriver = LOCKMEDIADB
     if(0 == strDevNames.length())
     {
-        List = pDbDriver->QuerySQL("select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where addtime > '%d' order by addtime desc limit %d offset %d", iLimitTime, iLimit, iLimit*iPage);
+        List = pDbDriver->QuerySQL("select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where addtime > '%d' order by addtime desc limit %d offset %d", iLimitTime, iLimit, iStart);
     }
     else
     {
-        List = pDbDriver->QuerySQL("select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where addtime > '%d' and devicename in ('%s') order by addtime desc limit %d offset %d", iLimitTime, strDevNames.c_str(), iLimit, iLimit*iPage);
+        List = pDbDriver->QuerySQL("select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where addtime > '%d' and devicename in ('%s') order by addtime desc limit %d offset %d", iLimitTime, strDevNames.c_str(), iLimit, iStart);
     }
     UNLOCKMEDIADB
     list<MediaInfoItem> retList = AssembleItems(List);
@@ -345,17 +345,17 @@ string CMediaInfoTable::GetRecentRecords(int iPage, int iLimit, string strDevNam
     string strJson = Server::CJsonUtil::ToString(jsonRoot);
     return strJson;
 }
-string CMediaInfoTable::GetFavoriteRecords(int iPage, int iLimit, string strDevNames)
+string CMediaInfoTable::GetFavoriteRecords(int iStart, int iLimit, string strDevNames)
 {
     list<map<string,string>> List;
     CDbDriver* pDbDriver = LOCKMEDIADB
     if(0 == strDevNames.length())
     {
-        List = pDbDriver->QuerySQL("select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where favoritetime > '0' order by favoritetime desc limit %d offset %d", iLimit, iLimit * iPage);
+        List = pDbDriver->QuerySQL("select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where favoritetime > '0' order by favoritetime desc limit %d offset %d", iLimit, iStart);
     }
     else
     {
-        List = pDbDriver->QuerySQL("select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where favoritetime > '0' and devicename in ('%s') order by favoritetime desc limit %d offset %d", strDevNames.c_str(), iLimit, iLimit * iPage);
+        List = pDbDriver->QuerySQL("select id,width,height,duration,meititype,meitisize,mediaaddr,hasextra from tbl_mediainfo where favoritetime > '0' and devicename in ('%s') order by favoritetime desc limit %d offset %d", strDevNames.c_str(), iLimit, iStart);
     }
     UNLOCKMEDIADB
     list<MediaInfoItem> retList = AssembleItems(List);
@@ -376,7 +376,8 @@ string CMediaInfoTable::GetFavoriteRecords(int iPage, int iLimit, string strDevN
     string strJson = Server::CJsonUtil::ToString(jsonRoot);
     return strJson;
 }
-string CMediaInfoTable::GetYearRecords(int iPage, int iLimit, int iYear, int iMonth, int iDay, string strDevNames, string strLocation)
+
+string CMediaInfoTable::GetYearRecords(int iStart, int iLimit, int iYear, int iMonth, int iDay, string strDevNames, string strLocation, BOOL bLocation)
 {
     string strSQL = "select * from tbl_mediainfo where ";
     if(iYear > 0)
@@ -391,7 +392,12 @@ string CMediaInfoTable::GetYearRecords(int iPage, int iLimit, int iYear, int iMo
     {
         strSQL.append(Server::CCommonUtil::StringFormat("day=%d and ", iDay));
     }
-    if(strLocation.length() != 0)
+    if(true == bLocation)
+    {
+        //如果是位置，即使strLocation是空的也得加上 因为待定位的location是空的
+        strSQL.append(Server::CCommonUtil::StringFormat("location='%s' and ", strLocation.c_str()));
+    }
+    else if(strLocation.length() != 0)
     {
         strSQL.append(Server::CCommonUtil::StringFormat("location='%s' and ", strLocation.c_str()));
     }
@@ -399,7 +405,7 @@ string CMediaInfoTable::GetYearRecords(int iPage, int iLimit, int iYear, int iMo
     {
         strSQL.append(Server::CCommonUtil::StringFormat("devicename in ('%s') and ", strDevNames.c_str()));
     }
-    strSQL.append(Server::CCommonUtil::StringFormat("1=1 order by pinnedtime desc, paishetime desc, id asc limit %d offset %d", iLimit, iLimit*iPage));
+    strSQL.append(Server::CCommonUtil::StringFormat("1=1 order by pinnedtime desc, paishetime desc limit %d offset %d", iLimit, iStart));
     CDbDriver* pDbDriver = LOCKMEDIADB
     list<map<string,string>> List = pDbDriver->QuerySQL(strSQL.c_str());
     UNLOCKMEDIADB
@@ -529,29 +535,30 @@ string CMediaInfoTable::GetItemIDSql(int iID, BOOL bNext, string strOtype, strin
     if(0 == strOtype.compare("recent"))
     {
         long iAddTimeSec = mediaInfoItem.iAddTime;
+        int iCurTime = Server::CTools::CurTimeSec();
+        int iLimitTime = iCurTime - 7*24*60*60;
         //最近
         if(TRUE == bNext)
         {
             if(iDevNamesLen == 0)
             {
-                strSQL = Server::CCommonUtil::StringFormat("select id as mediaitemid from tbl_mediainfo where addtime <= %d order by addtime desc", iAddTimeSec);
+                strSQL = Server::CCommonUtil::StringFormat("select id as mediaitemid from tbl_mediainfo where addtime <= %d and addtime > '%d' order by addtime desc", iAddTimeSec, iLimitTime);
             }
             else
             {
-                strSQL = Server::CCommonUtil::StringFormat("select id as mediaitemid from tbl_mediainfo where addtime <= %d and devicename in ('%s') order by addtime desc", iAddTimeSec, strDevNames.c_str());
+                strSQL = Server::CCommonUtil::StringFormat("select id as mediaitemid from tbl_mediainfo where addtime <= %d and devicename in ('%s') and addtime > '%d' order by addtime desc", iAddTimeSec, strDevNames.c_str(), iLimitTime);
             }
         }
         else
         {
-            int iCurTime = Server::CTools::CurTimeSec();
-            int iLimitTime = iCurTime - 7*24*60*60;
+            
             if(iDevNamesLen == 0)
             {
-                strSQL = Server::CCommonUtil::StringFormat("select id as mediaitemid from tbl_mediainfo where addtime >= %d and addtime < '%d' order by addtime asc", iAddTimeSec, iLimitTime);
+                strSQL = Server::CCommonUtil::StringFormat("select id as mediaitemid from tbl_mediainfo where addtime >= %d and addtime > '%d' order by addtime desc", iAddTimeSec, iLimitTime);
             }
             else
             {
-                strSQL = Server::CCommonUtil::StringFormat("select id as mediaitemid from tbl_mediainfo where addtime >= %d and devicename in ('%s') and addtime < '%d' order by addtime asc", iAddTimeSec, strDevNames.c_str(), iLimitTime);
+                strSQL = Server::CCommonUtil::StringFormat("select id as mediaitemid from tbl_mediainfo where addtime >= %d and devicename in ('%s') and addtime > '%d' order by addtime desc", iAddTimeSec, strDevNames.c_str(), iLimitTime);
             }
         }
     }
@@ -596,7 +603,7 @@ string CMediaInfoTable::GetItemIDSql(int iID, BOOL bNext, string strOtype, strin
     }
     else
     {
-        long iPaiTimeSec = mediaInfoItem.iPaiSheTime;
+        // long iPaiTimeSec = mediaInfoItem.iPaiSheTime;
         //年月日
         strSQL = "select id as mediaitemid from tbl_mediainfo where ";
         if(iYear > 0)
@@ -611,7 +618,12 @@ string CMediaInfoTable::GetItemIDSql(int iID, BOOL bNext, string strOtype, strin
         {
             strSQL.append(Server::CCommonUtil::StringFormat("day=%d and ", iDay));
         }
-        if(strLocation.length() != 0)
+        if(strOtype == "location")
+        {
+            //足迹的话 一定会带location的 如果location为空表示GPS未定位 所以对于location类型的查询必带Location
+            strSQL.append(Server::CCommonUtil::StringFormat("location='%s' and ", strLocation.c_str()));
+        }
+        else if(strLocation.length() != 0)
         {
             strSQL.append(Server::CCommonUtil::StringFormat("location='%s' and ", strLocation.c_str()));
         }
@@ -621,11 +633,11 @@ string CMediaInfoTable::GetItemIDSql(int iID, BOOL bNext, string strOtype, strin
         }
         if(TRUE == bNext)
         {
-            strSQL.append(Server::CCommonUtil::StringFormat("paishetime <= %d order by pinnedtime desc, paishetime desc", iPaiTimeSec));
+            strSQL.append("1=1 order by pinnedtime desc, paishetime desc");
         }
         else
         {
-            strSQL.append(Server::CCommonUtil::StringFormat("paishetime >= %d order by pinnedtime desc, paishetime desc", iPaiTimeSec));
+            strSQL.append("1=1 order by pinnedtime desc, paishetime desc");
         }
     }
     return strSQL;
@@ -642,6 +654,12 @@ int CMediaInfoTable::GetPrevItemID(int iID, string strOtype, string strDevNames,
     if(iCount == 0)
     {
         return -1;
+    }
+    if(iCount == 1)
+    {
+        cursor.Next();
+        int iCurID = cursor.GetInt("mediaitemid");
+        return iCurID;
     }
     int iRetID = -1;
     while(TRUE == cursor.Next())
@@ -670,6 +688,12 @@ int CMediaInfoTable::GetNextItemID(int iID, string strOtype, string strDevNames,
     if(iCount == 0)
     {
         return -1;
+    }
+    if(iCount == 1)
+    {
+        cursor.Next();
+        int iCurID = cursor.GetInt("mediaitemid");
+        return iCurID;
     }
     int iRetID = -1;
     BOOL bGetNext = FALSE;
@@ -912,7 +936,7 @@ string CMediaInfoTable::YearMonthDayCover(int iYear, int iMonth, int iDay, strin
     {
         strSQL.append(Server::CCommonUtil::StringFormat("devicename in ('%s') and ", strDevNames.c_str()));
     }
-    strSQL.append(" 1=1 order by paishetime desc limit 0,1");
+    strSQL.append(" 1=1 order by pinnedtime desc, paishetime desc limit 0,1");
     CDbDriver* pDbDriver = LOCKMEDIADB
     list<string> List = pDbDriver->QuerySQL2(strSQL.c_str());
     UNLOCKMEDIADB
@@ -939,6 +963,56 @@ BOOL CMediaInfoTable::SetPinned(int iID, BOOL bPinned)
     }
     CDbDriver* pDbDriver = LOCKMEDIADB
     BOOL bRet = pDbDriver->ExecuteSQL("update tbl_mediainfo set pinnedtime='%ld' where id='%d'", iTimeSec, iID);
+    UNLOCKMEDIADB
+    return bRet;
+}
+list<int> CMediaInfoTable::GetTodayYear(int iMonth, int iDay, string strDevNames)
+{
+    list<string> yearList;
+    CDbDriver* pDbDriver = LOCKMEDIADB
+    if(strDevNames.length() > 0)
+    {
+        yearList = pDbDriver->QuerySQL2("select DISTINCT(year) from tbl_mediainfo where month='%d' and day='%d' and devicename in ('%s') ORDER BY paishetime DESC", iMonth, iDay, strDevNames.c_str());
+    }
+    else
+    {
+        yearList = pDbDriver->QuerySQL2("select DISTINCT(year) from tbl_mediainfo where month='%d' and day='%d' ORDER BY paishetime DESC", iMonth, iDay);
+    }
+    UNLOCKMEDIADB
+    list<int> retList;
+    list<string>::iterator itor = yearList.begin();
+    for(; itor != yearList.end(); ++itor)
+    {
+        retList.push_back(atoi((*itor).c_str()));
+    }
+    return retList;
+}
+MediaInfoItem CMediaInfoTable::GetFirstMediaInDay(int iYear, int iMonth, int iDay, string strDevNames)
+{
+    list<map<string, string>> List;
+    CDbDriver* pDbDriver = LOCKMEDIADB
+    if(strDevNames.length() > 0)
+    {
+        List = pDbDriver->QuerySQL("select * from tbl_mediainfo where year='%d' and month='%d' and day='%d' and devicename in ('%s') ORDER BY paishetime DESC LIMIT 1", iYear, iMonth, iDay, strDevNames.c_str());
+    }
+    else
+    {
+        List = pDbDriver->QuerySQL("select * from tbl_mediainfo where year='%d' and month='%d' and day='%d' ORDER BY paishetime DESC LIMIT 1", iYear, iMonth, iDay);
+    }
+    UNLOCKMEDIADB
+    if(0 == List.size())
+    {
+        MediaInfoItem item = {};
+        item.iID = -1;
+        return item;
+    }
+    list<MediaInfoItem> retList = AssembleItems(List);
+    return retList.front();
+}
+BOOL CMediaInfoTable::ChangeMediaAddr(int iID, string strAddr, string strMd5)
+{
+    CDbDriver* pDbDriver = LOCKMEDIADB
+    BOOL bRet = pDbDriver->ExecuteSQL("update tbl_mediainfo set mediaaddr='%s', md5num='%s' where id='%d'", strAddr.c_str(), strMd5.c_str(), iID);
     UNLOCKMEDIADB
     return bRet;
 }

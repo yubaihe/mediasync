@@ -154,6 +154,10 @@ std::vector<string> CBackupManager::BackupFoldList()
     std::vector<FoldEntry>::iterator itor =  foldEntryList.begin();
     for(; itor != foldEntryList.end(); ++itor)
     {
+        if(0 == itor->strName.compare(".media_tmp"))
+        {
+            continue;
+        }
         retList.push_back(itor->strName);
     }
     return retList;
@@ -197,14 +201,34 @@ string CBackupManager::GetBackupRoot(string strName)
 }
 string CBackupManager::GetBackupThumbRoot(string strName)
 {
-    string strBackTmp = CCommonUtil::StringFormat("%s%s/", g_strBackThumbPath.c_str(), strName.c_str());
-    return strBackTmp;
+    string strBackThumb = CCommonUtil::StringFormat("%s%s/", g_strBackThumbPath.c_str(), strName.c_str());
+    return strBackThumb;
 }
-
+string CBackupManager::GetBackupTempRoot(string strName)
+{
+    if(g_strBackupPoint.length() == 0)
+    {
+        return "";
+    }
+    if(strName.length() == 0)
+    {
+        string strBackTmp = CCommonUtil::StringFormat("%s/.media_tmp/", g_strBackupPoint.c_str());
+        return strBackTmp;
+    }
+    else
+    {
+        string strBackTmp = CCommonUtil::StringFormat("%s/.media_tmp/%s/", g_strBackupPoint.c_str(), strName.c_str());
+        return strBackTmp;
+    }
+}
 string CBackupManager::GetBackupFoldItemDetail(int iItemID)
 {
     CBackupTable table;
     BackupItemFull curItem = table.GetItem(iItemID);
+    if(curItem.iID < 0)
+    {
+        return "";
+    }
     BackupItemFull nextItem = table.GetNextItem(curItem);
     BackupItemFull prevItem = table.GetPrevItem(curItem);
      

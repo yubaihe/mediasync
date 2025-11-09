@@ -199,3 +199,10 @@ string CMediaGroupTable::GetCoverPic(int iID)
     }
     return List.front();
 }
+BOOL CMediaGroupTable::UpdateCoverPic(string strFrom, string strTo)
+{
+    CDbDriver* pDbDriver = LOCKMEDIADB
+    BOOL bRet = pDbDriver->ExecuteSQL("update tbl_mediagroup set coverpic='%s' where coverpic='%s'", strTo.c_str(), strFrom.c_str());
+    UNLOCKMEDIADB
+    return bRet;
+}

@@ -18,7 +18,7 @@ struct BackupItemFull:BackupItem
 {
     string strAddr;                 //媒体地址 lat&long
     string strLocation;             //拍摄位置
-    long iMeiTiSize;                //拍摄图片的大小
+    int64_t iMeiTiSize;                //拍摄图片的大小
     string strFoldName;             //文件夹名称
     uint32_t iWidth;                //宽度
     uint32_t iHeight;               //高度

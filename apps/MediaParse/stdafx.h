@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <dirent.h>
 #include <sqlite3.h>
 #include <limits.h>
@@ -45,7 +46,7 @@ LPVOID lpThreadParameter
 );
 typedef PTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE;
 
-typedef unsigned long       DWORD;
+typedef signed long       DWORD;
 
 #ifndef FALSE
 #define FALSE               0

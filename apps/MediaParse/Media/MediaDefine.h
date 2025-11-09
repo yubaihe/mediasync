@@ -17,12 +17,12 @@ public:
 	int iWidth;
 	int iHeight;
 	string strName;
-	long long iFileSize;
+	int64_t iFileSize;
 	int iMediaType; //image:1 video 2
 	int iItemIndex;
     void Print()
     {
-        printf("Index:%d Name:%s Size:%lld MediaType:%s Width:%d Height:%d\n",
+        printf("Index:%d Name:%s Size:%ld MediaType:%s Width:%d Height:%d\n",
             iItemIndex, strName.c_str(), iFileSize, iMediaType==MEDIATYPE_IMAGE?"IMAGE":"VIDEO",
             iWidth, iHeight);
     }

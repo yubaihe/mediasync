@@ -26,6 +26,7 @@
 #include <string.h>
 #include <json.hpp>
 #include <curl.h>
+#include <thread> 
 
 using namespace std;
 
@@ -96,8 +97,9 @@ extern pthread_t LinuxCreateThread(pthread_attr_t* lpThreadAttributes, LPTHREAD_
 #define Sleep(MillSec)  usleep(MillSec*1000);
 #define LONGSLEEPPRE(SEC, LIJI)  int iCount = 0; if(LIJI){iCount = SEC;}
 #define LONGSLEEP(SEC) if(iCount >= SEC){iCount = 0;}else{iCount++;Sleep(1000);continue;}
-
-
+#define PRINTERROR(format, ...) Server::CCommonUtil::ColorPrintf(Server::COLORTYPE_ERROR, format, ##__VA_ARGS__);
+#define PRINTSUCCESS(format, ...) Server::CCommonUtil::ColorPrintf(Server::COLORTYPE_SUCCESS, format, ##__VA_ARGS__);
+#define PRINTWARNING(format, ...) Server::CCommonUtil::ColorPrintf(Server::COLORTYPE_WARNING, format, ##__VA_ARGS__);
 #define CASTTAG "PhotoVideo"
 typedef enum
 {

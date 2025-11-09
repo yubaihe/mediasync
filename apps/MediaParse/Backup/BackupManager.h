@@ -23,6 +23,7 @@ public:
     std::vector<BackupItem> BackupFileList(string strName, int* piPicCount = NULL, int* piVideoCount = NULL);
     string GetBackupRoot(string strName);
     string GetBackupThumbRoot(string strName);
+    string GetBackupTempRoot(string strName);
     string GetBackupFoldItemDetail(int iItemID);
     BOOL UploadItem(string strDev, string strFile, string strDestFold, string& strToken);
     int GetUploadPrecent(string strToken, char* pszErrorInfo);
@@ -32,9 +33,8 @@ public:
     list<string> GetStoreFoldList();
     void ClearCache();
     BOOL IsSupportBackup();
-private:
-    
     std::vector<FoldEntry> ScanFold(const std::string strPath);
+private:
     static bool CompareFoldWithCreatTime(const FoldEntry& a, const FoldEntry& b);
     static bool CompareFileWithCreatTime(const FileEntry& a, const FileEntry& b);
 private:

@@ -238,6 +238,7 @@ vector<BackupItem> CBackupTable::BackupFileListShort(string strFold, int* piVide
 }
 BOOL CBackupTable::CheckExist(string strFold, string strMd5, time_t iCreateTimeSec /*= 0*/)
 {
+    printf("CBackupTable::CheckExist start\n");
     list<string> IdList;
     if(0 == iCreateTimeSec)
     {
@@ -251,7 +252,7 @@ BOOL CBackupTable::CheckExist(string strFold, string strMd5, time_t iCreateTimeS
         IdList = pDbDriver->QuerySQL2("select id from %s where foldname='%s' and md5num='%s' and paishetime='%d' limit 1 offset 0", TABLE_BACKUP, strFold.c_str(), strMd5.c_str(), iCreateTimeSec);
         UNLOCKBACKUPDB
     }
-    
+    printf("CBackupTable::CheckExist end\n");
     if(IdList.size() > 0)
     {
         return TRUE;
@@ -330,7 +331,7 @@ BackupItemFull CBackupTable::GetNextItem(BackupItemFull curItem)
     BackupItemFull item = {};
     CDbCursor cursor;
     CDbDriver* pDbDriver = LOCKBACKUPDB
-    BOOL bRet = pDbDriver->QuerySQL(cursor, "select * from %s where paishetime<='%d' order by paishetime desc", TABLE_BACKUP, curItem.iCreateTimeSec);
+    BOOL bRet = pDbDriver->QuerySQL(cursor, "select * from %s where foldname='%s' and paishetime<='%d' order by paishetime desc", TABLE_BACKUP, curItem.strFoldName.c_str(), curItem.iCreateTimeSec);
     UNLOCKBACKUPDB
     if(FALSE == bRet)
     {
@@ -363,7 +364,7 @@ BackupItemFull CBackupTable::GetPrevItem(BackupItemFull curItem)
     BackupItemFull item = {};
     CDbCursor cursor;
     CDbDriver* pDbDriver = LOCKBACKUPDB
-    BOOL bRet = pDbDriver->QuerySQL(cursor, "select * from %s where paishetime>='%d' order by paishetime desc", TABLE_BACKUP, curItem.iCreateTimeSec);
+    BOOL bRet = pDbDriver->QuerySQL(cursor, "select * from %s where foldname='%s' and paishetime>='%d' order by paishetime desc", TABLE_BACKUP, curItem.strFoldName.c_str(), curItem.iCreateTimeSec);
     UNLOCKBACKUPDB
     if(FALSE == bRet)
     {

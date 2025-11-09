@@ -190,17 +190,17 @@ BOOL CMediaGroupItemsTable::RemoveFromGroupID(int iGID)
     UNLOCKMEDIADB
     return bRet;
 }
-string CMediaGroupItemsTable::MediaIds(int iPage, int iLimit, int iGID, string strDeviceNames)
+string CMediaGroupItemsTable::MediaIds(int iStart, int iLimit, int iGID, string strDeviceNames)
 {
     list<string> List;
     CDbDriver* pDbDriver = LOCKMEDIADB
     if(0 == strDeviceNames.length())
     {
-        List = pDbDriver->QuerySQL2("select mediaid from tbl_mediagroupitems where gid = '%d' order by id desc limit %d offset %d", iGID, iLimit, iLimit*iPage);
+        List = pDbDriver->QuerySQL2("select mediaid from tbl_mediagroupitems where gid = '%d' order by id desc limit %d offset %d", iGID, iLimit, iStart);
     }
     else
     {
-        List = pDbDriver->QuerySQL2("select mediaid from tbl_mediagroupitems where gid = '%d' and deviceidentify in('%s') order by id desc limit %d offset %d", iGID, strDeviceNames.c_str(), iLimit, iPage*iLimit);
+        List = pDbDriver->QuerySQL2("select mediaid from tbl_mediagroupitems where gid = '%d' and deviceidentify in('%s') order by id desc limit %d offset %d", iGID, strDeviceNames.c_str(), iLimit,iStart);
     }
     UNLOCKMEDIADB
     return Server::CCommonUtil::ListToString(List, "&");
@@ -251,11 +251,11 @@ string CMediaGroupItemsTable::GetPrevItemIDSql(int iMediaItemID, int iGID, strin
     MediaGroupItemOne findItem = GetItem(iGID, iMediaItemID);
     if(strDeviceNames.length() == 0)
     {
-        strSQL = Server::CCommonUtil::StringFormat("select mediaid as mediaitemid from tbl_mediagroupitems where gid=%d and id>%d order by id asc", iGID, findItem.iID);
+        strSQL = Server::CCommonUtil::StringFormat("select mediaid as mediaitemid from tbl_mediagroupitems where gid=%d and id>%d order by id asc LIMIT 1", iGID, findItem.iID);
     }
     else
     {
-        strSQL = Server::CCommonUtil::StringFormat("select mediaid as mediaitemid from tbl_mediagroupitems where gid=%d and id>%d and deviceidentify in('%s') order by id asc", iGID, findItem.iID, strDeviceNames.c_str());
+        strSQL = Server::CCommonUtil::StringFormat("select mediaid as mediaitemid from tbl_mediagroupitems where gid=%d and id>%d and deviceidentify in('%s') order by id asc LIMIT 1", iGID, findItem.iID, strDeviceNames.c_str());
     }
     return strSQL;
 }
@@ -265,11 +265,11 @@ string CMediaGroupItemsTable::GetNextItemIDSql(int iMediaItemID, int iGID, strin
     MediaGroupItemOne findItem = GetItem(iGID, iMediaItemID);
     if(strDeviceNames.length() == 0)
     {
-        strSQL = Server::CCommonUtil::StringFormat("select mediaid as mediaitemid from tbl_mediagroupitems where gid=%d and id<%d order by id desc", iGID, findItem.iID);
+        strSQL = Server::CCommonUtil::StringFormat("select mediaid as mediaitemid from tbl_mediagroupitems where gid=%d and id<%d order by id desc limit 1", iGID, findItem.iID);
     }
     else
     {
-        strSQL = Server::CCommonUtil::StringFormat("select mediaid as mediaitemid from tbl_mediagroupitems where gid=%d and id<%d and deviceidentify in('%s') order by id desc", iGID, findItem.iID, strDeviceNames.c_str());
+        strSQL = Server::CCommonUtil::StringFormat("select mediaid as mediaitemid from tbl_mediagroupitems where gid=%d and id<%d and deviceidentify in('%s') order by id desc LIMIT 1", iGID, findItem.iID, strDeviceNames.c_str());
     }
     return strSQL;
 }

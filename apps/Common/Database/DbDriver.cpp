@@ -126,6 +126,15 @@ long CDbCursor::GetLong(string strKey, long iDefault/* = 0*/)
     }
     return atol(strValue.c_str());
 }
+int64_t CDbCursor::GetInt64(string strKey, long iDefault/* = 0*/)
+{
+    string strValue = GetString(strKey);
+    if(strValue.length() == 0)
+    {
+        return iDefault;
+    }
+    return atoll(strValue.c_str());
+}
 int CDbCursor::GetIndex(string strKey)
 {
     int iCount = sqlite3_column_count(m_pSqliteStmt);

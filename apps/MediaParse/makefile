@@ -12,9 +12,9 @@ LDFLAGS = -lm
 ifneq (,$(filter $(BUILDTYPE),DEBUG))
 	CFLAGS = -g
 else
-	CFLAGS = 
+	CFLAGS =
 endif
-CFLAGS  += -std=gnu++11 -g -Wall -MD -fPIE -fpermissive -fno-stack-protector -Wno-conversion-null \
+CFLAGS  += -std=gnu++11 -Wall -MD -fPIE -fpermissive -fno-stack-protector -Wno-conversion-null \
 		-DBRANCH="\$(BRANCH)\" -DBUILDDATE="\$(BUILDDATE)\" \
 		-I$(ROOTDIR)/include/exiv2 \
 		-I$(ROOTDIR)/include/nlohmannjson \
@@ -29,10 +29,11 @@ CFLAGS  += -std=gnu++11 -g -Wall -MD -fPIE -fpermissive -fno-stack-protector -Wn
 		-I./Backup \
 		-I./Util \
 		-I./DataBase \
+		-I./Transcode \
 		-I.
 
 STATICLIB = -lpthread -L$(ROOTDIR)/libs/ -lexiv2 -lexpat -lsqlite3 -ldbus-1 -lcommon \
-			-lavformat -lavfilter -lavcodec -lswresample -lavutil -lswscale 
+			-lx264 -lavformat -lavfilter -lavcodec -lswresample -lavutil -lswscale -lpostproc
 
 ifeq ($(LIBDLPATH)/libdl.so, $(wildcard $(LIBDLPATH)/libdl.so))
 STATICLIB += $(LIBDLPATH)/libdl.so
@@ -47,6 +48,7 @@ SOURCE +=  $(wildcard $(addsuffix /*.cpp, Util ) )
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, Backup ) )
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, DataBase ) )
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, SyncToDevice ) )
+SOURCE +=  $(wildcard $(addsuffix /*.cpp, Transcode ) )
 
 SOURCE += stdafx.cpp MessageHandler.cpp main.cpp  
 ####################################################################################################

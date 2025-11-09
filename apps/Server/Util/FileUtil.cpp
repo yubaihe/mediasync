@@ -81,6 +81,20 @@ string CFileUtil::GetNewFileName(string strPath)
         return strFile;
     }
 }
+string CFileUtil::GetNewFileName(string strPath, string strPostfix)
+{
+    while(1)
+    {
+        string strFile = Server::CCommonUtil::StringFormat("%lld.%s", Server::CTools::CurTimeMilSec(), strPostfix.c_str());
+        string strPathFile = Server::CCommonUtil::StringFormat("%s%lld", strPath.c_str(), strFile.c_str());
+        if(TRUE == CFileUtil::CheckFileExist(strPathFile))
+        {
+            Sleep(10);
+            continue;
+        }
+        return strFile;
+    }
+}
 string CFileUtil::GetNewFileName2(int iYear, string strFileName, string strPostFix)
 {
     printf("CFileUtil::GetNewFileName2\n");
@@ -104,6 +118,15 @@ string CFileUtil::GetNewFileName2(int iYear, string strFileName, string strPostF
         }
         iIndex++;
     } while (1);
+}
+std::string CFileUtil::GetFileExtension(const string& strFileName) 
+{
+    size_t iPos = strFileName.find_last_of(".");
+    if (iPos == std::string::npos || iPos == 0) 
+    {
+        return "";
+    }
+    return strFileName.substr(iPos + 1);
 }
 BOOL CFileUtil::CheckFoldExist(string strFold)
 {

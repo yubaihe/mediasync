@@ -58,6 +58,7 @@ LibFilter()
 	cp -R $ROOTDIR/libs/libavcodec.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/libswresample.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/libavdevice.so**  $PWD/install/libs/
+	cp -R $ROOTDIR/libs/libx264.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/libexiv2.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/libiconv.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/preloadable_libiconv.so**  $PWD/install/libs/

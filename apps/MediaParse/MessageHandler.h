@@ -38,6 +38,13 @@ private:
     string OnBackupUploadItemAddrChange(nlohmann::json& jsonRoot);
     string OnSyncToDevice(nlohmann::json& jsonRoot);
     string OnSyncToDevicePrecent(nlohmann::json& jsonRoot);
+    string OnDiskIgnoreCount(nlohmann::json& jsonRoot);
+    string OnGetFileMime(nlohmann::json& jsonRoot);
+    string OnTransFileStart(nlohmann::json& jsonRoot);
+    string OnTransFileStop(nlohmann::json& jsonRoot);
+    string OnTransFilePrecent(nlohmann::json& jsonRoot);
+    string OnTransFileEnd(nlohmann::json& jsonRoot);
+    
 private:
     std::map<std::string, std::function<string(nlohmann::json&)>> m_ActionHandlerMap;
 };

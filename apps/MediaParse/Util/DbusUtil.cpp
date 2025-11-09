@@ -120,3 +120,29 @@ BOOL CDbusUtil::ReportInfo(const char* pszData, char* pszErrorInfo)
     }
     return iStatus;
 }
+BOOL CDbusUtil::TranscodeFinish(int  iItemID, string strFile, string strMd5, string strIdentify)
+{
+    nlohmann::json json;
+    json["action"] = "transfilefinish";
+    json["id"] = iItemID;
+    json["file"] = strFile;
+    json["md5"] = strMd5;
+    json["identify"] = strIdentify;
+    string strRequest = MediaParse::CJsonUtil::ToString(json);
+
+    char szRetBuffer[MAX_DBUS_RECV_LEN] = {0};
+    int iDbusLen = MAX_DBUS_RECV_LEN;
+    BOOL bRet = LibDbus_SendSync("Server", 0x5007, strRequest.c_str(), strRequest.length() + 1, szRetBuffer, &iDbusLen);
+    if(FALSE == bRet||0 == iDbusLen)
+    {
+        return FALSE;
+    }
+    nlohmann::json jsonValue;
+    bRet = MediaParse::CJsonUtil::FromString(szRetBuffer, jsonValue);
+    if(FALSE == bRet||0 == iDbusLen)
+    {
+        return FALSE;
+    }
+    BOOL iStatus = jsonValue["status"];
+    return iStatus;
+}

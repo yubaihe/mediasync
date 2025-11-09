@@ -4,10 +4,13 @@
 #include "./Util/CommonUtil.h"
 #include "./Util/JsonUtil.h"
 #include "./Backup/BackupManager.h"
+#include "./Backup/BackupTmpFoldMonitor.h"
 #include "PhotoManager.h"
 #include "Backup/BackupOrganize.h"
 #include "SyncToDeviceManager.h"
+#include "TranscodeManager.h"
 extern string g_strMountPoint;
+
 //进入设备
 //curl -X POST -H "Content-Type: application/json" -d "{\"action\":\"deventer\",\"dev\":\"sda4\"}" http://192.168.110.12:8080/mediaparse.fcgi
 //查询进入设备进度
@@ -122,6 +125,15 @@ string CMessageHandler::OnDiskMediaItemList(nlohmann::json& jsonRoot)
         MediaParse::CJsonUtil::FromString(*itor, jsonItem);
         jsonRet["items"].push_back(jsonItem);
     }
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
+string CMessageHandler::OnDiskIgnoreCount(nlohmann::json& jsonRoot)
+{
+    std::string strDevName = jsonRoot["dev"];
+    int iIgnoreCount = CDiskManager::GetInstance()->GetIgnoreCount(strDevName.c_str());
+    nlohmann::json jsonRet;
+    jsonRet["status"] = 1;
+    jsonRet["ignorecount"] = iIgnoreCount;
     return MediaParse::CJsonUtil::ToString(jsonRet);
 }
 string CMessageHandler::OnDiskAddIgnore(nlohmann::json& jsonRoot)
@@ -351,11 +363,23 @@ string CMessageHandler::OnGetBackupFoldAdd(nlohmann::json& jsonRoot)
 }
 string CMessageHandler::OnBackupFoldDelete(nlohmann::json& jsonRoot)
 {
+    //这里需要优化 relech
+    //全部移动到 /home/relech/mediasync/backup/.media_tmp/ 以秒为文件名
+    //启动定时任务删除里面的目录
     string strName = jsonRoot["name"];
     string strBackupRoot = CBackupManager::GetInstance()->GetBackupRoot(strName);
     string strBackupThumbRoot = CBackupManager::GetInstance()->GetBackupThumbRoot(strName);
-    CCommonUtil::RemoveFold(strBackupRoot.c_str());
-    CCommonUtil::RemoveFold(strBackupThumbRoot.c_str());
+
+    string strTmpRoot = CBackupManager::GetInstance()->GetBackupTempRoot(CCommonUtil::StringFormat("%ld", CCommonUtil::CurTimeMilSec()));
+    CCommonUtil::CreateFold(strTmpRoot.c_str());
+    printf("Create backup temp fold:%s\n", strTmpRoot.c_str());
+    string strDestFold = CCommonUtil::StringFormat("%s%s", strTmpRoot.c_str(), strName.c_str());
+    string strDestThumbFold = CCommonUtil::StringFormat("%s.%s", strTmpRoot.c_str(), strName.c_str());
+    CCommonUtil::MoveFile(strBackupRoot, strDestFold);
+    CCommonUtil::MoveFile(strBackupThumbRoot, strDestThumbFold);
+
+    CBackupTmpFoldMonitor::GetInstance()->SetImmediately();
+
     CBackupTable backupTable;
     backupTable.DeleteFold(strName);
     nlohmann::json jsonRet;
@@ -439,7 +463,10 @@ string CMessageHandler::OnGetBackupFoldItemDetail(nlohmann::json& jsonRoot)
     string strDetail = CBackupManager::GetInstance()->GetBackupFoldItemDetail(iItemID);
 
     nlohmann::json jsonRet;
-    MediaParse::CJsonUtil::FromString(strDetail, jsonRet);
+    if(strDetail.length() > 0)
+    {
+        MediaParse::CJsonUtil::FromString(strDetail, jsonRet);
+    }
     jsonRet["status"] = 1;
     return MediaParse::CJsonUtil::ToString(jsonRet);
 }
@@ -594,71 +621,138 @@ string CMessageHandler::OnSyncToDevicePrecent(nlohmann::json& jsonRoot)
     jsonRet["error"] = szErrorInfo;
     return MediaParse::CJsonUtil::ToString(jsonRet);
 }
+// /home/relech/mediasync/bin/curl -X POST -H "Content-Type: application/json" -d "{\"action\":\"transfilestart\",\"file\":\"/home/relech/Linux/test.mkv\",\"dest\":\"/home/relech/Linux/test1.mp4\"}" http://127.0.0.1:8080/mediaparse.fcgi
+// /home/relech/mediasync/bin/curl -X POST -H "Content-Type: application/json" -d "{\"action\":\"transfilestop\",\"identify\":\"ZWI4MDY1M2I4YTgxNDg4ZDU5MTRkOTdkMTM1ZGYzODE=\"}" http://127.0.0.1:8080/mediaparse.fcgi
+// /home/relech/mediasync/bin/curl -X POST -H "Content-Type: application/json" -d "{\"action\":\"transfileprecent\",\"identify\":\"ZWI4MDY1M2I4YTgxNDg4ZDU5MTRkOTdkMTM1ZGYzODE=\"}" http://127.0.0.1:8080/mediaparse.fcgi
+// /home/relech/mediasync/bin/curl -X POST -H "Content-Type: application/json" -d "{\"action\":\"getfilemime\",\"file\":\"/home/relech/Linux/test.mkv\"}" http://127.0.0.1:8080/mediaparse.fcgi
+string CMessageHandler::OnGetFileMime(nlohmann::json& jsonRoot)
+{
+    std::string strFile = jsonRoot["file"];
+    string strMime = CCommonUtil::GetMime(strFile.c_str());
+    nlohmann::json jsonRet;
+    jsonRet["status"] = 1;
+    jsonRet["mime"] = strMime;
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
+string CMessageHandler::OnTransFileStart(nlohmann::json& jsonRoot)
+{
+    std::string strFile = jsonRoot["file"];
+    std::string strDest = jsonRoot["dest"];
+    int iItemID = jsonRoot["itemid"];
+    time_t iDurSec = CTranscodeManager::GetVideoDurationSec(strFile);
+    string strMd5 = CTranscodeManager::GetInstance()->TransFile(strFile, strDest, iDurSec, iItemID);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = 1;
+    jsonRet["identify"] = strMd5;
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
+string CMessageHandler::OnTransFileStop(nlohmann::json& jsonRoot)
+{
+    std::string strIdentify = jsonRoot["identify"];
+    CTranscodeManager::GetInstance()->TerminalTrans(strIdentify);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = 1;
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
+string CMessageHandler::OnTransFilePrecent(nlohmann::json& jsonRoot)
+{
+    std::string strIdentify = jsonRoot["identify"];
+    DWORD iDurSec = 0;
+    DWORD iCurSec = 0;
+    int iPrecent = 0;
+    CTranscodeManager::GetInstance()->GetTransInfo(strIdentify, iDurSec, iCurSec, iPrecent);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = 1;
+    jsonRet["dur"] = iDurSec;
+    jsonRet["cur"] = iCurSec;
+    jsonRet["precent"] = iPrecent;
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
+string CMessageHandler::OnTransFileEnd(nlohmann::json& jsonRoot)
+{
+    std::string strIdentify = jsonRoot["identify"];
+    CTranscodeManager::GetInstance()->TransEnd(strIdentify);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = 1;
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
 void CMessageHandler::OnMessage(const char* pszMsg, char* pszRet)
 {
-   // printf("%s\n", pszMsg);
-	nlohmann::json jsonValue;
-    BOOL bRet = MediaParse::CJsonUtil::FromString(pszMsg, jsonValue);
-    if(FALSE == bRet)
-    {
-        strcpy(pszRet, "{\"status\":0,\"info\":\"input error\"}");
-        return;
-    }
-    string strAction = jsonValue["action"];
-    if(m_ActionHandlerMap.size() == 0)
-    {
-        m_ActionHandlerMap["listdisk"] = std::bind(&CMessageHandler::OnListDisk, this, std::placeholders::_1);
-        m_ActionHandlerMap["deventer"] = std::bind(&CMessageHandler::OnDevEnter, this, std::placeholders::_1);
-        m_ActionHandlerMap["devsyncprecent"] = std::bind(&CMessageHandler::OnDevSyncPrecent, this, std::placeholders::_1);
-        m_ActionHandlerMap["parsegps"] = std::bind(&CMessageHandler::OnParseGps, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskmediaitemlist"] = std::bind(&CMessageHandler::OnDiskMediaItemList, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskaddignore"] = std::bind(&CMessageHandler::OnDiskAddIgnore, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskremoveignore"] = std::bind(&CMessageHandler::OnDiskRemoveIgnore, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskmediaitemignorelist"] = std::bind(&CMessageHandler::OnDiskMediaItemIgnoreList, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskuploaditemlist"] = std::bind(&CMessageHandler::OnDiskUploadItemList, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskitemupload"] = std::bind(&CMessageHandler::OnDiskItemUpload, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskitemuploadprecent"] = std::bind(&CMessageHandler::OnDiskItemUploadPrecent, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskitemdetail"] = std::bind(&CMessageHandler::OnDiskItemDetail, this, std::placeholders::_1);
-        m_ActionHandlerMap["diskdeleteitem"] = std::bind(&CMessageHandler::OnDiskDeleteItem, this, std::placeholders::_1);
-        m_ActionHandlerMap["disksetignore"] = std::bind(&CMessageHandler::OnDiskSetIgnore, this, std::placeholders::_1);
-        m_ActionHandlerMap["printitem"] = std::bind(&CMessageHandler::OnPrintItem, this, std::placeholders::_1);
-        m_ActionHandlerMap["genthumb"] = std::bind(&CMessageHandler::OnGenThumb, this, std::placeholders::_1);
-        //备份
-        m_ActionHandlerMap["backupfolds"] = std::bind(&CMessageHandler::OnGetBackupFolds, this, std::placeholders::_1);
-        m_ActionHandlerMap["backupfoldadd"] = std::bind(&CMessageHandler::OnGetBackupFoldAdd, this, std::placeholders::_1);
-        m_ActionHandlerMap["backupfolddel"] = std::bind(&CMessageHandler::OnBackupFoldDelete, this, std::placeholders::_1);
-        m_ActionHandlerMap["backupfoldmodify"] = std::bind(&CMessageHandler::OnBackupFoldModify, this, std::placeholders::_1);
-        //提交
-        m_ActionHandlerMap["backupuploaditem"] = std::bind(&CMessageHandler::OnBackupUploadItem, this, std::placeholders::_1);
-        m_ActionHandlerMap["backupuploaditemaddrchange"] = std::bind(&CMessageHandler::OnBackupUploadItemAddrChange, this, std::placeholders::_1);
-        m_ActionHandlerMap["backupuploaditemprecent"] = std::bind(&CMessageHandler::OnBackupUploadItemPrecent, this, std::placeholders::_1);
-        m_ActionHandlerMap["backupuploaditemlist"] = std::bind(&CMessageHandler::OnBackupUploadItemList, this, std::placeholders::_1);
-        m_ActionHandlerMap["backupuploaditemdel"] = std::bind(&CMessageHandler::OnBackupUploadItemDel, this, std::placeholders::_1);
-        //文件
-        m_ActionHandlerMap["backupfolditemdetail"] = std::bind(&CMessageHandler::OnGetBackupFoldItemDetail, this, std::placeholders::_1);
-        //同步
-        m_ActionHandlerMap["backupfoldsyncstart"] = std::bind(&CMessageHandler::OnBackupFoldSyncStart, this, std::placeholders::_1);
-        m_ActionHandlerMap["backupfoldsyncprecent"] = std::bind(&CMessageHandler::OnBackupFoldSyncPrecent, this, std::placeholders::_1);
-        //同步到媒体列表
-        m_ActionHandlerMap["synctodevice"] = std::bind(&CMessageHandler::OnSyncToDevice, this, std::placeholders::_1);
-        m_ActionHandlerMap["synctodeviceprecent"] = std::bind(&CMessageHandler::OnSyncToDevicePrecent, this, std::placeholders::_1);
-        
-    }
-    std::map<std::string, std::function<string(nlohmann::json&)>>::iterator itor = m_ActionHandlerMap.find(strAction);
-    if(itor == m_ActionHandlerMap.end())
-    {
-        printf("================>Unknow action:%s\n", strAction.c_str());
-        string strRet = CCommonUtil::StringFormat("{\"status\":0,\"info\":\"unknow action %s\"}", strAction.c_str());
-        strcpy(pszRet, strRet.c_str());
-        return;
-    }
-    string strRet = itor->second(jsonValue);
-    strcpy(pszRet, strRet.c_str());
-    // if(0 == strAction.compare("test"))
+    // try 
     // {
-    //     char szServiceList[1000] = {0};
-    //     LibDbus_ServiceList(szServiceList);
-    //     printf("====serviceList:\n%s\n=====\n", szServiceList);
-    // }
+
+        // printf("%s\n", pszMsg);
+        nlohmann::json jsonValue;
+        BOOL bRet = MediaParse::CJsonUtil::FromString(pszMsg, jsonValue);
+        if(FALSE == bRet)
+        {
+            strcpy(pszRet, "{\"status\":0,\"info\":\"input error\"}");
+            return;
+        }
+        string strAction = jsonValue["action"];
+        if(m_ActionHandlerMap.size() == 0)
+        {
+            m_ActionHandlerMap["listdisk"] = std::bind(&CMessageHandler::OnListDisk, this, std::placeholders::_1);
+            m_ActionHandlerMap["deventer"] = std::bind(&CMessageHandler::OnDevEnter, this, std::placeholders::_1);
+            m_ActionHandlerMap["devsyncprecent"] = std::bind(&CMessageHandler::OnDevSyncPrecent, this, std::placeholders::_1);
+            m_ActionHandlerMap["parsegps"] = std::bind(&CMessageHandler::OnParseGps, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskmediaitemlist"] = std::bind(&CMessageHandler::OnDiskMediaItemList, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskaddignore"] = std::bind(&CMessageHandler::OnDiskAddIgnore, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskremoveignore"] = std::bind(&CMessageHandler::OnDiskRemoveIgnore, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskmediaitemignorelist"] = std::bind(&CMessageHandler::OnDiskMediaItemIgnoreList, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskuploaditemlist"] = std::bind(&CMessageHandler::OnDiskUploadItemList, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskitemupload"] = std::bind(&CMessageHandler::OnDiskItemUpload, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskitemuploadprecent"] = std::bind(&CMessageHandler::OnDiskItemUploadPrecent, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskitemdetail"] = std::bind(&CMessageHandler::OnDiskItemDetail, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskdeleteitem"] = std::bind(&CMessageHandler::OnDiskDeleteItem, this, std::placeholders::_1);
+            m_ActionHandlerMap["disksetignore"] = std::bind(&CMessageHandler::OnDiskSetIgnore, this, std::placeholders::_1);
+            m_ActionHandlerMap["diskignorecount"] = std::bind(&CMessageHandler::OnDiskIgnoreCount, this, std::placeholders::_1);
+            m_ActionHandlerMap["printitem"] = std::bind(&CMessageHandler::OnPrintItem, this, std::placeholders::_1);
+            m_ActionHandlerMap["genthumb"] = std::bind(&CMessageHandler::OnGenThumb, this, std::placeholders::_1);
+            //备份
+            m_ActionHandlerMap["backupfolds"] = std::bind(&CMessageHandler::OnGetBackupFolds, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupfoldadd"] = std::bind(&CMessageHandler::OnGetBackupFoldAdd, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupfolddel"] = std::bind(&CMessageHandler::OnBackupFoldDelete, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupfoldmodify"] = std::bind(&CMessageHandler::OnBackupFoldModify, this, std::placeholders::_1);
+            //提交
+            m_ActionHandlerMap["backupuploaditem"] = std::bind(&CMessageHandler::OnBackupUploadItem, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupuploaditemaddrchange"] = std::bind(&CMessageHandler::OnBackupUploadItemAddrChange, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupuploaditemprecent"] = std::bind(&CMessageHandler::OnBackupUploadItemPrecent, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupuploaditemlist"] = std::bind(&CMessageHandler::OnBackupUploadItemList, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupuploaditemdel"] = std::bind(&CMessageHandler::OnBackupUploadItemDel, this, std::placeholders::_1);
+            //文件
+            m_ActionHandlerMap["backupfolditemdetail"] = std::bind(&CMessageHandler::OnGetBackupFoldItemDetail, this, std::placeholders::_1);
+            //同步
+            m_ActionHandlerMap["backupfoldsyncstart"] = std::bind(&CMessageHandler::OnBackupFoldSyncStart, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupfoldsyncprecent"] = std::bind(&CMessageHandler::OnBackupFoldSyncPrecent, this, std::placeholders::_1);
+            //同步到媒体列表
+            m_ActionHandlerMap["synctodevice"] = std::bind(&CMessageHandler::OnSyncToDevice, this, std::placeholders::_1);
+            m_ActionHandlerMap["synctodeviceprecent"] = std::bind(&CMessageHandler::OnSyncToDevicePrecent, this, std::placeholders::_1);
+            //文件转换
+            m_ActionHandlerMap["getfilemime"] = std::bind(&CMessageHandler::OnGetFileMime, this, std::placeholders::_1);    //video/mp4
+            m_ActionHandlerMap["transfilestart"] = std::bind(&CMessageHandler::OnTransFileStart, this, std::placeholders::_1);
+            m_ActionHandlerMap["transfilestop"] = std::bind(&CMessageHandler::OnTransFileStop, this, std::placeholders::_1);
+            m_ActionHandlerMap["transfileprecent"] = std::bind(&CMessageHandler::OnTransFilePrecent, this, std::placeholders::_1);
+            m_ActionHandlerMap["transfileend"] = std::bind(&CMessageHandler::OnTransFileEnd, this, std::placeholders::_1);
+        }
+    
+        std::map<std::string, std::function<string(nlohmann::json&)>>::iterator itor = m_ActionHandlerMap.find(strAction);
+        if(itor == m_ActionHandlerMap.end())
+        {
+            printf("================>Unknow action:%s\n", strAction.c_str());
+            string strRet = CCommonUtil::StringFormat("{\"status\":0,\"info\":\"unknow action %s\"}", strAction.c_str());
+            strcpy(pszRet, strRet.c_str());
+            return;
+        }
+        string strRet = itor->second(jsonValue);
+        strcpy(pszRet, strRet.c_str());
+    //}
+    // catch (const std::exception& e) {  
+    //     nlohmann::json jsonRet;
+    //     jsonRet["status"] = 0;
+    //     jsonRet["info"] = e.what();
+    //     string strRet = MediaParse::CJsonUtil::ToString(jsonRet);
+    //     strcpy(pszRet, strRet.c_str());
+    // }  
     
 }

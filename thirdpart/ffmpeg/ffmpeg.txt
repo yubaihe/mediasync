@@ -1,3 +1,6 @@
+判断是不是支持x264编码
+ffmpeg -codecs | grep x264
+
  ./ffmpeg -i a.mp4 -y -t 0.001 -s 100x100 b.jpg  
 root@myimx6ek140p:/home/relech/share/ffmpeg/bin# ./ffprobe  -i a.mp4 -v quiet -print_format json -show_format -select_streams v -show_streams     
 {

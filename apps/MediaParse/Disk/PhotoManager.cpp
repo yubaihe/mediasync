@@ -26,11 +26,11 @@ void CPhotoManager::Empty()
 	m_strRoot = "";
 	m_strTempRoot = "";
 	EnterCriticalSection(&m_PhotosVectorSection);
-	vector<PhotoItem*>::iterator itor = m_PhotosVector.begin();
+	vector<PhotoItem *>::iterator itor = m_PhotosVector.begin();
 	for (; itor != m_PhotosVector.end();)
 	{
-		PhotoItem* pItem = *itor;
-		PhotoExtra* pExtra = GetExtraByItemIndexInner(pItem->iItemIndex);
+		PhotoItem *pItem = *itor;
+		PhotoExtra *pExtra = GetExtraByItemIndexInner(pItem->iItemIndex);
 		itor = m_PhotosVector.erase(itor);
 		m_PhotoExtraMap.erase(pItem->iItemIndex);
 		delete pItem;
@@ -41,8 +41,8 @@ void CPhotoManager::Empty()
 	itor = m_IgnorePhotosVector.begin();
 	for (; itor != m_IgnorePhotosVector.end();)
 	{
-		PhotoItem* pItem = *itor;
-		PhotoExtra* pExtra = GetExtraByItemIndexInner(pItem->iItemIndex);
+		PhotoItem *pItem = *itor;
+		PhotoExtra *pExtra = GetExtraByItemIndexInner(pItem->iItemIndex);
 		itor = m_IgnorePhotosVector.erase(itor);
 		m_IgnorePhotoExtraMap.erase(pItem->iItemIndex);
 		delete pItem;
@@ -52,15 +52,15 @@ void CPhotoManager::Empty()
 	}
 	LeaveCriticalSection(&m_PhotosVectorSection);
 }
-list<int> CPhotoManager::Init(vector<string> OrignalFileVec, string strOrignalRoot, string strThumbRoot, OnInitPhotoCallBack callBack, LPVOID* lpParameter, BOOL bSameNamePrefix /*= FALSE*/)
+list<int> CPhotoManager::Init(vector<string> OrignalFileVec, string strOrignalRoot, string strThumbRoot, OnInitPhotoCallBack callBack, LPVOID *lpParameter, BOOL bSameNamePrefix /*= FALSE*/)
 {
 	m_bSameNamePrefix = bSameNamePrefix;
 	printf("====>%s\n", strOrignalRoot.c_str());
-	//源文件路径
+	// 源文件路径
 	m_strRoot = strOrignalRoot;
 	m_strRoot = CCommonUtil::ReplaceStr(m_strRoot, "\\", "/");
 	m_lpParameter = lpParameter;
-	//缩略图文件路径
+	// 缩略图文件路径
 	m_strTempRoot = strThumbRoot;
 	m_strTempRoot = CCommonUtil::ReplaceStr(m_strTempRoot, "\\", "/");
 
@@ -68,12 +68,12 @@ list<int> CPhotoManager::Init(vector<string> OrignalFileVec, string strOrignalRo
 	printf("Tmp Root dir:%s\n", m_strTempRoot.c_str());
 	m_iTmpPhotoFilesIndex = 0;
 
-	int iFilterThreadCount = CCpuDetect::GetInstance()->GetCpuCount()/2;
-	if(iFilterThreadCount < 1)
+	int iFilterThreadCount = CCpuDetect::GetInstance()->GetCpuCount() / 2;
+	if (iFilterThreadCount < 1)
 	{
 		iFilterThreadCount = 1;
 	}
-	pthread_t hFilterFile[iFilterThreadCount] = { 0 };
+	pthread_t hFilterFile[iFilterThreadCount] = {0};
 	for (int i = 0; i < iFilterThreadCount; ++i)
 	{
 		hFilterFile[i] = (pthread_t)LinuxCreateThread(NULL, (LPTHREAD_START_ROUTINE)FilterFileProc, this);
@@ -81,27 +81,27 @@ list<int> CPhotoManager::Init(vector<string> OrignalFileVec, string strOrignalRo
 	int iPrecent = 0;
 	while (m_iTmpPhotoFilesIndex != (int)m_TmpPhotoFilesVector.size())
 	{
-		if(TRUE == g_bExit)
+		if (TRUE == g_bExit)
 		{
 			break;
 		}
 		int iNewPrecent = m_iTmpPhotoFilesIndex * 100 / m_TmpPhotoFilesVector.size();
-		if(iNewPrecent != iPrecent)
+		if (iNewPrecent != iPrecent)
 		{
 			callBack(iNewPrecent, m_lpParameter);
 			iPrecent = iNewPrecent;
 		}
-		
+
 		Sleep(500);
 	}
-	for(int i = 0; i < iFilterThreadCount; ++i)
+	for (int i = 0; i < iFilterThreadCount; ++i)
 	{
 		pthread_join(hFilterFile[i], NULL);
 		hFilterFile[i] = 0;
 	}
 	list<int> retList;
 	EnterCriticalSection(&m_PhotosVectorSection);
-	vector<PhotoItem*>::iterator itor = m_PhotosVector.begin();
+	vector<PhotoItem *>::iterator itor = m_PhotosVector.begin();
 	for (; itor != m_PhotosVector.end(); ++itor)
 	{
 		retList.push_back((*itor)->iItemIndex);
@@ -110,15 +110,15 @@ list<int> CPhotoManager::Init(vector<string> OrignalFileVec, string strOrignalRo
 	callBack(100, m_lpParameter);
 	return retList;
 }
-void CPhotoManager::Init(string strOrignalRoot, string strThumbRoot, OnInitPhotoCallBack callBack, LPVOID* lpParameter, BOOL bSameNamePrefix /*= FALSE*/)
+void CPhotoManager::Init(string strOrignalRoot, string strThumbRoot, OnInitPhotoCallBack callBack, LPVOID *lpParameter, BOOL bSameNamePrefix /*= FALSE*/)
 {
 	m_bSameNamePrefix = bSameNamePrefix;
 	printf("====>%s\n", strOrignalRoot.c_str());
-	//源文件路径
+	// 源文件路径
 	m_strRoot = strOrignalRoot;
 	m_strRoot = CCommonUtil::ReplaceStr(m_strRoot, "\\", "/");
 	m_lpParameter = lpParameter;
-	//缩略图文件路径
+	// 缩略图文件路径
 	m_strTempRoot = strThumbRoot;
 	m_strTempRoot = CCommonUtil::ReplaceStr(m_strTempRoot, "\\", "/");
 	CCommonUtil::RemoveFold(m_strTempRoot.c_str());
@@ -129,12 +129,12 @@ void CPhotoManager::Init(string strOrignalRoot, string strThumbRoot, OnInitPhoto
 	printf("Tmp Root dir:%s\n", m_strTempRoot.c_str());
 	m_iTmpPhotoFilesIndex = 0;
 
-	int iFilterThreadCount = CCpuDetect::GetInstance()->GetCpuCount()/2;
-	if(iFilterThreadCount < 1)
-	{
-		iFilterThreadCount = 1;
-	}
-	pthread_t hFilterFile[iFilterThreadCount] = { 0 };
+	int iFilterThreadCount = CCpuDetect::GetInstance()->GetCpuCount() / 2;
+	// if (iFilterThreadCount < 1)
+	// {
+	// 	iFilterThreadCount = 1;
+	// }
+	pthread_t hFilterFile[iFilterThreadCount] = {0};
 	for (int i = 0; i < iFilterThreadCount; ++i)
 	{
 		hFilterFile[i] = (pthread_t)LinuxCreateThread(NULL, (LPTHREAD_START_ROUTINE)FilterFileProc, this);
@@ -142,20 +142,20 @@ void CPhotoManager::Init(string strOrignalRoot, string strThumbRoot, OnInitPhoto
 	int iPrecent = 0;
 	while (m_iTmpPhotoFilesIndex != (int)m_TmpPhotoFilesVector.size())
 	{
-		if(TRUE == g_bExit)
+		if (TRUE == g_bExit)
 		{
 			break;
 		}
 		int iNewPrecent = m_iTmpPhotoFilesIndex * 100 / m_TmpPhotoFilesVector.size();
-		if(iNewPrecent != iPrecent)
+		if (iNewPrecent != iPrecent)
 		{
 			callBack(iNewPrecent, m_lpParameter);
 			iPrecent = iNewPrecent;
 		}
-		
+
 		Sleep(500);
 	}
-	for(int i = 0; i < iFilterThreadCount; ++i)
+	for (int i = 0; i < iFilterThreadCount; ++i)
 	{
 		pthread_join(hFilterFile[i], NULL);
 		hFilterFile[i] = 0;
@@ -164,27 +164,26 @@ void CPhotoManager::Init(string strOrignalRoot, string strThumbRoot, OnInitPhoto
 	callBack(100, m_lpParameter);
 }
 
-void CPhotoManager::GetAllFiles(const char* pszRoot)
+void CPhotoManager::GetAllFiles(const char *pszRoot)
 {
-	DIR* pDir = opendir(pszRoot);
-    if (pDir == NULL) 
-    {
-        return;
-    }
-    struct dirent* pEntry = NULL;
-    while ((pEntry = readdir(pDir)))
-    {
-		
-        // 忽略 "." 和 ".." 条目
-        if (pEntry->d_name[0] == '.' && 
-                (pEntry->d_name[1] == '\0' || (pEntry->d_name[1] == '.' && pEntry->d_name[2] == '\0'))
-        ) 
-        {
-            continue;
-        }
-        // 构建完整路径
-        char szFullPath[1024] {0};
-		if(pszRoot[strlen(pszRoot) - 1] == '/')
+	DIR *pDir = opendir(pszRoot);
+	if (pDir == NULL)
+	{
+		return;
+	}
+	struct dirent *pEntry = NULL;
+	while ((pEntry = readdir(pDir)))
+	{
+
+		// 忽略 "." 和 ".." 条目
+		if (pEntry->d_name[0] == '.' &&
+			(pEntry->d_name[1] == '\0' || (pEntry->d_name[1] == '.' && pEntry->d_name[2] == '\0')))
+		{
+			continue;
+		}
+		// 构建完整路径
+		char szFullPath[1024]{0};
+		if (pszRoot[strlen(pszRoot) - 1] == '/')
 		{
 			snprintf(szFullPath, sizeof(szFullPath), "%s%s", pszRoot, pEntry->d_name);
 		}
@@ -192,21 +191,21 @@ void CPhotoManager::GetAllFiles(const char* pszRoot)
 		{
 			snprintf(szFullPath, sizeof(szFullPath), "%s/%s", pszRoot, pEntry->d_name);
 		}
-        // m_FileList.push_back(szFullPath);
+		// m_FileList.push_back(szFullPath);
 		AddFile(pszRoot, pEntry->d_name);
 
-        struct stat pathStat;
-        stat(szFullPath, &pathStat);
-        // 如果是目录，则递归调用
-        if (S_ISDIR(pathStat.st_mode)) 
-        {
-            GetAllFiles(szFullPath);
-        }
-    }
-    closedir(pDir);
+		struct stat pathStat;
+		stat(szFullPath, &pathStat);
+		// 如果是目录，则递归调用
+		if (S_ISDIR(pathStat.st_mode))
+		{
+			GetAllFiles(szFullPath);
+		}
+	}
+	closedir(pDir);
 }
 
-void CPhotoManager::AddFile(const char* pszPath, const char* pszFile)
+void CPhotoManager::AddFile(const char *pszPath, const char *pszFile)
 {
 	string str(pszPath);
 	str.append("/");
@@ -215,7 +214,7 @@ void CPhotoManager::AddFile(const char* pszPath, const char* pszFile)
 	m_TmpPhotoFilesVector.push_back(strNewFile);
 }
 
-string CPhotoManager::GetTempFile(int* pIndex)
+string CPhotoManager::GetTempFile(int *pIndex)
 {
 	EnterCriticalSection(&m_TmpPhotoFilesSection);
 	if (m_iTmpPhotoFilesIndex == (int)m_TmpPhotoFilesVector.size())
@@ -230,9 +229,9 @@ string CPhotoManager::GetTempFile(int* pIndex)
 	return strTempFile;
 }
 
-DWORD CPhotoManager::FilterFileProc(LPVOID* lpParameter)
+DWORD CPhotoManager::FilterFileProc(LPVOID *lpParameter)
 {
-	CPhotoManager* pPhotoManager = (CPhotoManager*)lpParameter;
+	CPhotoManager *pPhotoManager = (CPhotoManager *)lpParameter;
 	while (FALSE == g_bExit)
 	{
 		int iIndex = 0;
@@ -249,8 +248,8 @@ DWORD CPhotoManager::FilterFileProc(LPVOID* lpParameter)
 		string strMimeType = CCommonUtil::GetMime(strFile.c_str());
 		if (TRUE == CCommonUtil::IsMimeTypeImage(strMimeType.c_str()))
 		{
-			//string str = CCommonUtil::StringFormat("FileName:%s MimeType:%s  图片\r\n", strFile.c_str(), strMimeType.c_str());
-			//printf("%s\n", str.c_str());
+			// string str = CCommonUtil::StringFormat("FileName:%s MimeType:%s  图片\r\n", strFile.c_str(), strMimeType.c_str());
+			// printf("%s\n", str.c_str());
 			if (pPhotoManager->GenPicThumb(iIndex, strFile))
 			{
 				pPhotoManager->GetImageItem(iIndex, strTempFile);
@@ -258,8 +257,8 @@ DWORD CPhotoManager::FilterFileProc(LPVOID* lpParameter)
 		}
 		else if (TRUE == CCommonUtil::IsMimeTypeVideo(strMimeType.c_str()))
 		{
-			//string str = CCommonUtil::StringFormat("FileName:%s MimeType:%s  视频\r\n", strFile.c_str(), strMimeType.c_str());
-			//printf("%s\n", str.c_str());
+			// string str = CCommonUtil::StringFormat("FileName:%s MimeType:%s  视频\r\n", strFile.c_str(), strMimeType.c_str());
+			// printf("%s\n", str.c_str());
 			if (pPhotoManager->GenPicThumb(iIndex, strFile))
 			{
 				pPhotoManager->GetVideoItem(iIndex, strTempFile);
@@ -272,7 +271,7 @@ BOOL CPhotoManager::GenPicThumb(int iIndex, string strFile)
 {
 	string strThumb = CCommonUtil::StringFormat("%sthumbtmp_%ld.jpg", m_strTempRoot.c_str(), iIndex);
 	CImageParse imageParse;
-    BOOL bSuccess = imageParse.GetThumbnail(strFile.c_str(), strThumb.c_str(), PIC_WIDTH, PIC_HEIGHT);
+	BOOL bSuccess = imageParse.GetThumbnail(strFile.c_str(), strThumb.c_str(), PIC_WIDTH, PIC_HEIGHT);
 	return bSuccess;
 }
 
@@ -280,14 +279,14 @@ BOOL CPhotoManager::GenVideoThumb(int iIndex, string strFile)
 {
 	string strThumb = CCommonUtil::StringFormat("%sthumbtmp_%ld.jpg", m_strTempRoot.c_str(), iIndex);
 	CVideoParse videoParse;
-    BOOL bSuccess = videoParse.GetThumbnail(strFile.c_str(), strThumb.c_str(), PIC_WIDTH, PIC_HEIGHT);
+	BOOL bSuccess = videoParse.GetThumbnail(strFile.c_str(), strThumb.c_str(), PIC_WIDTH, PIC_HEIGHT);
 	return bSuccess;
 }
 
 void CPhotoManager::GetImageItem(int iThumbID, string strFile)
 {
-	PhotoItem* pItem = new PhotoItem();
-	PhotoExtra* pExtra = new PhotoExtra();
+	PhotoItem *pItem = new PhotoItem();
+	PhotoExtra *pExtra = new PhotoExtra();
 
 	string strPathFile(m_strRoot);
 	strPathFile.append(strFile);
@@ -310,11 +309,11 @@ void CPhotoManager::GetImageItem(int iThumbID, string strFile)
 	pItem->iHeight = imageParse.GetHeight();
 	pItem->iItemIndex = iItemID;
 	m_PhotosVector.push_back(pItem);
-	m_PhotoExtraMap.insert(pair<int, PhotoExtra*>(pItem->iItemIndex, pExtra));
+	m_PhotoExtraMap.insert(pair<int, PhotoExtra *>(pItem->iItemIndex, pExtra));
 	LeaveCriticalSection(&m_PhotosVectorSection);
 	string strThumb1 = CCommonUtil::StringFormat("%sthumbtmp_%ld.jpg", m_strTempRoot.c_str(), iThumbID);
 	string strThumb2 = CCommonUtil::StringFormat("%sthumb_%ld.jpg", m_strTempRoot.c_str(), iItemID);
-	if(TRUE == m_bSameNamePrefix)
+	if (TRUE == m_bSameNamePrefix)
 	{
 		strThumb2 = CCommonUtil::StringFormat("%s%s", m_strTempRoot.c_str(), GetThumbFileName(pItem).c_str());
 	}
@@ -323,8 +322,8 @@ void CPhotoManager::GetImageItem(int iThumbID, string strFile)
 
 void CPhotoManager::GetVideoItem(int iThumbID, string strFile)
 {
-	PhotoItem* pItem = new PhotoItem();
-	PhotoExtra* pExtra = new PhotoExtra();
+	PhotoItem *pItem = new PhotoItem();
+	PhotoExtra *pExtra = new PhotoExtra();
 
 	string strPathFile(m_strRoot);
 	strPathFile.append(strFile);
@@ -347,12 +346,12 @@ void CPhotoManager::GetVideoItem(int iThumbID, string strFile)
 	size_t iItemID = m_PhotosVector.size();
 	pItem->iItemIndex = iItemID;
 	m_PhotosVector.push_back(pItem);
-	m_PhotoExtraMap.insert(pair<int, PhotoExtra*>(pItem->iItemIndex, pExtra));
+	m_PhotoExtraMap.insert(pair<int, PhotoExtra *>(pItem->iItemIndex, pExtra));
 	LeaveCriticalSection(&m_PhotosVectorSection);
 
 	string strThumb1 = CCommonUtil::StringFormat("%sthumbtmp_%ld.jpg", m_strTempRoot.c_str(), iThumbID);
 	string strThumb2 = CCommonUtil::StringFormat("%sthumb_%ld.jpg", m_strTempRoot.c_str(), iItemID);
-	if(TRUE == m_bSameNamePrefix)
+	if (TRUE == m_bSameNamePrefix)
 	{
 		strThumb2 = CCommonUtil::StringFormat("%s%s", m_strTempRoot.c_str(), GetThumbFileName(pItem).c_str());
 	}
@@ -364,25 +363,25 @@ list<string> CPhotoManager::GetIgnoreItems(int iStart, int iLimited)
 	list<string> retList;
 	for (int i = 0; i < iLimited; ++i)
 	{
-		if (iStart + i == (int)m_IgnorePhotosVector.size())
+		if (iStart + i  >= (int)m_IgnorePhotosVector.size())
 		{
 			return retList;
 		}
 		int iIndex = iStart + i;
-		PhotoItem* pItem = m_IgnorePhotosVector[iIndex];
-		if(NULL == pItem)
+		PhotoItem *pItem = m_IgnorePhotosVector[iIndex];
+		if (NULL == pItem)
 		{
 			continue;
 		}
-		map<int, PhotoExtra*>::iterator itor = m_IgnorePhotoExtraMap.find(pItem->iItemIndex);
-		PhotoExtra* pExtra = itor->second;
-		//全路径
-		//string strThumbPic = CCommonUtil::StringFormat("%sthumb_%ld.jpg", m_strTempRoot.c_str(), pItem->iThumbID);
-		//string strThumbPic = CCommonUtil::StringFormat("thumb_%ld.jpg", pItem->iItemIndex);
+		map<int, PhotoExtra *>::iterator itor = m_IgnorePhotoExtraMap.find(pItem->iItemIndex);
+		PhotoExtra *pExtra = itor->second;
+		// 全路径
+		// string strThumbPic = CCommonUtil::StringFormat("%sthumb_%ld.jpg", m_strTempRoot.c_str(), pItem->iThumbID);
+		// string strThumbPic = CCommonUtil::StringFormat("thumb_%ld.jpg", pItem->iItemIndex);
 		string strThumbPic = GetThumbFileName(pItem);
-		//文件名称
-		string strItem = CCommonUtil::StringFormat("{\"id\":\"%ld\",\"w\":\"%ld\",\"h\":\"%ld\",\"dur\":\"%d\",\"mtype\":\"%ld\",\"msize\":\"%lld\",\"maddr\":\"%s\"}",
-			pItem->iItemIndex, (int)pItem->iWidth, (int)pItem->iHeight, pExtra->iDuration, pItem->iMediaType, pItem->iFileSize, strThumbPic.c_str());
+		// 文件名称
+		string strItem = CCommonUtil::StringFormat("{\"id\":%ld,\"w\":%ld,\"h\":%ld,\"dur\":%d,\"mtype\":%ld,\"msize\":%ld,\"maddr\":\"%s\"}",
+												   pItem->iItemIndex, (int)pItem->iWidth, (int)pItem->iHeight, pExtra->iDuration, pItem->iMediaType, pItem->iFileSize, strThumbPic.c_str());
 		retList.push_back(strItem);
 	}
 
@@ -394,40 +393,44 @@ list<string> CPhotoManager::GetItems(int iStart, int iLimited)
 	list<string> retList;
 	for (int i = 0; i < iLimited; ++i)
 	{
-		if (iStart + i == (int)(m_PhotosVector.size() + m_IgnorePhotosVector.size()))
+		if (iStart + i >= (int)(m_PhotosVector.size() + m_IgnorePhotosVector.size()))
 		{
 			LeaveCriticalSection(&m_PhotosVectorSection);
 			return retList;
 		}
 		int iItemIndex = iStart + i;
 		BOOL bIgnore = FALSE;
-		map<int, PhotoExtra*>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
+		map<int, PhotoExtra *>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
 		if (itor == m_PhotoExtraMap.end())
 		{
 			itor = m_IgnorePhotoExtraMap.find(iItemIndex);
 			bIgnore = TRUE;
 		}
-		PhotoItem* pItem = GetItemByItemIndexInner(iItemIndex);
-		if(NULL == pItem)
+		if (itor == m_PhotoExtraMap.end())
+		{
+			return retList;
+		}
+		PhotoItem *pItem = GetItemByItemIndexInner(iItemIndex);
+		if (NULL == pItem)
 		{
 			continue;
 		}
-		PhotoExtra* pExtra = itor->second;
-		//全路径
-		//string strThumbPic = CCommonUtil::StringFormat("%sthumb_%ld.jpg", m_strTempRoot.c_str(), pItem->iThumbID);
-		//文件名称
-		//string strThumbPic = CCommonUtil::StringFormat("thumb_%ld.jpg", pItem->iItemIndex);
+		PhotoExtra *pExtra = itor->second;
+		// 全路径
+		// string strThumbPic = CCommonUtil::StringFormat("%sthumb_%ld.jpg", m_strTempRoot.c_str(), pItem->iThumbID);
+		// 文件名称
+		// string strThumbPic = CCommonUtil::StringFormat("thumb_%ld.jpg", pItem->iItemIndex);
 		string strThumbPic = GetThumbFileName(pItem);
-		string strItem = CCommonUtil::StringFormat("{\"id\":\"%ld\",\"w\":\"%ld\",\"h\":\"%ld\",\"dur\":\"%d\",\"mtype\":\"%ld\",\"msize\":\"%lld\",\"maddr\":\"%s\",\"ignore\":%d}",
-			pItem->iItemIndex, (int)pItem->iWidth, (int)pItem->iHeight, pExtra->iDuration, pItem->iMediaType, pItem->iFileSize, strThumbPic.c_str(), bIgnore);
+		string strItem = CCommonUtil::StringFormat("{\"id\":\"%ld\",\"w\":\"%ld\",\"h\":\"%ld\",\"dur\":\"%d\",\"mtype\":\"%ld\",\"msize\":\"%ld\",\"maddr\":\"%s\",\"ignore\":%d}",
+												   pItem->iItemIndex, (int)pItem->iWidth, (int)pItem->iHeight, pExtra->iDuration, pItem->iMediaType, pItem->iFileSize, strThumbPic.c_str(), bIgnore);
 		retList.push_back(strItem);
 	}
 	LeaveCriticalSection(&m_PhotosVectorSection);
 	return retList;
 }
-string CPhotoManager::GetThumbFileName(PhotoItem* pItem)
+string CPhotoManager::GetThumbFileName(PhotoItem *pItem)
 {
-	if(FALSE == m_bSameNamePrefix)
+	if (FALSE == m_bSameNamePrefix)
 	{
 		string strThumbPic = CCommonUtil::StringFormat("thumb_%ld.jpg", pItem->iItemIndex);
 		return strThumbPic;
@@ -451,24 +454,24 @@ list<string> CPhotoManager::GetItems2(int iStart, int iLimited)
 			return retList;
 		}
 		int iItemIndex = iStart + i;
-		PhotoItem* pItem = m_PhotosVector[iItemIndex];
-		if(NULL == pItem)
+		PhotoItem *pItem = m_PhotosVector[iItemIndex];
+		if (NULL == pItem)
 		{
 			continue;
 		}
-		map<int, PhotoExtra*>::iterator itor = m_PhotoExtraMap.find(pItem->iItemIndex);
-		if(itor == m_PhotoExtraMap.end())
+		map<int, PhotoExtra *>::iterator itor = m_PhotoExtraMap.find(pItem->iItemIndex);
+		if (itor == m_PhotoExtraMap.end())
 		{
 			continue;
 		}
-		PhotoExtra* pExtra = itor->second;
-		//string strThumbPic = CCommonUtil::StringFormat("%s/thumb_%ld.jpg", m_strTempRoot.c_str(), pItem->iThumbID);
+		PhotoExtra *pExtra = itor->second;
+		// string strThumbPic = CCommonUtil::StringFormat("%s/thumb_%ld.jpg", m_strTempRoot.c_str(), pItem->iThumbID);
 		string strThumbPic = CCommonUtil::StringFormat("thumb_%ld.jpg", pItem->iItemIndex);
 		string strPaiTime = CCommonUtil::SecToTime(pExtra->iAddTime);
 		string strFileSize = CCommonUtil::SizeToString(pItem->iFileSize);
 		string strDur = CCommonUtil::SecondToTime(pExtra->iDuration);
-		string strItem = CCommonUtil::StringFormat("{\"id\":\"%ld\",\"mtype\":\"%ld\",\"paitime\":\"%s\",\"filesize\":\"%s\",\"dur\":\"%s\",\"pic\":\"%s\"}",
-			pItem->iItemIndex, (int)pItem->iMediaType, strPaiTime.c_str(), strFileSize.c_str(), strDur.c_str(), strThumbPic.c_str());
+		string strItem = CCommonUtil::StringFormat("{\"id\":%ld,\"mtype\":%ld,\"paitime\":\"%s\",\"filesize\":\"%s\",\"dur\":\"%s\",\"pic\":\"%s\"}",
+												   pItem->iItemIndex, (int)pItem->iMediaType, strPaiTime.c_str(), strFileSize.c_str(), strDur.c_str(), strThumbPic.c_str());
 
 		retList.push_back(strItem);
 	}
@@ -481,37 +484,37 @@ int CPhotoManager::GetItemCount()
 	return m_PhotosVector.size();
 }
 
-PhotoItem* CPhotoManager::GetItemByItemIndexInner(int iItemIndex)
+PhotoItem *CPhotoManager::GetItemByItemIndexInner(int iItemIndex)
 {
 	for (size_t i = 0; i < m_PhotosVector.size(); ++i)
 	{
-		if (((PhotoItem*)m_PhotosVector[i])->iItemIndex == iItemIndex)
+		if (((PhotoItem *)m_PhotosVector[i])->iItemIndex == iItemIndex)
 		{
-			return (PhotoItem*)m_PhotosVector[i];
+			return (PhotoItem *)m_PhotosVector[i];
 		}
 	}
 	for (size_t i = 0; i < m_IgnorePhotosVector.size(); ++i)
 	{
-		if (((PhotoItem*)m_IgnorePhotosVector[i])->iItemIndex == iItemIndex)
+		if (((PhotoItem *)m_IgnorePhotosVector[i])->iItemIndex == iItemIndex)
 		{
-			return (PhotoItem*)m_IgnorePhotosVector[i];
+			return (PhotoItem *)m_IgnorePhotosVector[i];
 		}
 	}
 	return NULL;
 }
 
-PhotoItem* CPhotoManager::GetItemByPositionInner(int iPosition)
+PhotoItem *CPhotoManager::GetItemByPositionInner(int iPosition)
 {
 	return m_PhotosVector[iPosition];
 }
 
 vector<string> CPhotoManager::GetAddr(int iItemIndex)
 {
-	map<int, PhotoExtra*>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
+	map<int, PhotoExtra *>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
 	if (itor == m_PhotoExtraMap.end())
 	{
 		itor = m_IgnorePhotoExtraMap.find(iItemIndex);
-		if(itor == m_IgnorePhotoExtraMap.end())
+		if (itor == m_IgnorePhotoExtraMap.end())
 		{
 			vector<string> vec;
 			vec.push_back("0");
@@ -519,13 +522,13 @@ vector<string> CPhotoManager::GetAddr(int iItemIndex)
 			return vec;
 		}
 	}
-	PhotoExtra* pExtra = itor->second;
+	PhotoExtra *pExtra = itor->second;
 	return pExtra->vecLocation;
 }
 string CPhotoManager::GetFile(int iItemIndex)
 {
-	PhotoExtra* pExtra = GetExtraByItemIndexInner(iItemIndex);
-	if(NULL == pExtra)
+	PhotoExtra *pExtra = GetExtraByItemIndexInner(iItemIndex);
+	if (NULL == pExtra)
 	{
 		return "";
 	}
@@ -537,36 +540,36 @@ string CPhotoManager::GetFile(int iItemIndex)
 string CPhotoManager::GetThumb(int iItemIndex)
 {
 	EnterCriticalSection(&m_PhotosVectorSection);
-	PhotoItem* pPhotoItem = GetItemByItemIndexInner(iItemIndex);
+	PhotoItem *pPhotoItem = GetItemByItemIndexInner(iItemIndex);
 	string strFileName = GetThumbFileName(pPhotoItem);
 	LeaveCriticalSection(&m_PhotosVectorSection);
 	string strThumbPic = CCommonUtil::StringFormat("%s%s", m_strTempRoot.c_str(), strFileName.c_str());
 	return strThumbPic;
 }
 
-string CPhotoManager::GetCreateDate(int iItemIndex)//拍摄时间
+string CPhotoManager::GetCreateDate(int iItemIndex) // 拍摄时间
 {
-	map<int, PhotoExtra*>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
+	map<int, PhotoExtra *>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
 	if (itor == m_PhotoExtraMap.end())
 	{
 		itor = m_IgnorePhotoExtraMap.find(iItemIndex);
 	}
-	PhotoExtra* pExtra = itor->second;
+	PhotoExtra *pExtra = itor->second;
 	return CCommonUtil::SecToTime(pExtra->iAddTime);
 }
 
-void CPhotoManager::RemoveItem(PhotoItem* pItem)
+void CPhotoManager::RemoveItem(PhotoItem *pItem)
 {
-	map<int, PhotoExtra*>::iterator itor = m_PhotoExtraMap.find(pItem->iItemIndex);
-	PhotoExtra* pExtra = itor->second;
+	map<int, PhotoExtra *>::iterator itor = m_PhotoExtraMap.find(pItem->iItemIndex);
+	PhotoExtra *pExtra = itor->second;
 	m_PhotoExtraMap.erase(pItem->iItemIndex);
 	delete pExtra;
 	pExtra = NULL;
 
-	vector<PhotoItem*>::iterator itor2 = m_PhotosVector.begin();
+	vector<PhotoItem *>::iterator itor2 = m_PhotosVector.begin();
 	for (; itor2 != m_PhotosVector.end(); ++itor2)
 	{
-		PhotoItem* pTmpItem = *itor2;
+		PhotoItem *pTmpItem = *itor2;
 		if (pItem->iItemIndex == pTmpItem->iItemIndex)
 		{
 			m_PhotosVector.erase(itor2);
@@ -579,21 +582,21 @@ void CPhotoManager::RemoveItem(PhotoItem* pItem)
 void CPhotoManager::RemoveItem(int iItemIndex)
 {
 	EnterCriticalSection(&m_PhotosVectorSection);
-	map<int, PhotoExtra*>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
-	if(itor == m_PhotoExtraMap.end())
+	map<int, PhotoExtra *>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
+	if (itor == m_PhotoExtraMap.end())
 	{
 		LeaveCriticalSection(&m_PhotosVectorSection);
 		return;
 	}
-	PhotoExtra* pExtra = itor->second;
+	PhotoExtra *pExtra = itor->second;
 	m_PhotoExtraMap.erase(iItemIndex);
 	delete pExtra;
 	pExtra = NULL;
 
-	vector<PhotoItem*>::iterator itor2 = m_PhotosVector.begin();
+	vector<PhotoItem *>::iterator itor2 = m_PhotosVector.begin();
 	for (; itor2 != m_PhotosVector.end(); ++itor2)
 	{
-		PhotoItem* pTmpItem = *itor2;
+		PhotoItem *pTmpItem = *itor2;
 		if (iItemIndex == pTmpItem->iItemIndex)
 		{
 			m_PhotosVector.erase(itor2);
@@ -606,18 +609,18 @@ void CPhotoManager::RemoveItem(int iItemIndex)
 }
 PhotoExtra CPhotoManager::GetExtraByItemIndex(int iItemIndex)
 {
-    PhotoExtra* pPhotoExtra = GetExtraByItemIndexInner(iItemIndex);
+	PhotoExtra *pPhotoExtra = GetExtraByItemIndexInner(iItemIndex);
 	PhotoExtra retItem = {};
-    if(NULL != pPhotoExtra)
-    {
-        retItem.Clone(pPhotoExtra);
-    }
+	if (NULL != pPhotoExtra)
+	{
+		retItem.Clone(pPhotoExtra);
+	}
 
-    return retItem;
+	return retItem;
 }
-PhotoExtra* CPhotoManager::GetExtraByItemIndexInner(int iItemIndex)
+PhotoExtra *CPhotoManager::GetExtraByItemIndexInner(int iItemIndex)
 {
-	map<int, PhotoExtra*>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
+	map<int, PhotoExtra *>::iterator itor = m_PhotoExtraMap.find(iItemIndex);
 	if (itor == m_PhotoExtraMap.end())
 	{
 		itor = m_IgnorePhotoExtraMap.find(iItemIndex);
@@ -626,7 +629,7 @@ PhotoExtra* CPhotoManager::GetExtraByItemIndexInner(int iItemIndex)
 			return NULL;
 		}
 	}
-	PhotoExtra* pExtra = itor->second;
+	PhotoExtra *pExtra = itor->second;
 	return pExtra;
 }
 int CPhotoManager::GetDuration(int iItemIndex)
@@ -635,10 +638,10 @@ int CPhotoManager::GetDuration(int iItemIndex)
 }
 void CPhotoManager::AddIgnoreItem(int iItemIndex)
 {
-	vector<PhotoItem*>::iterator itor = m_PhotosVector.begin();
+	vector<PhotoItem *>::iterator itor = m_PhotosVector.begin();
 	for (; itor != m_PhotosVector.end(); ++itor)
 	{
-		PhotoItem* pPhotoItem = *itor;
+		PhotoItem *pPhotoItem = *itor;
 		if (iItemIndex == pPhotoItem->iItemIndex)
 		{
 			AddIgnoreItem(pPhotoItem);
@@ -646,15 +649,15 @@ void CPhotoManager::AddIgnoreItem(int iItemIndex)
 		}
 	}
 }
-void CPhotoManager::AddIgnoreItem(PhotoItem* pItem)
+void CPhotoManager::AddIgnoreItem(PhotoItem *pItem)
 {
 	m_IgnorePhotosVector.push_back(pItem);
-	m_IgnorePhotoExtraMap.insert(pair<int, PhotoExtra*>(pItem->iItemIndex, m_PhotoExtraMap.find(pItem->iItemIndex)->second));
+	m_IgnorePhotoExtraMap.insert(pair<int, PhotoExtra *>(pItem->iItemIndex, m_PhotoExtraMap.find(pItem->iItemIndex)->second));
 
-	vector<PhotoItem*>::iterator itor = m_PhotosVector.begin();
+	vector<PhotoItem *>::iterator itor = m_PhotosVector.begin();
 	for (; itor != m_PhotosVector.end(); ++itor)
 	{
-		PhotoItem* pTmpItem = *itor;
+		PhotoItem *pTmpItem = *itor;
 		if (pItem->iItemIndex == pTmpItem->iItemIndex)
 		{
 			m_PhotosVector.erase(itor);
@@ -667,10 +670,10 @@ void CPhotoManager::AddIgnoreItem(PhotoItem* pItem)
 }
 void CPhotoManager::RemoveIgnoreItem(int iItemIndex)
 {
-	vector<PhotoItem*>::iterator itor = m_IgnorePhotosVector.begin();
+	vector<PhotoItem *>::iterator itor = m_IgnorePhotosVector.begin();
 	for (; itor != m_IgnorePhotosVector.end(); ++itor)
 	{
-		PhotoItem* pPhotoItem = *itor;
+		PhotoItem *pPhotoItem = *itor;
 		if (iItemIndex == pPhotoItem->iItemIndex)
 		{
 			RemoveIgnoreItem(pPhotoItem);
@@ -678,7 +681,7 @@ void CPhotoManager::RemoveIgnoreItem(int iItemIndex)
 		}
 	}
 }
-void CPhotoManager::RemoveIgnoreItem(PhotoItem* pItem)
+void CPhotoManager::RemoveIgnoreItem(PhotoItem *pItem)
 {
 	BOOL bAdd = FALSE;
 	for (size_t i = 0; i < m_PhotosVector.size(); ++i)
@@ -695,13 +698,13 @@ void CPhotoManager::RemoveIgnoreItem(PhotoItem* pItem)
 		m_PhotosVector.push_back(pItem);
 	}
 
-	m_PhotoExtraMap.insert(pair<int, PhotoExtra*>(pItem->iItemIndex, m_IgnorePhotoExtraMap.find(pItem->iItemIndex)->second));
+	m_PhotoExtraMap.insert(pair<int, PhotoExtra *>(pItem->iItemIndex, m_IgnorePhotoExtraMap.find(pItem->iItemIndex)->second));
 
 	m_IgnorePhotoExtraMap.erase(pItem->iItemIndex);
-	vector<PhotoItem*>::iterator itor = m_IgnorePhotosVector.begin();
+	vector<PhotoItem *>::iterator itor = m_IgnorePhotosVector.begin();
 	for (; itor != m_IgnorePhotosVector.end(); ++itor)
 	{
-		PhotoItem* pTmpItem = *itor;
+		PhotoItem *pTmpItem = *itor;
 		if (pItem->iItemIndex == pTmpItem->iItemIndex)
 		{
 			m_IgnorePhotosVector.erase(itor);
@@ -710,17 +713,17 @@ void CPhotoManager::RemoveIgnoreItem(PhotoItem* pItem)
 	}
 	SaveIgnoreItems();
 }
-void  CPhotoManager::SaveIgnoreItems()
+void CPhotoManager::SaveIgnoreItems()
 {
 	string strIgnoreFile(m_strRoot);
 	CFileUtil fileUtil;
 	strIgnoreFile.append("/");
 	strIgnoreFile.append("ignore.txt");
 	string strIgnoreIds = "";
-	std::map<int, PhotoExtra*>::iterator itor;
+	std::map<int, PhotoExtra *>::iterator itor;
 	for (itor = m_IgnorePhotoExtraMap.begin(); itor != m_IgnorePhotoExtraMap.end(); ++itor)
 	{
-		PhotoExtra* pPhotoExtra = itor->second;
+		PhotoExtra *pPhotoExtra = itor->second;
 		strIgnoreIds.append(pPhotoExtra->strFileName);
 		strIgnoreIds.append("\n");
 	}
@@ -765,8 +768,8 @@ void CPhotoManager::FilterIgnore()
 	std::vector<int> itemIndexVec;
 	for (size_t i = 0; i < m_PhotosVector.size(); ++i)
 	{
-		PhotoItem* pPhotoItem = m_PhotosVector[i];
-		PhotoExtra* pPhotoExtra = m_PhotoExtraMap.find(pPhotoItem->iItemIndex)->second;
+		PhotoItem *pPhotoItem = m_PhotosVector[i];
+		PhotoExtra *pPhotoExtra = m_PhotoExtraMap.find(pPhotoItem->iItemIndex)->second;
 		fileNameVec.push_back(pPhotoExtra->strFileName);
 		itemIndexVec.push_back(pPhotoItem->iItemIndex);
 	}
@@ -800,7 +803,7 @@ void CPhotoManager::FilterIgnore()
 }
 BOOL CPhotoManager::IsIgnore(int iItemIndex)
 {
-	map<int, PhotoExtra*>::iterator itor = m_IgnorePhotoExtraMap.find(iItemIndex);
+	map<int, PhotoExtra *>::iterator itor = m_IgnorePhotoExtraMap.find(iItemIndex);
 	if (itor == m_IgnorePhotoExtraMap.end())
 	{
 		return FALSE;
@@ -835,9 +838,8 @@ int CPhotoManager::GetNextVisiableIndex(int iCurItemIndex, BOOL bIgnoreGroup)
 				break;
 			}
 		}
-		
 	}
-	
+
 	return iIndex;
 }
 int CPhotoManager::GetPrevVisiableIndex(int iCurIndex, BOOL bIgnoreGroup)
@@ -883,24 +885,24 @@ void CPhotoManager::Print()
 }
 PhotoItem CPhotoManager::GetItemByItemIndex(int iItemIndex)
 {
-    PhotoItem* pPhotoItem = GetItemByItemIndexInner(iItemIndex);
-    PhotoItem retItem = {};
-    if(NULL != pPhotoItem)
-    {
-        retItem.Clone(pPhotoItem);
-    }
+	PhotoItem *pPhotoItem = GetItemByItemIndexInner(iItemIndex);
+	PhotoItem retItem = {};
+	if (NULL != pPhotoItem)
+	{
+		retItem.Clone(pPhotoItem);
+	}
 
-    return retItem;
+	return retItem;
 }
 BOOL CPhotoManager::GenThumbPic(string strOrginalFile, string strThumbFile)
 {
-	//源文件在不在
+	// 源文件在不在
 	if (FALSE == CCommonUtil::CheckFileExist(strOrginalFile.c_str()))
 	{
 		return FALSE;
 	}
 	string strDestPath = CCommonUtil::GetPath(strThumbFile.c_str());
-	if(FALSE == CCommonUtil::CheckFoldExist(strDestPath.c_str()))
+	if (FALSE == CCommonUtil::CheckFoldExist(strDestPath.c_str()))
 	{
 		CCommonUtil::CreateFold(strDestPath.c_str());
 	}
@@ -919,4 +921,11 @@ BOOL CPhotoManager::GenThumbPic(string strOrginalFile, string strThumbFile)
 		return bSuccess;
 	}
 	return FALSE;
+}
+size_t CPhotoManager::GetIgnoreItemCount()
+{
+	EnterCriticalSection(&m_PhotosVectorSection);
+	size_t iRetCount = m_IgnorePhotosVector.size();
+	LeaveCriticalSection(&m_PhotosVectorSection);
+	return iRetCount;
 }

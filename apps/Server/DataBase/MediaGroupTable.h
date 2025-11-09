@@ -24,6 +24,7 @@ public:
     static string GetJsonAllGroupsFromGids(string strGids);
     static BOOL GroupItemUpdate(int iID, string strGroupName);
     static string GetCoverPic(int iID);
+    static BOOL UpdateCoverPic(string strFrom, string strTo);
 private:
     static list<MediaGroupItem> AssembleItems(list<map<string, string>> List);
 };

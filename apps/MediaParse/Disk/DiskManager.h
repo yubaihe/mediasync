@@ -28,6 +28,7 @@ public:
     void DevCheck();
     string GetThumbFile(const char* pszDevName, int iItemID);
     string GetOriginalFile(const char* pszDevName, int iItemID);
+    size_t GetIgnoreCount(const char* pszDevName);
 private:
     std::list<std::string> GetDiskNames(const char* pszPrefix);
 private:

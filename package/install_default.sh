@@ -8,11 +8,24 @@ SambaFilter()
 {
 	echo "-----SambaFilter"
 	mkdir -p $PWD/install/samba
+	#bin
+	mkdir -p $PWD/install/samba/bin
+	cp $ROOTDIR/samba/bin/smbpasswd $PWD/install/samba/bin
 	#lib
 	mkdir -p $PWD/install/samba/lib
 	cp $ROOTDIR/samba/lib/smb.conf $PWD/install/samba/lib/
 	cp $ROOTDIR/samba/lib/smbmedia.conf $PWD/install/samba/lib/
 	cp $ROOTDIR/samba/lib/smbusers $PWD/install/samba/lib/
+	#log
+	mkdir -p $PWD/install/samba/log
+	#private
+	cp -r $ROOTDIR/samba/private $PWD/install/samba/
+	#sbin
+	mkdir -p $PWD/install/samba/sbin
+	cp -r $ROOTDIR/samba/sbin/nmbd $PWD/install/samba/sbin/
+	cp -r $ROOTDIR/samba/sbin/smbd $PWD/install/samba/sbin/
+	#varlibpcre2
+	cp -r $ROOTDIR/samba/var $PWD/install/samba/
 }
 LighttpdFilter()
 {
@@ -22,7 +35,7 @@ LighttpdFilter()
 	cp -R $ROOTDIR/lighttpd/config $PWD/install/lighttpd
 	#fcgi
 	mkdir -p $PWD/install/lighttpd/fcgi
-	cp -R $ROOTDIR/lighttpd/fcgi/** $PWD/install/lighttpd/fcgi/
+        cp -R $ROOTDIR/lighttpd/fcgi/** $PWD/install/lighttpd/fcgi/
 	#lib
 	mkdir -p $PWD/install/lighttpd/lib
 	cp -R $ROOTDIR/lighttpd/lib/*.so $PWD/install/lighttpd/lib/
@@ -43,6 +56,7 @@ LibFilter()
 	cp -R $ROOTDIR/libs/libavcodec.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/libswresample.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/libavdevice.so**  $PWD/install/libs/
+	cp -R $ROOTDIR/libs/libx264.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/libexiv2.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/libiconv.so**  $PWD/install/libs/
 	cp -R $ROOTDIR/libs/preloadable_libiconv.so**  $PWD/install/libs/

@@ -1,5 +1,6 @@
 #pragma once
 #include "../stdafx.h"
+#include "arch.h"
 struct MediaInfoItem
 {
     //uint32_t最大值4,294,967,295
@@ -10,7 +11,11 @@ struct MediaInfoItem
     uint8_t iMonth;             //月
     uint8_t iDay;             //日
     uint8_t  iMediaType;        //媒体类型
-    long iMeiTiSize;         //拍摄图片的大小
+#if CHIPTYPE == QZS3
+    unsigned long iMeiTiSize;         //拍摄图片的大小
+#else
+    int64_t iMeiTiSize;         //拍摄图片的大小
+#endif
     uint32_t iWidth;             //宽度
     uint32_t iHeight;            //高度
     uint32_t iDuration;          //持续时间
@@ -41,9 +46,9 @@ public:
     static MediaInfoItem GetLatestItem();//最后更新项
     static int GetItemPaiTime(int iID);
     static int GetRecentRecordCount(uint32_t iType, string strDevNames);
-    static string GetRecentRecords(int iPage, int iLimit, string strDevNames);
-    static string GetFavoriteRecords(int iPage, int iLimit, string strDevNames);
-    static string GetYearRecords(int iPage, int iLimit, int iYear, int iMonth, int iDay, string strDevNames, string strLocation);
+    static string GetRecentRecords(int iStart, int iLimit, string strDevNames);
+    static string GetFavoriteRecords(int iStart, int iLimit, string strDevNames);
+    static string GetYearRecords(int iStart, int iLimit, int iYear, int iMonth, int iDay, string strDevNames, string strLocation, BOOL bLocation);
     static string GetLocationGroup(int iStart, int iLimit, int iYear, int iMonth, int iDay, string strDevNames);
     static string RecordsFromIds(string strIds, string strSort);
     static string GetItemIDSql(int iID, BOOL bNext, string strOtype, string strDevNames, int iGid, int iYear, int iMonth, int iDay, string strLocation);
@@ -80,5 +85,8 @@ public:
     static string GetGroupInfoFomItemID(int iID);
     static list<MediaInfoItem> AssembleItems(list<map<string, string>> List);
     static BOOL SetPinned(int iID, BOOL bPinned);
+    static list<int> GetTodayYear(int iMonth, int iDay, string strDevNames);
+    static MediaInfoItem GetFirstMediaInDay(int iYear, int iMonth, int iDay, string strDevNames);
+    static BOOL ChangeMediaAddr(int iID, string strAddr, string strMd5);
 };
 
