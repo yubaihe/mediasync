@@ -25,7 +25,7 @@ git clone https://github.com/yubaihe/mediasync.git mediasyncsrc
 ```shell
 cd mediasyncsrc
 # 初始化环境变量
-source ./initenv.sh LINUX /home/relech/mediasync/
+source ./initenv.sh DOCKER /home/relech/mediasync/
 # 编译
 make
 # 将编译的临时文件删除掉

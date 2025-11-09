@@ -76,6 +76,7 @@ endif
 endif
 package:
 ifneq ($(PROJECTARC),)
+	@chmod +x ./package/install_$(shell echo $(PROJECTARC) | tr A-Z a-z ).sh
 	@./package/install_$(shell echo $(PROJECTARC) | tr A-Z a-z ).sh
 else
 	@./package/install.sh
