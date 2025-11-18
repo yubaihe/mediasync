@@ -17,4 +17,3 @@ install:
 clean:
 	@[ -d ./$(name) ] &  rm -rf ./$(name)
 	@[ -d ./out ] &  rm -rf ./out
-
