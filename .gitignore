@@ -11,8 +11,6 @@ apps/Common/libcommon.so
 apps/Common/obj.libcommon.so/
 apps/MediaParse/MediaParse
 apps/MediaParse/obj.MediaParse/
-apps/Server/DataBase/CommentTable.cpp
-apps/Server/DataBase/CommentTable.h
 lighttpd/fcgi/MediaParse/mediaparse.fcgi
 lighttpd/fcgi/MediaParse/obj.mediaparse.fcgi/
 lighttpd/fcgi/Network/network.fcgi
