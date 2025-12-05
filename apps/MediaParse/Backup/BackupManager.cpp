@@ -221,6 +221,7 @@ string CBackupManager::GetBackupTempRoot(string strName)
         return strBackTmp;
     }
 }
+
 string CBackupManager::GetBackupFoldItemDetail(int iItemID)
 {
     CBackupTable table;
@@ -244,6 +245,7 @@ string CBackupManager::GetBackupFoldItemDetail(int iItemID)
     jsonRoot["cur"]["location"] = curItem.strLocation;
     jsonRoot["cur"]["size"] = (uint64_t)(curItem.iMeiTiSize/1024);
     jsonRoot["cur"]["duration"] = (uint64_t)curItem.iDuration;
+    jsonRoot["cur"]["commentshort"] = curItem.strCommentShort;
     if(nextItem.strFile.length() > 0)
     {
         jsonRoot["next"]["itemid"] = nextItem.iID;
@@ -257,6 +259,7 @@ string CBackupManager::GetBackupFoldItemDetail(int iItemID)
         jsonRoot["next"]["location"] = nextItem.strLocation;
         jsonRoot["next"]["size"] = (uint64_t)(nextItem.iMeiTiSize/1024);
         jsonRoot["next"]["duration"] = (uint64_t)nextItem.iDuration;
+        jsonRoot["next"]["commentshort"] = nextItem.strCommentShort;
     }
     if(prevItem.strFile.length() > 0)
     {
@@ -271,8 +274,34 @@ string CBackupManager::GetBackupFoldItemDetail(int iItemID)
         jsonRoot["prev"]["location"] = prevItem.strLocation;
         jsonRoot["prev"]["size"] = (uint64_t)(prevItem.iMeiTiSize/1024);
         jsonRoot["prev"]["duration"] = (uint64_t)prevItem.iDuration;
+        jsonRoot["prev"]["commentshort"] = prevItem.strCommentShort;
     }
 
+    string strRet = MediaParse::CJsonUtil::ToString(jsonRoot);
+    return strRet;
+}
+string CBackupManager::GetBackupFoldItemFromItemID(int iItemID)
+{
+    CBackupTable table;
+    BackupItemFull curItem = table.GetItem(iItemID);
+    if(curItem.iID < 0)
+    {
+        return "";
+    }
+     
+    nlohmann::json jsonRoot;
+    jsonRoot["itemid"] = iItemID;
+    jsonRoot["mtype"] = curItem.eMediaType;
+    jsonRoot["fold"] = curItem.strFoldName;
+    jsonRoot["file"] = curItem.strFile;
+    jsonRoot["width"] = curItem.iWidth;
+    jsonRoot["height"] = curItem.iHeight;
+    jsonRoot["createtime"] = curItem.iCreateTimeSec;
+    jsonRoot["weizhi"] = curItem.strAddr;
+    jsonRoot["location"] = curItem.strLocation;
+    jsonRoot["size"] = (uint64_t)(curItem.iMeiTiSize/1024);
+    jsonRoot["duration"] = (uint64_t)curItem.iDuration;
+    jsonRoot["commentshort"] = curItem.strCommentShort;
     string strRet = MediaParse::CJsonUtil::ToString(jsonRoot);
     return strRet;
 }

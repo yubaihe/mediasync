@@ -41,7 +41,7 @@ STATICLIB = -lpthread -L$(ROOTDIR)/libs/ -lsqlite3 -lcurl -ldbus-1 -lcommon
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, Util ) )
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, DataBase ) )
 SOURCE +=  $(wildcard $(addsuffix /*.cpp, BroadCast ) )
-SOURCE += stdafx.cpp Config.cpp BroadCastServer.cpp ConnectServer.cpp ConnectServerMessage.cpp ClearCache.cpp MediaScan.cpp GpsManager.cpp main.cpp Butler.cpp
+SOURCE += stdafx.cpp Config.cpp BroadCastServer.cpp ConnectServer.cpp ConnectServerMessage.cpp ClearCache.cpp MediaScan.cpp GpsManager.cpp main.cpp Butler.cpp 
 ####################################################################################################
 
 OBJS = $(SOURCE:%.cpp=obj.$(TARGET)/%.o)

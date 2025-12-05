@@ -146,3 +146,78 @@ BOOL CDbusUtil::TranscodeFinish(int  iItemID, string strFile, string strMd5, str
     BOOL iStatus = jsonValue["status"];
     return iStatus;
 }
+
+BOOL CDbusUtil::SetMediaComment(int iItemID, string strComment)
+{
+    nlohmann::json json;
+    json["action"] = "setcomment";
+    json["id"] = iItemID;
+    json["comment"] = strComment;
+    json["module"] = DBUS_MEDIAPARSE;
+    string strRequest = MediaParse::CJsonUtil::ToString(json);
+
+    char szRetBuffer[MAX_DBUS_RECV_LEN] = {0};
+    int iDbusLen = MAX_DBUS_RECV_LEN;
+    BOOL bRet = LibDbus_SendSync("Server", 0x5007, strRequest.c_str(), strRequest.length() + 1, szRetBuffer, &iDbusLen);
+    if(FALSE == bRet||0 == iDbusLen)
+    {
+        return FALSE;
+    }
+    nlohmann::json jsonValue;
+    bRet = MediaParse::CJsonUtil::FromString(szRetBuffer, jsonValue);
+    if(FALSE == bRet||0 == iDbusLen)
+    {
+        return FALSE;
+    }
+    BOOL iStatus = jsonValue["status"];
+    return iStatus;
+}
+BOOL CDbusUtil::RemoveMediaComment(int iItemID)
+{
+    nlohmann::json json;
+    json["action"] = "removecomment";
+    json["id"] = iItemID;
+    json["module"] = DBUS_MEDIAPARSE;
+    string strRequest = MediaParse::CJsonUtil::ToString(json);
+
+    char szRetBuffer[MAX_DBUS_RECV_LEN] = {0};
+    int iDbusLen = MAX_DBUS_RECV_LEN;
+    BOOL bRet = LibDbus_SendSync("Server", 0x5007, strRequest.c_str(), strRequest.length() + 1, szRetBuffer, &iDbusLen);
+    if(FALSE == bRet||0 == iDbusLen)
+    {
+        return FALSE;
+    }
+    nlohmann::json jsonValue;
+    bRet = MediaParse::CJsonUtil::FromString(szRetBuffer, jsonValue);
+    if(FALSE == bRet||0 == iDbusLen)
+    {
+        return FALSE;
+    }
+    BOOL iStatus = jsonValue["status"];
+    return iStatus;
+}
+
+BOOL CDbusUtil::RemoveMediaCommentFromIds(string strIds)
+{
+    nlohmann::json json;
+    json["action"] = "removecommentfromids";
+    json["ids"] = strIds;
+    json["module"] = DBUS_MEDIAPARSE;
+    string strRequest = MediaParse::CJsonUtil::ToString(json);
+
+    char szRetBuffer[MAX_DBUS_RECV_LEN] = {0};
+    int iDbusLen = MAX_DBUS_RECV_LEN;
+    BOOL bRet = LibDbus_SendSync("Server", 0x5007, strRequest.c_str(), strRequest.length() + 1, szRetBuffer, &iDbusLen);
+    if(FALSE == bRet||0 == iDbusLen)
+    {
+        return FALSE;
+    }
+    nlohmann::json jsonValue;
+    bRet = MediaParse::CJsonUtil::FromString(szRetBuffer, jsonValue);
+    if(FALSE == bRet||0 == iDbusLen)
+    {
+        return FALSE;
+    }
+    BOOL iStatus = jsonValue["status"];
+    return iStatus;
+}

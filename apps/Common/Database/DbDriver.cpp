@@ -219,6 +219,10 @@ BOOL CDbDriver::ExecuteSQL(const char* pszFormat, ...)
 	va_end(vArgList);
     return bRet;
 }
+int CDbDriver::GetLastInsertID()
+{
+    return sqlite3_last_insert_rowid(m_pSqlite3);
+}
 
 BOOL CDbDriver::ExecuteSQLWithArgList(const char* pszFormat, va_list vArgList)
 {

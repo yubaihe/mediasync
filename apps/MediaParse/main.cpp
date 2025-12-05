@@ -60,7 +60,7 @@ void InitEnv()
         storeInfo = CDbusUtil::GetStoreInfo();
         if(storeInfo.strStorage.length() == 0)
         {
-            printf("Get store info failed\n");
+            printf("Get store info failed:%s\n", storeInfo.strStorage.c_str());
             Sleep(1000);
             continue;
         }

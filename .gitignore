@@ -7,5 +7,14 @@ lighttpd/lighttpd/lighttpd-1.4.66
 package/install
 apps/Server/obj.**
 apps/Server/Server
-apps/MetaParse/obj.**
-apps/MetaParse/MetaParse
+apps/Common/libcommon.so
+apps/Common/obj.libcommon.so/
+apps/MediaParse/MediaParse
+apps/MediaParse/obj.MediaParse/
+apps/Server/DataBase/CommentTable.cpp
+apps/Server/DataBase/CommentTable.h
+lighttpd/fcgi/MediaParse/mediaparse.fcgi
+lighttpd/fcgi/MediaParse/obj.mediaparse.fcgi/
+lighttpd/fcgi/Network/network.fcgi
+lighttpd/fcgi/Network/obj.network.fcgi/
+

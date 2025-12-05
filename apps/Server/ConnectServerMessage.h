@@ -65,6 +65,12 @@ private:
     string OnTransFileStop(nlohmann::json& jsonRoot);
     string OnTransFilePrecent(nlohmann::json& jsonRoot);
     string OnTransFileFinish(nlohmann::json& jsonRoot);
+    string OnGetMediaComment(nlohmann::json& jsonRoot);
+    string OnSetMediaComment(nlohmann::json& jsonRoot);
+    string OnSetComment(nlohmann::json& jsonRoot);
+    string OnRemoveComment(nlohmann::json& jsonRoot);
+    string OnRemoveCommentFromIds(nlohmann::json& jsonRoot);
+    string OnQueryComment(nlohmann::json& jsonRoot);
 private:
     std::map<std::string, std::function<string(nlohmann::json&)>> m_ActionHandlerMap;
 };

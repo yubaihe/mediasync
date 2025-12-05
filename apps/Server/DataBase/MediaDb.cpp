@@ -6,6 +6,7 @@
 #include "MediaGroupTable.h"
 #include "MediaGroupItemsTable.h"
 #include "MediaGpsTable.h"
+#include "CommentTable.h"
 CMediaDb* CMediaDb::m_pMediaDb = NULL;
 CMediaDb::CMediaDb()
 {
@@ -76,4 +77,7 @@ void CMediaDb::InitAllTables(string strStore)
 
     CMediaGpsTable mediaGpsTable;
     mediaGpsTable.CreateTable();
+
+    CCommentTable commentTable;
+    commentTable.CreateTable();
 }

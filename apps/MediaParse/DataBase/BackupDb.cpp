@@ -1,6 +1,7 @@
 #include "BackupDb.h"
 #include "../Disk/PhotoManager.h"
 #include "../Util/CommonUtil.h"
+#include "DbusUtil.h"
 CBackupDb* CBackupDb::m_pBackupDb = NULL;
 CBackupDb::CBackupDb()
 {
@@ -84,6 +85,8 @@ BOOL CBackupTable::CreateTable()
 	//mediaaddr  媒体本地存储地址
 	//addtime    添加时间
     //hasextra    是否包含livephoto 0:否 1:是
+    //commentshort 备注前20个字符
+    //comment 备注
     map<string, string> param;
     param.insert(pair<string, string>("id", "integer PRIMARY KEY autoincrement"));
     param.insert(pair<string, string>("paishetime", "text DEFAULT '0'")); //虽然是毫秒级别的，但是精确度是分钟
@@ -98,6 +101,8 @@ BOOL CBackupTable::CreateTable()
     param.insert(pair<string, string>("duration", "text DEFAULT ''"));
     param.insert(pair<string, string>("mediaaddr", "text DEFAULT ''"));
     param.insert(pair<string, string>("hasextra", "text DEFAULT (0)"));
+    param.insert(pair<string, string>("commentshort", "text DEFAULT ''"));
+    param.insert(pair<string, string>("comment", "text DEFAULT ''"));
     CDbDriver* pDbDriver = LOCKBACKUPDB
     BOOL bRet = pDbDriver->CreateTable(TABLE_BACKUP, param);
     UNLOCKBACKUPDB
@@ -168,6 +173,14 @@ list<BackupItemFull> CBackupTable::AssembleItems(list<map<string, string>> List)
             {
                 item.iHasExtra = atoi(strValue.c_str());
             }
+            else if(0 == strKey.compare("commentshort"))
+            {
+                item.strCommentShort = strValue;
+            }
+            else if(0 == strKey.compare("comment"))
+            {
+                item.strComment = strValue;
+            }
         }
         retList.push_back(item);
     }
@@ -184,7 +197,10 @@ BOOL CBackupTable::DeleteFold(string strFold)
 {
     CDbDriver* pDbDriver = LOCKBACKUPDB
     BOOL bRet = pDbDriver->ExecuteSQL("delete from %s where foldname='%s'", TABLE_BACKUP, strFold.c_str());
+    list<string> IdList = pDbDriver->QuerySQL2("select id from %s where foldname='%s'", TABLE_BACKUP, strFold.c_str());
     UNLOCKBACKUPDB
+    //删除备注
+    RemoveComment(IdList);
     return bRet;
 }
 vector<BackupItem> CBackupTable::BackupFileListShort(string strFold, int* piVideoCount, int* piPicCount)
@@ -269,15 +285,27 @@ BOOL CBackupTable::RemoveFromIDList(list<int> idList)
     CDbDriver* pDbDriver = LOCKBACKUPDB
     BOOL bRet = pDbDriver->ExecuteSQL("delete from %s where id in(%s)", TABLE_BACKUP, strParam.c_str());
     UNLOCKBACKUPDB
+    //删除备注
+    list<string> removeidList;
+    for(list<int>::iterator itor = idList.begin(); itor != idList.end(); ++itor)
+    {
+        removeidList.push_back(std::to_string(*itor));
+    }
+    RemoveComment(removeidList);
     return bRet;
 }
 BOOL CBackupTable::AddItem(BackupItemFull item)
 {
-    string strSQL = CCommonUtil::StringFormat("insert into %s (paishetime,md5num,weizhi,location,meititype,meitisize,foldname,width,height,duration,mediaaddr,hasextra)values('%d','%s','%s','%s','%d','%d','%s','%d','%d','%d','%s','%d')",
-        TABLE_BACKUP, item.iCreateTimeSec, item.strMd5.c_str(), item.strAddr.c_str(), item.strLocation.c_str(), item.eMediaType, item.iMeiTiSize, item.strFoldName.c_str(), item.iWidth, item.iHeight, item.iDuration, item.strFile.c_str(), 0);
+    string strSQL = CCommonUtil::StringFormat("insert into %s (paishetime,md5num,weizhi,location,meititype,meitisize,foldname,width,height,duration,mediaaddr,hasextra,commentshort,comment)values('%d','%s','%s','%s','%d','%d','%s','%d','%d','%d','%s','%d','%s','%s')",
+        TABLE_BACKUP, item.iCreateTimeSec, item.strMd5.c_str(), item.strAddr.c_str(), item.strLocation.c_str(), item.eMediaType, item.iMeiTiSize, item.strFoldName.c_str(), item.iWidth, item.iHeight, item.iDuration, item.strFile.c_str(), 0, item.strCommentShort.c_str(), item.strComment.c_str());
     CDbDriver* pDbDriver = LOCKBACKUPDB
     BOOL bRet = pDbDriver->ExecuteSQL(strSQL.c_str());
+    int iItemID = pDbDriver->GetLastInsertID();
     UNLOCKBACKUPDB
+    if(item.strCommentShort.length() > 0)
+    {
+        CDbusUtil::SetMediaComment(iItemID, item.strComment);
+    }
     return bRet;
 }
 BackupItemFull CBackupTable::GetItemFromFileName(string strFileName, string strFoldName)
@@ -314,6 +342,8 @@ BOOL CBackupTable::RemoveItem(int iItemID)
     CDbDriver* pDbDriver = LOCKBACKUPDB
     BOOL bRet = pDbDriver->ExecuteSQL("delete from %s where id=%d", TABLE_BACKUP, iItemID);
     UNLOCKBACKUPDB
+    //删除备注
+    CDbusUtil::RemoveMediaComment(iItemID);
     return bRet;
 }
 list<BackupItemFull> CBackupTable::BackupFileList(string strFold, int iStart, int iLimit)
@@ -416,19 +446,88 @@ list<string> CBackupTable::RemoveFoldNotIn(vector<string> foldVec)
     list<string> retList;
     if(foldVec.size() == 0)
     {
+        CDbDriver* pDbDriver = LOCKBACKUPDB
+        pDbDriver->ExecuteSQL("delete from %s ", TABLE_BACKUP);
+        UNLOCKBACKUPDB
         return retList;
     }
     string strParam = CCommonUtil::VectorStringToString(foldVec, ",");
     CDbDriver* pDbDriver = LOCKBACKUPDB
     retList = pDbDriver->QuerySQL2("select foldname from %s where foldname not in(%s)", TABLE_BACKUP, strParam.c_str());
     pDbDriver->ExecuteSQL("delete from %s where foldname not in(%s)", TABLE_BACKUP, strParam.c_str());
+    list<string> IdList = pDbDriver->QuerySQL2("select id from %s where foldname not in(%s)", TABLE_BACKUP, strParam.c_str());
     UNLOCKBACKUPDB
+    //删除备注
+    RemoveComment(IdList);
     return retList;
 }
+void CBackupTable::RemoveComment(list<string> idList)
+{
+    string strIds = "";
+    list<string>::iterator itor = idList.begin();
+    for(; itor != idList.end(); ++itor)
+    {
+        if(strIds.length() == 0)
+        {
+            strIds = *itor;
+        }
+        else
+        {
+            strIds.append(",");
+            strIds.append(*itor);
+        }
+        if(strIds.length() == 10)
+        {
+            CDbusUtil::RemoveMediaCommentFromIds(strIds);
+            strIds = "";
+        }
+    }
+    if(strIds.length() > 0)
+    {
+        CDbusUtil::RemoveMediaCommentFromIds(strIds);
+        strIds = "";
+    }
+}
+
 BOOL CBackupTable::UpdateItemGpsAddr(int iItemID, string strGps, string strAddr)
 {
     CDbDriver* pDbDriver = LOCKBACKUPDB
     BOOL bRet = pDbDriver->ExecuteSQL("update %s set weizhi='%s', location='%s' where id='%d'", TABLE_BACKUP, strGps.c_str(), strAddr.c_str(), iItemID);
     UNLOCKBACKUPDB
+    return bRet;
+}
+
+BOOL CBackupTable::GetComment(int iID, string& strCommentShort, string& strComment)
+{
+    CDbDriver* pDbDriver = LOCKBACKUPDB
+    list<map<string, string>> List = pDbDriver->QuerySQL("select * from %s where id='%d'", TABLE_BACKUP, iID);
+    UNLOCKBACKUPDB
+    if(List.size() == 0)
+    {
+        return FALSE;
+    }
+    list<BackupItemFull> itemList = AssembleItems(List);
+    if(itemList.size() > 0)
+    {
+        BackupItemFull item = itemList.front();
+        strCommentShort = item.strCommentShort;
+        strComment = item.strComment;
+        return TRUE;
+    }
+    return FALSE;
+}
+BOOL CBackupTable::UpdateComment(int iID, string strCommentShort, string strComment)
+{
+    CDbDriver* pDbDriver = LOCKBACKUPDB
+    BOOL bRet = pDbDriver->ExecuteSQL("update %s set commentshort='%s', comment='%s' where id='%d'", TABLE_BACKUP, strCommentShort.c_str(), strComment.c_str(), iID);
+    UNLOCKBACKUPDB
+    if(strCommentShort.length() > 0)
+    {
+        CDbusUtil::SetMediaComment(iID, strComment);
+    }
+    else
+    {
+        CDbusUtil::RemoveMediaComment(iID);
+    }
     return bRet;
 }

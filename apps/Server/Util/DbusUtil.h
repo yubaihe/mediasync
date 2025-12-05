@@ -24,6 +24,7 @@ public:
     static BOOL TranscodeStop(string strIdentify);
     static BOOL TranscodePrecent(string strIdentify, DWORD& iDurSec, DWORD& iCurSec, int& iPrecent);
     static BOOL TranscodeEnd(string strIdentify);
+    static string GetBackupItem(int iItemID);
 };
 
 

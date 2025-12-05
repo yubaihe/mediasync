@@ -9,6 +9,7 @@
 #include "MediaGroupItemsTable.h"
 #include "MediaGroupTable.h"
 #include "../GpsManager.h"
+#include "CommentTable.h"
 CMediaInfoTable::CMediaInfoTable()
 {
 }
@@ -36,6 +37,9 @@ BOOL CMediaInfoTable::CreateTable()
 	//mediaaddr  媒体本地存储地址
 	//addtime    添加时间
     //hasextra    是否包含livephoto 0:否 1:是
+    //pinnedtime 置顶时间
+    //commentshort 备注前20个字符
+    //comment 备注
     map<string, string> param;
     param.insert(pair<string, string>("id", "integer PRIMARY KEY autoincrement"));
     param.insert(pair<string, string>("paishetime", "text DEFAULT '0'")); //虽然是毫秒级别的，但是精确度是分钟
@@ -56,6 +60,8 @@ BOOL CMediaInfoTable::CreateTable()
     param.insert(pair<string, string>("favoritetime", "text DEFAULT (0)"));
     param.insert(pair<string, string>("hasextra", "text DEFAULT (0)"));
     param.insert(pair<string, string>("pinnedtime", "text DEFAULT (0)"));
+    param.insert(pair<string, string>("commentshort", "text DEFAULT ''"));
+    param.insert(pair<string, string>("comment", "text DEFAULT ''"));
     CDbDriver* pDbDriver = LOCKMEDIADB
     BOOL bRet = pDbDriver->CreateTable(TABLE_MEDIAINFO, param);
     UNLOCKMEDIADB
@@ -150,6 +156,14 @@ list<MediaInfoItem> CMediaInfoTable::AssembleItems(list<map<string, string>> Lis
             {
                 item.iPinnedTime = atol(strValue.c_str());
             }
+            else if(0 == strKey.compare("commentshort"))
+            {
+                item.strCommentShort = strValue;
+            }
+            else if(0 == strKey.compare("comment"))
+            {
+                item.strComment = strValue;
+            }
         }
         retList.push_back(item);
     }
@@ -191,6 +205,8 @@ MediaInfoItem CMediaInfoTable::GetItem(CDbCursor& cursor)
     item.iFavoriteTime = cursor.GetLong("favoritetime");
     item.iHasExtra = cursor.GetInt("hasextra");
     item.iPinnedTime = cursor.GetLong("pinnedtime");
+    item.strCommentShort = cursor.GetString("commentshort");
+    item.strComment = cursor.GetString("comment");
     return item;
 }
 BOOL CMediaInfoTable::CheckMd5Exist(string strMd5Num)
@@ -234,7 +250,7 @@ string CMediaInfoTable::FileNameFromPaiTime(long iPaiTime, string strDevNames, i
     }
     return List.front();
 }
-BOOL CMediaInfoTable::AddItem(MediaInfoItem item)
+BOOL CMediaInfoTable::AddItem(MediaInfoItem& item)
 {
     Server::CTools::SecInfo(item.iPaiSheTime, &(item.iYear), &(item.iMonth), &(item.iDay));
     float dLat = 0;
@@ -245,12 +261,13 @@ BOOL CMediaInfoTable::AddItem(MediaInfoItem item)
     {
         return FALSE;
     }
-     CDbDriver* pDbDriver = LOCKMEDIADB
-     BOOL bRet = pDbDriver->ExecuteSQL("insert into tbl_mediainfo(paishetime, year, month, day, md5num, weizhi, location, meititype, meitisize, devicename,width,height,duration,mediaaddr,addtime,hasextra,pinnedtime)values \
-												( '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%ld', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '0')",  
-    				item.iPaiSheTime, item.iYear, item.iMonth, item.iDay, item.strMd5Num.c_str(), item.strWeiZhi.c_str(), item.strLocation.c_str(), 
+    CDbDriver* pDbDriver = LOCKMEDIADB
+    BOOL bRet = pDbDriver->ExecuteSQL("insert into tbl_mediainfo(paishetime, year, month, day, md5num, weizhi, location, meititype, meitisize, devicename,width,height,duration,mediaaddr,addtime,hasextra,pinnedtime,commentshort,comment)values \
+												( '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%ld', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '0', '%s', '%s')",  
+    				item.iPaiSheTime, item.iYear, item.iMonth, item.iDay, item.strMd5Num.c_str(), item.strWeiZhi.c_str(), item.strLocation.c_str(),
                     item.iMediaType, item.iMeiTiSize, item.strDeviceName.c_str(), item.iWidth, 
-                    item.iHeight, item.iDuration, item.strAddr.c_str(), item.iAddTime, item.iHasExtra);
+                    item.iHeight, item.iDuration, item.strAddr.c_str(), item.iAddTime, item.iHasExtra, item.strCommentShort.c_str(), item.strComment.c_str());
+    item.iID = pDbDriver->GetLastInsertID();
      UNLOCKMEDIADB
      //计数加 1
      CMediaJishuTable mediaJiShu;
@@ -259,6 +276,11 @@ BOOL CMediaInfoTable::AddItem(MediaInfoItem item)
      {
         CGpsManager::GetInstance()->NeedCheck();
      }
+     //备注也要加上去
+     if(item.strCommentShort.length() > 0)
+    {
+        CCommentTable::AddItem(item.iID, item.strComment);
+    }
      return bRet;
 }
 int CMediaInfoTable::GetRecordCount()
@@ -739,6 +761,7 @@ string CMediaInfoTable::GetItem(int iID, BOOL& bGet)
     jsonItem["favoritetime"] = item.iFavoriteTime;
     jsonItem["hasextra"] = item.iHasExtra;
     jsonItem["pinnedtime"] = item.iPinnedTime;
+    jsonItem["commentshort"] = item.strCommentShort;
     string strJson = Server::CJsonUtil::ToString(jsonItem);
     return strJson;
 }
@@ -778,6 +801,8 @@ BOOL CMediaInfoTable::RemoveItem(int iID)
     CDbDriver* pDbDriver = LOCKMEDIADB
     BOOL bRet = pDbDriver->ExecuteSQL("delete from tbl_mediainfo where id='%d'", iID);
     UNLOCKMEDIADB
+    //备注也要删除一下
+    CCommentTable::DeleteItem(iID);
     return bRet;
 }
 MediaInfoItem CMediaInfoTable::GetItemFromName(string strName)
@@ -812,6 +837,8 @@ BOOL CMediaInfoTable::RemoveItemFromName(string strName)
     CDbDriver* pDbDriver = LOCKMEDIADB
     BOOL bRet = pDbDriver->ExecuteSQL("delete from tbl_mediainfo where mediaaddr='%s'", strName.c_str());
     UNLOCKMEDIADB
+    //备注也要删除一下
+    CCommentTable::DeleteItem(item.iID);
     return bRet;
 }
 string CMediaInfoTable::GetFileName(int iID)
@@ -1014,5 +1041,39 @@ BOOL CMediaInfoTable::ChangeMediaAddr(int iID, string strAddr, string strMd5)
     CDbDriver* pDbDriver = LOCKMEDIADB
     BOOL bRet = pDbDriver->ExecuteSQL("update tbl_mediainfo set mediaaddr='%s', md5num='%s' where id='%d'", strAddr.c_str(), strMd5.c_str(), iID);
     UNLOCKMEDIADB
+    return bRet;
+}
+BOOL CMediaInfoTable::GetComment(int iID, string& strCommentShort, string& strComment)
+{
+    CDbDriver* pDbDriver = LOCKMEDIADB
+    list<map<string, string>> List = pDbDriver->QuerySQL("select * from tbl_mediainfo where id='%d'", iID);
+    UNLOCKMEDIADB
+    if(List.size() == 0)
+    {
+        return FALSE;
+    }
+    list<MediaInfoItem> itemList = AssembleItems(List);
+    if(itemList.size() > 0)
+    {
+        MediaInfoItem item = itemList.front();
+        strCommentShort = item.strCommentShort;
+        strComment = item.strComment;
+        return TRUE;
+    }
+    return FALSE;
+}
+BOOL CMediaInfoTable::UpdateComment(int iID, string strCommentShort, string strComment)
+{
+    CDbDriver* pDbDriver = LOCKMEDIADB
+    BOOL bRet = pDbDriver->ExecuteSQL("update tbl_mediainfo set commentshort='%s', comment='%s' where id='%d'", strCommentShort.c_str(), strComment.c_str(), iID);
+    UNLOCKMEDIADB
+    if(strCommentShort.length() > 0)
+    {
+        CCommentTable::AddItem(iID, strComment);
+    }
+    else
+    {
+        CCommentTable::DeleteItem(iID);
+    }
     return bRet;
 }

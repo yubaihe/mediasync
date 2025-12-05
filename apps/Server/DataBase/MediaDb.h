@@ -8,6 +8,7 @@
 #define TABLE_MEDIAGROUP        "tbl_mediagroup"        //媒体分组
 #define TABLE_MEDIAGROUPITEMS   "tbl_mediagroupitems"   //媒体分组项
 #define TABLE_MEDIAGPS          "tbl_mediagps"          //媒体GPS缓存
+#define TABLE_COMMENT           "tbl_comment"           //媒体备注
 
 #define LOCKMEDIADB CMediaDb::GetInstance()->Lock();
 #define UNLOCKMEDIADB CMediaDb::GetInstance()->UnLock();

@@ -470,6 +470,25 @@ string CMessageHandler::OnGetBackupFoldItemDetail(nlohmann::json& jsonRoot)
     jsonRet["status"] = 1;
     return MediaParse::CJsonUtil::ToString(jsonRet);
 }
+
+string CMessageHandler::OnGetBackupFoldItemFromItemID(nlohmann::json& jsonRoot)
+{
+    int iItemID = jsonRoot["itemid"];
+    string strDetail = CBackupManager::GetInstance()->GetBackupFoldItemFromItemID(iItemID);
+
+    nlohmann::json jsonRet;
+    if(strDetail.length() > 0)
+    {
+        MediaParse::CJsonUtil::FromString(strDetail, jsonRet);
+        jsonRet["status"] = 1;
+    }
+    else
+    {
+        jsonRet["status"] = 0;
+    }
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
+
 string CMessageHandler::OnBackupUploadItemAddrChange(nlohmann::json& jsonRoot)
 {
     int iItemID = jsonRoot["itemid"];
@@ -676,6 +695,34 @@ string CMessageHandler::OnTransFileEnd(nlohmann::json& jsonRoot)
     jsonRet["status"] = 1;
     return MediaParse::CJsonUtil::ToString(jsonRet);
 }
+string CMessageHandler::OnGetMediaComment(nlohmann::json& jsonRoot)
+{
+    int iItemID = jsonRoot["id"];
+    string strCommentShort = "";
+    string strComment = "";
+    CBackupTable table;
+    BOOL bRet = table.GetComment(iItemID, strCommentShort, strComment);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = bRet;
+    jsonRet["id"] = iItemID;
+    jsonRet["commentshort"] = strCommentShort;
+    jsonRet["comment"] = strComment;
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
+string CMessageHandler::OnSetMediaComment(nlohmann::json& jsonRoot)
+{
+    int iItemID = jsonRoot["id"];
+    string strCommentShort = jsonRoot["commentshort"];
+    string strComment = jsonRoot["comment"];
+    CBackupTable table;
+    BOOL bRet = table.UpdateComment(iItemID, strCommentShort, strComment);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = bRet;
+    jsonRet["id"] = iItemID;
+    jsonRet["commentshort"] = strCommentShort;
+    jsonRet["comment"] = strComment;
+    return MediaParse::CJsonUtil::ToString(jsonRet);
+}
 void CMessageHandler::OnMessage(const char* pszMsg, char* pszRet)
 {
     // try 
@@ -722,6 +769,7 @@ void CMessageHandler::OnMessage(const char* pszMsg, char* pszRet)
             m_ActionHandlerMap["backupuploaditemdel"] = std::bind(&CMessageHandler::OnBackupUploadItemDel, this, std::placeholders::_1);
             //文件
             m_ActionHandlerMap["backupfolditemdetail"] = std::bind(&CMessageHandler::OnGetBackupFoldItemDetail, this, std::placeholders::_1);
+            m_ActionHandlerMap["backupfolditemfromitemid"] = std::bind(&CMessageHandler::OnGetBackupFoldItemFromItemID, this, std::placeholders::_1);
             //同步
             m_ActionHandlerMap["backupfoldsyncstart"] = std::bind(&CMessageHandler::OnBackupFoldSyncStart, this, std::placeholders::_1);
             m_ActionHandlerMap["backupfoldsyncprecent"] = std::bind(&CMessageHandler::OnBackupFoldSyncPrecent, this, std::placeholders::_1);
@@ -734,6 +782,10 @@ void CMessageHandler::OnMessage(const char* pszMsg, char* pszRet)
             m_ActionHandlerMap["transfilestop"] = std::bind(&CMessageHandler::OnTransFileStop, this, std::placeholders::_1);
             m_ActionHandlerMap["transfileprecent"] = std::bind(&CMessageHandler::OnTransFilePrecent, this, std::placeholders::_1);
             m_ActionHandlerMap["transfileend"] = std::bind(&CMessageHandler::OnTransFileEnd, this, std::placeholders::_1);
+
+            //媒体备注
+            m_ActionHandlerMap["getmediacommentbackup"] = std::bind(&CMessageHandler::OnGetMediaComment, this, std::placeholders::_1);
+            m_ActionHandlerMap["setmediacommentbackup"] = std::bind(&CMessageHandler::OnSetMediaComment, this, std::placeholders::_1);
         }
     
         std::map<std::string, std::function<string(nlohmann::json&)>>::iterator itor = m_ActionHandlerMap.find(strAction);

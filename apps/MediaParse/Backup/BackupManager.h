@@ -25,6 +25,7 @@ public:
     string GetBackupThumbRoot(string strName);
     string GetBackupTempRoot(string strName);
     string GetBackupFoldItemDetail(int iItemID);
+    string GetBackupFoldItemFromItemID(int iItemID);
     BOOL UploadItem(string strDev, string strFile, string strDestFold, string& strToken);
     int GetUploadPrecent(string strToken, char* pszErrorInfo);
     std::vector<string> BackupFoldList();

@@ -27,6 +27,8 @@ struct MediaInfoItem
     uint8_t iHasExtra;                //是否有额外视频比如livephoto
     string strLocation;            //拍摄位置
     long iPinnedTime;              //置顶时间秒数
+    string strCommentShort;
+    string strComment;
 };
 #define MEDIATYPE_IMAGE 1
 #define MEDIATYPE_VIDEO 2
@@ -41,7 +43,7 @@ public:
     static BOOL CheckMd5Exist(string strMd5Num);
     static string FileNameFromMd5(string strMd5Num);
     static string FileNameFromPaiTime(long iPaiTime, string strDevNames, int iMediaType, long iLFileSize);
-    static BOOL AddItem(MediaInfoItem item);
+    static BOOL AddItem(MediaInfoItem& item);
     static int GetRecordCount();
     static MediaInfoItem GetLatestItem();//最后更新项
     static int GetItemPaiTime(int iID);
@@ -88,5 +90,7 @@ public:
     static list<int> GetTodayYear(int iMonth, int iDay, string strDevNames);
     static MediaInfoItem GetFirstMediaInDay(int iYear, int iMonth, int iDay, string strDevNames);
     static BOOL ChangeMediaAddr(int iID, string strAddr, string strMd5);
+    static BOOL GetComment(int iID, string& strCommentShort, string& strComment);
+    static BOOL UpdateComment(int iID, string strCommentShort, string strComment);
 };
 

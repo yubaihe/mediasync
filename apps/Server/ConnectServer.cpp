@@ -46,7 +46,7 @@ BOOL CConnectServer::InitStore()
         exit(0);
         return FALSE;
     }
-    printf("Addr:%s Total:%lld Used:%lld\n", store.strAddr.c_str(), iTotal, iUsed);
+    printf("Addr:%s Total:%lld Used:%lld\n", store.strAddr.c_str(), (long long int)iTotal, (long long int)iUsed);
 
     string strStoreRoot = CConfig::GetInstance()->GetStoreRoot();
     printf("StoreRoot:%s\n", strStoreRoot.c_str());

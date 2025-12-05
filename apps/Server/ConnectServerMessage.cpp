@@ -13,6 +13,7 @@
 #include "Util/DbusUtil.h"
 #include "BroadCastServer.h"
 #include "GpsManager.h"
+#include "CommentTable.h"
 CConnectServerMessage::CConnectServerMessage(/* args */)
 {
 }
@@ -738,7 +739,7 @@ string CConnectServerMessage::OnReportInfo(nlohmann::json& jsonRoot)
 	printf("~~~%s\n", strPathFile.c_str());
 	if(CFileUtil::GetFileSize(strPathFile) != iSFileSize)
 	{
-		printf("%s device:%lld server:%ld\n", strSFileName.c_str(), iSFileSize, CFileUtil::GetFileSize(strPathFile));
+		printf("%s device:%lld server:%lld\n", strSFileName.c_str(), (long long int)iSFileSize, (long long int)CFileUtil::GetFileSize(strPathFile));
         nlohmann::json jsonRet;
         jsonRet["status"] = 0;
         jsonRet["info"] = "small file size not match";
@@ -748,7 +749,7 @@ string CConnectServerMessage::OnReportInfo(nlohmann::json& jsonRoot)
     strPathFile.append(strLFileName);
 	if(CFileUtil::GetFileSize(strPathFile) != iLFileSize)
 	{
-		printf("%s device:%lld server:%lld\n", strPathFile.c_str(), iLFileSize, CFileUtil::GetFileSize(strPathFile));
+		printf("%s device:%lld server:%lld\n", strPathFile.c_str(), (long long int)iLFileSize, (long long int)CFileUtil::GetFileSize(strPathFile));
         nlohmann::json jsonRet;
         jsonRet["status"] = 0;
         jsonRet["info"] = "large file size not match";
@@ -758,7 +759,7 @@ string CConnectServerMessage::OnReportInfo(nlohmann::json& jsonRoot)
     strPathFile.append(strExFileName);
 	if(iExFileSize > 0 && CFileUtil::GetFileSize(strPathFile) != iExFileSize)
 	{
-		printf("%s device:%lld server:%lld\n", strPathFile.c_str(), iExFileSize, CFileUtil::GetFileSize(strPathFile));
+		printf("%s device:%lld server:%lld\n", strPathFile.c_str(), (long long int)iExFileSize, (long long int)CFileUtil::GetFileSize(strPathFile));
         nlohmann::json jsonRet;
         jsonRet["status"] = 0;
         jsonRet["info"] = "exfile file size not match";
@@ -891,7 +892,8 @@ string CConnectServerMessage::OnReportInfo(nlohmann::json& jsonRoot)
     int iHeight = jsonRoot["height"];
     int iDuration = jsonRoot["duration"];
     string strLocation = jsonRoot["location"];
-
+    string strCommentShort = jsonRoot["commentshort"];
+    string strComment = jsonRoot["comment"];
 	//校验位置信息如果没有在获取一次
 	float dLat = 0;
 	float dLong = 0;
@@ -921,13 +923,15 @@ string CConnectServerMessage::OnReportInfo(nlohmann::json& jsonRoot)
 	item.strAddr = strFileAddr;									//媒体地址
 	item.strLocation = strLocation.length()==0?"":strLocation;  //拍摄时候地理位置
 	item.iHasExtra = iExFileSize > 0?TRUE:FALSE;
+    item.strCommentShort = strCommentShort;
+    item.strComment = strComment;
 
     printf("item.iPaiSheTime:%ld\n", iPaiSheTime);
     printf("item.iAddTime:%ld\n", Server::CTools::CurTimeSec());
     printf("item.iMediaType:%d\n", iMediaType);
     printf("item.strMd5Num:%s\n", strMd5Num.c_str());
     printf("item.strWeiZhi:%s\n", strWeiZhi2.c_str());
-    printf("item.iMeiTiSize:%lld\n", iLFileSize);
+    printf("item.iMeiTiSize:%lld\n", (long long int)iLFileSize);
     printf("item.iWidth:%d\n", iWidth);
     printf("item.iHeight:%d\n", iHeight);
     printf("item.iDuration:%d\n", iDuration);
@@ -937,8 +941,7 @@ string CConnectServerMessage::OnReportInfo(nlohmann::json& jsonRoot)
     printf("item.strLocation:%s\n", str.c_str());
     int iTemp = iExFileSize > 0?TRUE:FALSE;
     printf("item.iHasExtra:%d\n", iTemp);
-
-
+    
     BOOL bRet = CMediaInfoTable::AddItem(item);
 	if(FALSE == bRet)
 	{
@@ -953,6 +956,10 @@ string CConnectServerMessage::OnReportInfo(nlohmann::json& jsonRoot)
 	}
 	else
 	{
+        if(item.strComment.length() > 0)
+        {
+            CCommentTable::AddItem(item.iID, item.strComment);
+        }
         nlohmann::json jsonRet;
         jsonRet["status"] = 1;
         jsonRet["file"] = strFileAddr;
@@ -1411,6 +1418,8 @@ string CConnectServerMessage::OnMediaList(nlohmann::json& jsonRoot)
     BOOL bError = FALSE;
     nlohmann::ordered_json jsonRet;
     jsonRet["status"] = 1;
+    //媒体备注是否包含
+    jsonRet["hasmedianotes"] = CCommentTable::IsEmpty() == TRUE?0:1;
     //备份数量
     jsonRet["backupcount"] = CDbusUtil::BackupFoldCount(bError);
     //分组数量
@@ -1635,7 +1644,86 @@ string CConnectServerMessage::OnTransFileFinish(nlohmann::json& jsonRoot)
     jsonRet["status"] = 1;
     return Server::CJsonUtil::ToString(jsonRet);
 }
-
+string CConnectServerMessage::OnGetMediaComment(nlohmann::json& jsonRoot)
+{
+    int iItemID = jsonRoot["id"];
+    string strCommentShort = "";
+    string strComment = "";
+    BOOL bRet = CMediaInfoTable::GetComment(iItemID, strCommentShort, strComment);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = bRet;
+    jsonRet["id"] = iItemID;
+    jsonRet["commentshort"] = strCommentShort;
+    jsonRet["comment"] = strComment;
+    return Server::CJsonUtil::ToString(jsonRet);
+}
+string CConnectServerMessage::OnSetMediaComment(nlohmann::json& jsonRoot)
+{
+    int iItemID = jsonRoot["id"];
+    string strCommentShort = jsonRoot["commentshort"];
+    string strComment = jsonRoot["comment"];
+    if(strCommentShort.length() == 0)
+    {
+        strComment = "";
+    }
+    BOOL bRet = CMediaInfoTable::UpdateComment(iItemID, strCommentShort, strComment);
+    if(TRUE == bRet)
+    {
+        if(strComment.length() > 0)
+        {
+            CCommentTable::UpdateItem(iItemID, strComment);
+        }
+        else
+        {
+            CCommentTable::DeleteItem(iItemID);
+        }
+    }
+    nlohmann::json jsonRet;
+    jsonRet["status"] = bRet;
+    jsonRet["id"] = iItemID;
+    jsonRet["commentshort"] = strCommentShort;
+    jsonRet["comment"] = strComment;
+    return Server::CJsonUtil::ToString(jsonRet);
+}
+string CConnectServerMessage::OnSetComment(nlohmann::json& jsonRoot)
+{
+    int iItemID = jsonRoot["id"];
+    string strComment = jsonRoot["comment"];
+    string strModule = jsonRoot["module"];
+    BOOL bRet = CCommentTable::AddItem(iItemID, strComment, strModule);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = bRet;
+    return Server::CJsonUtil::ToString(jsonRet);
+}
+string CConnectServerMessage::OnRemoveComment(nlohmann::json& jsonRoot)
+{
+    int iItemID = jsonRoot["id"];
+    string strModule = jsonRoot["module"];
+    BOOL bRet = CCommentTable::DeleteItem(iItemID, strModule);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = bRet;
+    return Server::CJsonUtil::ToString(jsonRet);
+}
+string CConnectServerMessage::OnRemoveCommentFromIds(nlohmann::json& jsonRoot)
+{
+    string strIds = jsonRoot["ids"];
+    string strModule = jsonRoot["module"];
+    BOOL bRet = CCommentTable::DeleteItems(strIds, strModule);
+    nlohmann::json jsonRet;
+    jsonRet["status"] = bRet;
+    return Server::CJsonUtil::ToString(jsonRet);
+}
+ string CConnectServerMessage::OnQueryComment(nlohmann::json& jsonRoot)
+ {
+    int iID = jsonRoot["id"];
+    int iLimit = jsonRoot["limit"];
+    string strQuery = jsonRoot["query"];
+    nlohmann::ordered_json items = CCommentTable::GetItems(iID, iLimit, strQuery);
+    nlohmann::ordered_json jsonRet;
+    jsonRet["status"] = 1;
+    jsonRet["items"] = items;
+    return Server::CJsonUtil::ToString(jsonRet);
+ }
 void CConnectServerMessage::OnMessage(const char* pszMsg, char* pszRet)
 {
 	nlohmann::json jsonValue;
@@ -1707,6 +1795,12 @@ void CConnectServerMessage::OnMessage(const char* pszMsg, char* pszRet)
         m_ActionHandlerMap["transfilestop"] = std::bind(&CConnectServerMessage::OnTransFileStop, this, std::placeholders::_1);
         m_ActionHandlerMap["transfileprecent"] = std::bind(&CConnectServerMessage::OnTransFilePrecent, this, std::placeholders::_1);
         m_ActionHandlerMap["transfilefinish"] = std::bind(&CConnectServerMessage::OnTransFileFinish, this, std::placeholders::_1);
+        m_ActionHandlerMap["getmediacomment"] = std::bind(&CConnectServerMessage::OnGetMediaComment, this, std::placeholders::_1);
+        m_ActionHandlerMap["setmediacomment"] = std::bind(&CConnectServerMessage::OnSetMediaComment, this, std::placeholders::_1);
+        m_ActionHandlerMap["setcomment"] = std::bind(&CConnectServerMessage::OnSetComment, this, std::placeholders::_1);
+        m_ActionHandlerMap["removecomment"] = std::bind(&CConnectServerMessage::OnRemoveComment, this, std::placeholders::_1);
+        m_ActionHandlerMap["removecommentfromids"] = std::bind(&CConnectServerMessage::OnRemoveCommentFromIds, this, std::placeholders::_1);
+        m_ActionHandlerMap["querycomments"] = std::bind(&CConnectServerMessage::OnQueryComment, this, std::placeholders::_1);
     }
     string strAction = jsonValue["action"];
     std::map<std::string, std::function<string(nlohmann::json&)>>::iterator itor = m_ActionHandlerMap.find(strAction);

@@ -18,5 +18,20 @@ namespace Server
         static BOOL HasRootPermission();
         static BOOL UpdateTimeSec(long iSec);
         static string GetSambaVersion();
+        static string Trim(const std::string& str);
+        template <typename T>
+        static string VecToString(const std::vector<T>& vec, const std::string& strDelimiter)
+        {
+            if (TRUE == vec.empty())
+            {
+                return "";
+            }
+            std::string strResult = std::to_string(vec[0]);
+            for (size_t i = 1; i < vec.size(); ++i)
+            {
+                strResult += strDelimiter + std::to_string(vec[i]);
+            }
+            return strResult;
+        }
     };
-};
+}

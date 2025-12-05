@@ -65,6 +65,7 @@ public:
     string GetString(string strKey, string strDefault = "");
     long GetLong(string strKey, long iDefault = 0);
     int64_t GetInt64(string strKey, long iDefault = 0);
+    
 private:
     int GetIndex(string strKey);
 private:
@@ -83,7 +84,7 @@ public:
     list<map<string, string>> QuerySQL(const char* pszFormat, ...);
     list<string> QuerySQL2(const char* pszFormat, ...);
     BOOL QuerySQL(CDbCursor& DbCursor, const char* pszFormat, ...);
-
+    int GetLastInsertID();
 private:
     BOOL ExecuteSQLWithArgList(const char* pszFormat, va_list vArgList);
     list<map<string, string>> QuerySQLWithArgList(const char* pszFormat, va_list vArgList);

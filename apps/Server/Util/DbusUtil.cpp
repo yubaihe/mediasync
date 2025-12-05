@@ -408,3 +408,29 @@ int CDbusUtil::BackupFoldCount(BOOL& bError)
     }
     return TRUE;
  }
+
+ string CDbusUtil::GetBackupItem(int iItemID)
+ {
+    if(FALSE == CDbusUtil::ContainModule(DBUS_MEDIAPARSE))
+    {
+        return "";
+    }
+    nlohmann::json json;
+    json["action"] = "backupfolditemfromitemid";
+    json["itemid"] = iItemID;
+    string strRequest = Server::CJsonUtil::ToString(json);
+    char szRet[MAX_DBUSMESSAGE_LEN] = {0};
+    int iRetLen = MAX_DBUSMESSAGE_LEN;
+    BOOL bSend = LibDbus_SendSync(DBUS_MEDIAPARSE, 0x5007, (const char*)strRequest.c_str(), strRequest.length() + 1, szRet, &iRetLen);
+    if(FALSE == bSend)
+    {
+        return "";
+    }
+    nlohmann::json jsonRet;
+    BOOL bRet = Server::CJsonUtil::FromString(szRet, jsonRet);
+    if(FALSE == bRet)
+    {
+        return "";
+    }
+    return szRet;
+ }

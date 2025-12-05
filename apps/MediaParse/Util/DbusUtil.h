@@ -23,8 +23,10 @@ public:
     static DiskInfo GetDiskInfo(void);
     static BOOL CheckMd5(const char* pszMd5, char* pszErrorInfo, char* pszRemoteFile);
     static BOOL ReportInfo(const char* pszData, char* pszErrorInfo);
-    static BOOL TranscodeFinish(int  iItemID, string strFile, string strMd5, string strIdentify);
-    static BOOL GetTransInfo(string strIdentify, DWORD& iDurationSec, DWORD& iCurSec, int& iPrecent);
+    static BOOL TranscodeFinish(int iItemID, string strFile, string strMd5, string strIdentify);
+    static BOOL SetMediaComment(int iItemID, string strComment);
+    static BOOL RemoveMediaComment(int iItemID);
+    static BOOL RemoveMediaCommentFromIds(string strIds);
 private:
 
 };

@@ -24,6 +24,8 @@ struct BackupItemFull:BackupItem
     uint32_t iHeight;               //高度
     uint32_t iDuration;             //持续时间
     uint8_t iHasExtra;              //是否有额外视频比如livephoto
+    string strCommentShort;
+    string strComment;
 };
 #define LOCKBACKUPDB CBackupDb::GetInstance()->Lock();
 #define UNLOCKBACKUPDB CBackupDb::GetInstance()->UnLock();
@@ -84,4 +86,8 @@ public:
     BackupItemFull GetItemFromMd5(string strFold, string strMd5);
     list<string> RemoveFoldNotIn(vector<string> foldList);
     BOOL UpdateItemGpsAddr(int iItemID, string strGps, string strAddr);
+    BOOL GetComment(int iID, string& strCommentShort, string& strComment);
+    BOOL UpdateComment(int iID, string strCommentShort, string strComment);
+private:
+    void RemoveComment(list<string> idList);
 };

@@ -198,4 +198,17 @@ namespace Server
         }
         return vec2[0];
     }
+    string CTools::Trim(const string& str)
+    {
+        // 找到第一个非空格字符位置
+        size_t iStartPos = str.find_first_not_of(" \t\n\r\v\f");
+        if (iStartPos == std::string::npos)
+        {
+            return "";
+        }
+
+        // 找到最后一个非空格字符位置
+        size_t iEndPos = str.find_last_not_of(" \t\n\r\v\f");
+        return str.substr(iStartPos, iEndPos - iStartPos + 1);
+    }
 }

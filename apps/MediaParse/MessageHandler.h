@@ -29,6 +29,7 @@ private:
     string OnBackupFoldDelete(nlohmann::json& jsonRoot);
     string OnBackupFoldModify(nlohmann::json& jsonRoot);
     string OnGetBackupFoldItemDetail(nlohmann::json& jsonRoot);
+    string OnGetBackupFoldItemFromItemID(nlohmann::json& jsonRoot);
     string OnBackupUploadItem(nlohmann::json& jsonRoot);
     string OnBackupUploadItemPrecent(nlohmann::json& jsonRoot);
     string OnBackupUploadItemList(nlohmann::json& jsonRoot);
@@ -44,6 +45,8 @@ private:
     string OnTransFileStop(nlohmann::json& jsonRoot);
     string OnTransFilePrecent(nlohmann::json& jsonRoot);
     string OnTransFileEnd(nlohmann::json& jsonRoot);
+    string OnGetMediaComment(nlohmann::json& jsonRoot);
+    string OnSetMediaComment(nlohmann::json& jsonRoot);
     
 private:
     std::map<std::string, std::function<string(nlohmann::json&)>> m_ActionHandlerMap;

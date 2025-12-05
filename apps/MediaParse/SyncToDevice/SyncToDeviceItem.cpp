@@ -177,6 +177,8 @@ void CSyncToDeviceItem::Sync()
     jsonRoot["width"] = m_Item.iWidth;
     jsonRoot["height"] = m_Item.iHeight;
     jsonRoot["duration"] = m_Item.iDuration;
+    jsonRoot["comment"] = m_Item.strComment;
+    jsonRoot["commentshort"] = m_Item.strCommentShort;
     string strJson = MediaParse::CJsonUtil::ToString(jsonRoot);
     memset(szErrorInfo, 0, sizeof(szErrorInfo));
     CDbusUtil::ReportInfo(strJson.c_str(), szErrorInfo);

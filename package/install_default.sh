@@ -6,6 +6,9 @@ mkdir  -p $PWD/install
 
 SambaFilter()
 {
+	if [ ! -d "$ROOTDIR/samba/bin" ];then
+		return
+	fi
 	echo "-----SambaFilter"
 	mkdir -p $PWD/install/samba
 	#bin
