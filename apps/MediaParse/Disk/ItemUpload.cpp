@@ -164,6 +164,8 @@ void CItemUpload::Upload()
     jsonRoot["width"] = photoItem.iWidth;
     jsonRoot["height"] = photoItem.iHeight;
     jsonRoot["duration"] = m_pDiskItem->GetDuration(m_iItemID);
+    jsonRoot["comment"] = "";
+    jsonRoot["commentshort"] = "";
     string strJson = MediaParse::CJsonUtil::ToString(jsonRoot);
     memset(szErrorInfo, 0, sizeof(szErrorInfo));
     CDbusUtil::ReportInfo(strJson.c_str(), szErrorInfo);
