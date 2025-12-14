@@ -25,6 +25,7 @@ namespace Server
     static BOOL CheckFoldEmpty(const char* pszFold);
     static BOOL RemoveFold(const char* pszFold, BOOL bForce = TRUE);
     static BOOL CheckCmdStatus(pid_t iStatus);
+    static BOOL CheckContain(vector<string> vec, string strItem);
     };
 }
 

@@ -1713,17 +1713,83 @@ string CConnectServerMessage::OnRemoveCommentFromIds(nlohmann::json& jsonRoot)
     jsonRet["status"] = bRet;
     return Server::CJsonUtil::ToString(jsonRet);
 }
- string CConnectServerMessage::OnQueryComment(nlohmann::json& jsonRoot)
- {
+string CConnectServerMessage::OnQueryComment(nlohmann::json& jsonRoot)
+{
     int iID = jsonRoot["id"];
     int iLimit = jsonRoot["limit"];
     string strQuery = jsonRoot["query"];
-    nlohmann::ordered_json items = CCommentTable::GetItems(iID, iLimit, strQuery);
+    string strDeviceName = jsonRoot["devnames"];
+    nlohmann::ordered_json items = CCommentTable::GetItems(iID, iLimit, strDeviceName, strQuery);
     nlohmann::ordered_json jsonRet;
     jsonRet["status"] = 1;
     jsonRet["items"] = items;
     return Server::CJsonUtil::ToString(jsonRet);
- }
+}
+string CConnectServerMessage::OnMediaRandom(nlohmann::json& jsonRoot)
+{
+    int iRecordCount = CMediaInfoTable::GetRecordCount();
+    if(iRecordCount == 0)
+    {
+        nlohmann::json jsonRet;
+        jsonRet["status"] = 0;
+        jsonRet["count"] = iRecordCount;
+        return Server::CJsonUtil::ToString(jsonRet);
+    }
+    BOOL bGet = FALSE;
+    string strItem = "";
+    int iID = jsonRoot["id"];
+    
+    if(iID > 0)
+    {
+        strItem = CMediaInfoTable::GetItem(iID, bGet);
+    }
+    else
+    {
+        string strDeviceName = jsonRoot["devnames"];
+        vector<std::string> devNameVec = Server::CCommonUtil::StringSplit(strDeviceName, "&");
+        int iTryCount = 0;
+        while (FALSE == bGet)
+        {
+            iTryCount++;
+            if(iTryCount == 1000)
+            {
+                printf("Reach limited 1000\n");
+                break;
+            }
+            int iIndex = Server::CTools::GetRandomNum(1, iRecordCount);
+            int iItemID = CMediaInfoTable::GetItemIDByRowIndex(iIndex - 1);
+            strItem = CMediaInfoTable::GetItem(iItemID, bGet);
+            if(TRUE == bGet)
+            {
+                if(devNameVec.size() > 0)
+                {
+                    nlohmann::json jsonItem;
+                    Server::CJsonUtil::FromString(strItem, jsonItem);
+                    string strDevice = jsonItem["device"];
+                    if(FALSE == Server::CCommonUtil::CheckContain(devNameVec, strDevice))
+                    {
+                        bGet = FALSE;
+                    }
+                }
+            }
+        }
+    }
+    if(FALSE == bGet)
+    {
+        nlohmann::json jsonRet;
+        jsonRet["status"] = 0;
+        jsonRet["count"] = iRecordCount;
+        return Server::CJsonUtil::ToString(jsonRet);
+    }
+    nlohmann::json jsonItem;
+    Server::CJsonUtil::FromString(strItem, jsonItem);
+
+    nlohmann::json jsonRet;
+    jsonRet["status"] = 1;
+    jsonRet["count"] = iRecordCount;
+    jsonRet["item"] = jsonItem;
+    return Server::CJsonUtil::ToString(jsonRet);
+}
 void CConnectServerMessage::OnMessage(const char* pszMsg, char* pszRet)
 {
 	nlohmann::json jsonValue;
@@ -1801,6 +1867,7 @@ void CConnectServerMessage::OnMessage(const char* pszMsg, char* pszRet)
         m_ActionHandlerMap["removecomment"] = std::bind(&CConnectServerMessage::OnRemoveComment, this, std::placeholders::_1);
         m_ActionHandlerMap["removecommentfromids"] = std::bind(&CConnectServerMessage::OnRemoveCommentFromIds, this, std::placeholders::_1);
         m_ActionHandlerMap["querycomments"] = std::bind(&CConnectServerMessage::OnQueryComment, this, std::placeholders::_1);
+        m_ActionHandlerMap["mediarandom"] = std::bind(&CConnectServerMessage::OnMediaRandom, this, std::placeholders::_1);
     }
     string strAction = jsonValue["action"];
     std::map<std::string, std::function<string(nlohmann::json&)>>::iterator itor = m_ActionHandlerMap.find(strAction);

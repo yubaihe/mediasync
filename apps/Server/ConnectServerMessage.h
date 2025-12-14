@@ -71,6 +71,7 @@ private:
     string OnRemoveComment(nlohmann::json& jsonRoot);
     string OnRemoveCommentFromIds(nlohmann::json& jsonRoot);
     string OnQueryComment(nlohmann::json& jsonRoot);
+    string OnMediaRandom(nlohmann::json& jsonRoot);
 private:
     std::map<std::string, std::function<string(nlohmann::json&)>> m_ActionHandlerMap;
 };

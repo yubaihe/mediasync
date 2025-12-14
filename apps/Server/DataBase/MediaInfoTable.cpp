@@ -1077,3 +1077,14 @@ BOOL CMediaInfoTable::UpdateComment(int iID, string strCommentShort, string strC
     }
     return bRet;
 }
+int CMediaInfoTable::GetItemIDByRowIndex(int iRowIndex)
+{
+    CDbDriver* pDbDriver = LOCKMEDIADB
+    list<string> retList = pDbDriver->QuerySQL2("SELECT id FROM tbl_mediainfo ORDER BY id desc LIMIT 1 OFFSET %d", iRowIndex);
+    UNLOCKMEDIADB
+    if(retList.size() == 0)
+    {
+        return -1;
+    }
+    return atoi(retList.front().c_str());
+}

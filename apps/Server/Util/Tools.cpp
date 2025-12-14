@@ -2,6 +2,7 @@
 #include <sys/statvfs.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
+#include <random>
 #include "./CommonUtil.h"
 #include "md5.h"
 #include "Base64Coding.h"
@@ -211,4 +212,12 @@ namespace Server
         size_t iEndPos = str.find_last_not_of(" \t\n\r\v\f");
         return str.substr(iStartPos, iEndPos - iStartPos + 1);
     }
+     int CTools::GetRandomNum(int iMin, int iMax)
+     {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(iMin, iMax);
+        return dis(gen);
+     }
 }
+

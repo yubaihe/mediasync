@@ -92,5 +92,6 @@ public:
     static BOOL ChangeMediaAddr(int iID, string strAddr, string strMd5);
     static BOOL GetComment(int iID, string& strCommentShort, string& strComment);
     static BOOL UpdateComment(int iID, string strCommentShort, string strComment);
+    static int GetItemIDByRowIndex(int iRowIndex);
 };
 

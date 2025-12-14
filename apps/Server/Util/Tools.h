@@ -19,6 +19,7 @@ namespace Server
         static BOOL UpdateTimeSec(long iSec);
         static string GetSambaVersion();
         static string Trim(const std::string& str);
+        static int GetRandomNum(int iMin, int iMax);
         template <typename T>
         static string VecToString(const std::vector<T>& vec, const std::string& strDelimiter)
         {

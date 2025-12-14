@@ -320,6 +320,17 @@ BOOL CCommonUtil::CheckCmdStatus(pid_t iStatus)
         }
     }
 }
+BOOL CCommonUtil::CheckContain(vector<string> vec, string strItem)
+{
+    for(size_t i = 0; i < vec.size(); ++i)
+    {
+        if(0 == vec[i].compare(strItem))
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
 }
 
 

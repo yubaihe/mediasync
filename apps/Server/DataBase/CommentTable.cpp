@@ -4,6 +4,7 @@
 #include "DbusUtil.h"
 #include "Tools.h"
 #include "JsonUtil.h"
+#include "CommonUtil.h"
 CCommentTable::CCommentTable()
 {
 
@@ -71,7 +72,7 @@ BOOL CCommentTable::DeleteItems(string strMediaIDs, string strModule /*= ""*/)
     UNLOCKMEDIADB
     return bRet;
 }
-nlohmann::ordered_json CCommentTable::GetItems(int iID, int iLimited, string strQuery /*= ""*/)
+nlohmann::ordered_json CCommentTable::GetItems(int iID, int iLimited, string strDevNames, string strQuery /*= ""*/)
 {
     vector<int> NeedDelItemIDVec;
     nlohmann::ordered_json jsonRet = nlohmann::ordered_json::array();
@@ -99,6 +100,7 @@ nlohmann::ordered_json CCommentTable::GetItems(int iID, int iLimited, string str
         pDbDriver->QuerySQL(cursor, "select id,mediaid,mediamodule from %s where id<%d and comment LIKE '%%%s%%' COLLATE NOCASE order by id desc", TABLE_COMMENT, iID, strQuery.c_str());
     }
     UNLOCKMEDIADB
+    vector<std::string> devNameVec = Server::CCommonUtil::StringSplit(strDevNames, "&");
     while(TRUE == cursor.Next())
     {
         int iID = cursor.GetInt("id");
@@ -112,6 +114,13 @@ nlohmann::ordered_json CCommentTable::GetItems(int iID, int iLimited, string str
             {
                 NeedDelItemIDVec.push_back(iID);
                 continue;
+            }
+            if(devNameVec.size() > 0)
+            {
+                if(FALSE == Server::CCommonUtil::CheckContain(devNameVec, item.strDeviceName))
+                {
+                    continue;
+                }
             }
             nlohmann::ordered_json jsonItem;
             jsonItem["id"] = iID;

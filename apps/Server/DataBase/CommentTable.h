@@ -18,7 +18,7 @@ public:
     static BOOL UpdateItem(int iMediaID, string strComment, string strModule = "");
     static BOOL DeleteItem(int iMediaID, string strModule = "");
     static BOOL DeleteItems(string strMediaIDs, string strModule = "");
-    static nlohmann::ordered_json GetItems(int iID, int iLimited, string strQuery = "");
+    static nlohmann::ordered_json GetItems(int iID, int iLimited, string strDevNames, string strQuery = "");
     static BOOL IsEmpty();
 private:
 };
