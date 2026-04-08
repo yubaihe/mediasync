@@ -78,10 +78,7 @@ sudo systemctl restart smbd
 
 > IOS
 
-<img src="./ios.png" align="left" alt="扫描二维码下载IOS程序" />
-
-<div style="clear: both;"></div>
-<div style="height:20px"></div>
+<img src="./ios.png" alt="扫描二维码下载IOS程序" />
 
 # 8.百度网盘地址
 ```shell
