@@ -1,0 +1,10 @@
+如果系统自带samba就不需要编译了
+
+sudo vi /etc/samba/smb.conf 
+增加
+include = /home/relech/mediasync/samba/lib/smbmedia.conf
+
+/home/relech/mediasync 这个需要修改为实际的地址
+
+重启
+sudo systemctl restart smbd
