@@ -1722,30 +1722,6 @@ string CConnectServerMessage::OnUpdateGpsLocation(nlohmann::json& jsonRoot)
     jsonRet["status"] = bRet;
     return Server::CJsonUtil::ToString(jsonRet);
 }
-string CConnectServerMessage::OnUpdateMd5(nlohmann::json& jsonRoot)
-{
-    std::thread([]() {
-        int iID = 0;
-        while(TRUE)
-        {
-            MediaInfoItem item = CMediaInfoTable::GetNextItem(iID);
-            if(item.iID == -1)
-            {
-                break;
-            }
-            iID = item.iID;
-            string strMd5 = CFileUtil::GetFileMd5(Server::CCommonUtil::StringFormat("/home/relech/mediasync/media/%s", item.strAddr.c_str()).c_str());
-            if(0 != strMd5.compare(item.strMd5Num.c_str()))
-            {
-                CMediaInfoTable::UpdateMd5(item.iID, strMd5.c_str());
-                printf("%d\t%s\t%s\n", item.iID, item.strMd5Num.c_str(), strMd5.c_str());
-            }
-        }
-    }).detach();
-    nlohmann::json jsonRet;
-    jsonRet["status"] = 1;
-    return Server::CJsonUtil::ToString(jsonRet);
-}
 void CConnectServerMessage::OnMessage(const char* pszMsg, char* pszRet)
 {
 	nlohmann::json jsonValue;
@@ -1823,7 +1799,6 @@ void CConnectServerMessage::OnMessage(const char* pszMsg, char* pszRet)
         m_ActionHandlerMap["mediarandom"] = std::bind(&CConnectServerMessage::OnMediaRandom, this, std::placeholders::_1);
         m_ActionHandlerMap["uncheckgps"] = std::bind(&CConnectServerMessage::OnUnCheckGps, this, std::placeholders::_1);
         m_ActionHandlerMap["updategpslocation"] = std::bind(&CConnectServerMessage::OnUpdateGpsLocation, this, std::placeholders::_1);
-        m_ActionHandlerMap["updatemd5"] = std::bind(&CConnectServerMessage::OnUpdateMd5, this, std::placeholders::_1);
     }
     string strAction = jsonValue["action"];
     std::map<std::string, std::function<string(nlohmann::json&)>>::iterator itor = m_ActionHandlerMap.find(strAction);

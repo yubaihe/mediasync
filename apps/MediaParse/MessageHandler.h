@@ -48,7 +48,6 @@ private:
     string OnGetMediaComment(nlohmann::json& jsonRoot);
     string OnSetMediaComment(nlohmann::json& jsonRoot);
     string OnBackupMediaTimeUpdate(nlohmann::json& jsonRoot);
-    string OnUpdateMd5(nlohmann::json& jsonRoot);
 private:
     std::map<std::string, std::function<string(nlohmann::json&)>> m_ActionHandlerMap;
 };

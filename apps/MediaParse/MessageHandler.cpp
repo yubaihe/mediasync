@@ -791,32 +791,7 @@ string CMessageHandler::OnBackupMediaTimeUpdate(nlohmann::json& jsonRoot)
     jsonRet["status"] = bRet;
     return MediaParse::CJsonUtil::ToString(jsonRet);
 }
-string CMessageHandler::OnUpdateMd5(nlohmann::json& jsonRoot)
-{
-    std::thread([]() {
-        int iID = 0;
-        while(TRUE)
-        {
-            CBackupTable table;
-            BackupItemFull item = table.GetNextItem(iID);
-            if(item.iID == -1)
-            {
-                break;
-            }
-            iID = item.iID;
-            string strMd5 = CFileUtil::GetFileMd5(CCommonUtil::StringFormat("/home/relech/mediasync/backup/%s/%s", item.strFoldName.c_str(), item.strFile.c_str()).c_str());
-            if(0 != strMd5.compare(item.strMd5.c_str()))
-            {
-                table.UpdateMd5(item.iID, strMd5.c_str());
-                // table.UpdateMd5(item.iID, CCommonUtil::StringFormat("%d", item.iID).c_str());
-                printf("%d\t%s\t%s\n", item.iID, item.strMd5.c_str(), strMd5.c_str());
-            }
-        }
-    }).detach();
-    nlohmann::json jsonRet;
-    jsonRet["status"] = 1;
-    return MediaParse::CJsonUtil::ToString(jsonRet);
-}
+
 void CMessageHandler::OnMessage(const char* pszMsg, char* pszRet)
 {
     // try 
@@ -883,7 +858,6 @@ void CMessageHandler::OnMessage(const char* pszMsg, char* pszRet)
 
             //更新备份媒体时间
             m_ActionHandlerMap["backupmediatimeupdate"] = std::bind(&CMessageHandler::OnBackupMediaTimeUpdate, this, std::placeholders::_1);
-            m_ActionHandlerMap["updatemd5"] = std::bind(&CMessageHandler::OnUpdateMd5, this, std::placeholders::_1);
         }
     
         std::map<std::string, std::function<string(nlohmann::json&)>>::iterator itor = m_ActionHandlerMap.find(strAction);

@@ -1080,24 +1080,3 @@ int CMediaInfoTable::GetItemIDByRowIndex(int iRowIndex)
     return atoi(retList.front().c_str());
 }
 
-MediaInfoItem CMediaInfoTable::GetNextItem(int iItemID)
-{
-    CDbDriver* pDbDriver = LOCKMEDIADB
-    list<map<string, string>> List = pDbDriver->QuerySQL("select * from tbl_mediainfo where id>'%d' ORDER BY id ASC LIMIT 1", iItemID);
-    UNLOCKMEDIADB
-    if(0 == List.size())
-    {
-        MediaInfoItem item = {};
-        item.iID = -1;
-        return item;
-    }
-    list<MediaInfoItem> retList = AssembleItems(List);
-    return retList.front();
-}
-BOOL CMediaInfoTable::UpdateMd5(int iItemID, string strMd5)
-{
-    CDbDriver* pDbDriver = LOCKMEDIADB
-    BOOL bRet = pDbDriver->ExecuteSQL("update tbl_mediainfo set md5num='%s' where id='%d'", strMd5.c_str(), iItemID);
-    UNLOCKMEDIADB
-    return bRet;
-}

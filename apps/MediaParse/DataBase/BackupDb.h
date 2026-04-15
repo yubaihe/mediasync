@@ -90,8 +90,6 @@ public:
     BOOL GetComment(int iID, string& strCommentShort, string& strComment);
     BOOL UpdateComment(int iID, string strCommentShort, string strComment);
     BOOL UpdatePaiTimeSec(int iID, time_t iPaiTimeSec, string strMediaAddr);
-    BackupItemFull GetNextItem(int iItemID);
-    BOOL UpdateMd5(int iItemID, string strMd5);
 private:
     void RemoveComment(list<string> idList);
 };

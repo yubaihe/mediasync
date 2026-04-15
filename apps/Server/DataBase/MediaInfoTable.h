@@ -95,7 +95,5 @@ public:
     static BOOL GetComment(int iID, string& strCommentShort, string& strComment);
     static BOOL UpdateComment(int iID, string strCommentShort, string strComment);
     static int GetItemIDByRowIndex(int iRowIndex);
-    static MediaInfoItem GetNextItem(int iItemID);
-    static BOOL UpdateMd5(int iItemID, string strMd5);
 };
 
