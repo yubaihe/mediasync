@@ -43,6 +43,7 @@ public:
     static string ReadLink(string strFileName);
     static BOOL IsSoftLink(string strFileName);
     static std::string GetFileExtension(const string& filename);
+    static string GetFileMd5(const char* pszFile);
 };
 
 

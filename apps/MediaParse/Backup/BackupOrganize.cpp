@@ -142,7 +142,7 @@ void CBackupOrganize::DealOneFold(string strFoldName)
         SetProcess((int)((i*10.0f)/originalFileVec.size()));
         FileEntry entry = originalFileVec[i];
         string strFile = CCommonUtil::StringFormat("%s%s", strFoldRoot.c_str(), entry.strName.c_str());
-        string strFileMd5 = CFileUtil::GetFileMd51(strFile.c_str(), 2);
+        string strFileMd5 = CFileUtil::GetFileMd5(strFile.c_str());
         CBackupTable table;
         BackupItemFull tableItem = table.GetItemFromMd5(strFoldName, strFileMd5);
         printf("===========%s=========\n", strFile.c_str());
@@ -183,7 +183,7 @@ void CBackupOrganize::DealOneFold(string strFoldName)
                 }
                 else
                 {
-                    string strTbFileMd5 = CFileUtil::GetFileMd51(strOriginalFile.c_str(), 3);
+                    string strTbFileMd5 = CFileUtil::GetFileMd5(strOriginalFile.c_str());
                     if(0 != strTbFileMd5.compare(strFileMd5))
                     {
                         printf("need sync => record md5 not equal %s  => %s\n", strOriginalFile.c_str(), strFile.c_str());
@@ -306,7 +306,7 @@ void CBackupOrganize::DealOneFold(string strFoldName)
         {
             iCreateTimeSec = CCommonUtil::CurTimeSec();
         }
-        string strMd5 = CFileUtil::GetFileMd51(strFileName.c_str(), 10);
+        string strMd5 = CFileUtil::GetFileMd5(strFileName.c_str());
         BackupItemFull record = {};
         record.strFile = item.strName;
         record.strMd5 = strMd5;

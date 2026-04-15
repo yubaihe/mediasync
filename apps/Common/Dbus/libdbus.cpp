@@ -188,72 +188,116 @@ void LibDbus_SetSignalCallBack(void* pContext, OnDbusSignalHandler handler)
 }
 void LibDbus_ServiceList(char* pszServiceList)
 {
+    if (pszServiceList == NULL)
+    {
+        return;
+    }
+    pszServiceList[0] = '\0';
+
     DBusError error;
     dbus_error_init(&error);
+    // 1. 获取 D-Bus 连接
     DBusConnection* pDBusConnection = dbus_bus_get_private(DBUS_BUS_SESSION, &error);
-    if (dbus_error_is_set(&error)) 
+    if (pDBusConnection == NULL || dbus_error_is_set(&error))
     {
-        printf("Connection Error (%s)\n", error.message); 
-        fprintf(stderr, "Connection Error (%s)\n", error.message); 
+        printf("D-Bus connection error: %s\n", error.message ? error.message : "unknown");
         dbus_error_free(&error);
-        return ;
+        return;
     }
     dbus_error_free(&error);
+    // 2. 创建方法调用消息
     DBusMessage* pDBusMessage = dbus_message_new_method_call(
-        "org.freedesktop.DBus", "/org/freedesktop/DBus",
-        "org.freedesktop.DBus", "ListNames"
+        "org.freedesktop.DBus",
+        "/org/freedesktop/DBus",
+        "org.freedesktop.DBus",
+        "ListNames"
     );
-    if(NULL == pDBusMessage)
+    if (pDBusMessage == NULL)
     {
         dbus_connection_close(pDBusConnection);
         dbus_connection_unref(pDBusConnection);
         return;
     }
+
+    // 3. 发送调用并等待回复
     DBusPendingCall* pDBusPendingCall = NULL;
-    dbus_connection_send_with_reply(pDBusConnection, pDBusMessage, &pDBusPendingCall, -1);
-    if(NULL == pDBusPendingCall)
+    if (!dbus_connection_send_with_reply(pDBusConnection, pDBusMessage, &pDBusPendingCall, -1) ||
+        pDBusPendingCall == NULL)
     {
         dbus_message_unref(pDBusMessage);
         dbus_connection_close(pDBusConnection);
         dbus_connection_unref(pDBusConnection);
         return;
     }
+
     dbus_pending_call_block(pDBusPendingCall);
     DBusMessage* pDBusMessageReply = dbus_pending_call_steal_reply(pDBusPendingCall);
     dbus_pending_call_unref(pDBusPendingCall);
-    if(NULL == pDBusMessageReply)
+    if (pDBusMessageReply == NULL)
     {
         dbus_message_unref(pDBusMessage);
         dbus_connection_close(pDBusConnection);
         dbus_connection_unref(pDBusConnection);
         return;
     }
+
+    // 4. 检查回复是否为方法返回（而非错误）
+    if (dbus_message_get_type(pDBusMessageReply) != DBUS_MESSAGE_TYPE_METHOD_RETURN)
+    {
+        printf("D-Bus method call failed: %s\n", dbus_message_get_error_name(pDBusMessageReply));
+        dbus_message_unref(pDBusMessageReply);
+        dbus_message_unref(pDBusMessage);
+        dbus_connection_close(pDBusConnection);
+        dbus_connection_unref(pDBusConnection);
+        return;
+    }
+
+    // 5. 解析回复：外层应该是数组类型
     DBusMessageIter iter;
     dbus_message_iter_init(pDBusMessageReply, &iter);
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_ARRAY)
+    {
+        printf("Unexpected D-Bus reply signature (expected array)\n");
+        dbus_message_unref(pDBusMessageReply);
+        dbus_message_unref(pDBusMessage);
+        dbus_connection_close(pDBusConnection);
+        dbus_connection_unref(pDBusConnection);
+        return;
+    }
+
     DBusMessageIter array_iter;
     dbus_message_iter_recurse(&iter, &array_iter);
-    
-    while (dbus_message_iter_get_arg_type(&array_iter) == DBUS_TYPE_STRING) 
+
+    // 6. 遍历字符串数组
+    while (dbus_message_iter_get_arg_type(&array_iter) == DBUS_TYPE_STRING)
     {
         const char* pszServiceName = NULL;
         dbus_message_iter_get_basic(&array_iter, &pszServiceName);
+
         char szName[100] = {0};
-        sscanf(pszServiceName, BUSNAME, szName);
-        if(0 == strlen(szName) || 0 == strncmp(szName, "Module_dbus_", strlen("Module_dbus_")))
+        // 根据 BUSNAME 宏提取名字，若格式不匹配则跳过
+        if (sscanf(pszServiceName, BUSNAME, szName) != 1)
         {
             dbus_message_iter_next(&array_iter);
             continue;
         }
+
+        // 跳过空名字或以 "Module_dbus_" 开头的名字
+        if (strlen(szName) == 0 || strncmp(szName, "Module_dbus_", strlen("Module_dbus_")) == 0)
+        {
+            dbus_message_iter_next(&array_iter);
+            continue;
+        }
+
+        // 将名字和逗号追加到局部缓冲区，检查空间
+        
         strcat(pszServiceList, szName);
         strcat(pszServiceList, ",");
         dbus_message_iter_next(&array_iter);
     }
-    dbus_message_unref(pDBusMessage);
+    // 清理资源
     dbus_message_unref(pDBusMessageReply);
+    dbus_message_unref(pDBusMessage);
     dbus_connection_close(pDBusConnection);
     dbus_connection_unref(pDBusConnection);
-    if(strlen(pszServiceList) > 0)
-    {
-        pszServiceList[strlen(pszServiceList) - 1] = '\0'; 
-    }
 }

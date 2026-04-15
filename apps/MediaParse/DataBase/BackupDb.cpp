@@ -545,3 +545,26 @@ BOOL CBackupTable::UpdatePaiTimeSec(int iID, time_t iPaiTimeSec, string strMedia
     UNLOCKBACKUPDB
     return bRet;
 }
+
+BackupItemFull CBackupTable::GetNextItem(int iItemID)
+{
+    BackupItemFull retItem = {};
+    retItem.iID = -1;
+    CDbDriver* pDbDriver = LOCKBACKUPDB
+    list<map<string, string>> itemList = pDbDriver->QuerySQL("select * from %s where id>'%d' limit 1", TABLE_BACKUP, iItemID);
+    UNLOCKBACKUPDB
+    if(0 == itemList.size())
+    {
+        return retItem;
+    }
+    list<BackupItemFull> item = AssembleItems(itemList);
+    BackupItemFull backupItem = item.front();
+    return backupItem;
+}
+BOOL CBackupTable::UpdateMd5(int iItemID, string strMd5)
+{
+    CDbDriver* pDbDriver = LOCKBACKUPDB
+    BOOL bRet = pDbDriver->ExecuteSQL("update %s set md5num='%s' where id='%d'", TABLE_BACKUP, strMd5.c_str(), iItemID);
+    UNLOCKBACKUPDB
+    return bRet;
+}

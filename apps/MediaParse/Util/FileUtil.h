@@ -16,7 +16,6 @@ public:
     static BOOL CheckFileExist(string strFile);
     static BOOL CreateFold(string strFold);
     static BOOL RemoveFile(string strFile);
-    static string GetFileMd51(const char* pszFile, int iTag);
 private:
     char* m_pszFileContent;
     list<string> m_FoldFileList;

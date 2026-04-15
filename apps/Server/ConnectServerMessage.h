@@ -71,6 +71,7 @@ private:
     string OnMediaRandom(nlohmann::json& jsonRoot);
     string OnUnCheckGps(nlohmann::json& jsonRoot);
     string OnUpdateGpsLocation(nlohmann::json& jsonRoot);
+    string OnUpdateMd5(nlohmann::json& jsonRoot);
 private:
     std::map<std::string, std::function<string(nlohmann::json&)>> m_ActionHandlerMap;
 };

@@ -79,15 +79,6 @@ BOOL CFileUtil::SetFileContent(const char* pszFile, const char* pszContent)
     fclose(pFile);
     return TRUE;
 }
-string CFileUtil::GetFileMd51(const char* pszFile, int iTag)
-{
-    string strRet = GetFileMd5(pszFile);
-    if(strRet.length() == 0)
-    {
-        printf("%d\n", iTag);
-    }
-    return strRet;
-}
 string CFileUtil::GetFileMd5(const char* pszFile)
 {
     FILE* pFile = fopen(pszFile, "rb");
@@ -124,12 +115,12 @@ string CFileUtil::GetFileMd5(const char* pszFile)
         //time_t endTime = time(NULL);
         fclose(pFile);
         
-        char szBase64[100] = {0};
-        int iBase64Len = 100;
-        base64_encode((unsigned char*)szMd5, 32, (unsigned char*)szBase64, &iBase64Len);
+        // char szBase64[100] = {0};
+        // int iBase64Len = 100;
+        // base64_encode((unsigned char*)szMd5, 32, (unsigned char*)szBase64, &iBase64Len);
         
         //printf("计算完毕：%s，耗时%ld秒\n", szMd5, endTime - startTime);
-        return szBase64;
+        return szMd5;
     }
     else
     {

@@ -133,11 +133,11 @@ namespace Server
             strcat(szMd5, szHexBuffer);
         }
         //printf("%s\n", szMd5String);
-        char szBase64[1024] = {0};
-        int iBufferLen = 1024;
-        base64_encode((unsigned char*)szMd5, 32, (unsigned char*)szBase64, &iBufferLen);
+        // char szBase64[1024] = {0};
+        // int iBufferLen = 1024;
+        // base64_encode((unsigned char*)szMd5, 32, (unsigned char*)szBase64, &iBufferLen);
         
-        string strRet(szBase64);
+        string strRet(szMd5);
         return strRet;
     }
     BOOL CTools::HasRootPermission()

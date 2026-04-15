@@ -1,6 +1,7 @@
 #include "FileUtil.h"
 #include "Config.h"
 #include "Tools.h"
+#include "md5.h"
 BOOL CFileUtil::CheckFileExist(string strFile)
 {
     int iRet = access(strFile.c_str(), F_OK);
@@ -548,4 +549,53 @@ BOOL CFileUtil::IsSoftLink(string strFileName)
         return FALSE;
     }
     return TRUE;
+}
+string CFileUtil::GetFileMd5(const char* pszFile)
+{
+    FILE* pFile = fopen(pszFile, "rb");
+    if (pFile)
+    {
+        //printf("正在计算MD5值...\n");
+        //time_t startTime = time(NULL);
+        md5_state_t md5StateT;
+        md5_init(&md5StateT);
+        char szBuffer[1024] = {0};
+        int iBufferLen = sizeof(szBuffer);
+        while (!feof(pFile))
+        {
+            memset(szBuffer, 0, iBufferLen);
+            size_t iReadLen = fread(szBuffer, sizeof(char), iBufferLen, pFile);
+            md5_append(&md5StateT, (const md5_byte_t *)szBuffer, (int)iReadLen);
+        }
+        md5_byte_t digest[16];
+        md5_finish(&md5StateT, digest);
+        char szMd5[33] = { '\0' }, szHexBuffer[5]={0};
+        for (size_t i = 0; i != 16; ++i)
+        {
+            if (digest[i] < 16)
+            {
+                sprintf(szHexBuffer, "0%x", digest[i]);
+            } 
+            else
+            {
+                sprintf(szHexBuffer, "%x", digest[i]);
+            }
+                
+            strcat(szMd5, szHexBuffer);
+        }
+        //time_t endTime = time(NULL);
+        fclose(pFile);
+        
+        // char szBase64[100] = {0};
+        // int iBase64Len = 100;
+        // base64_encode((unsigned char*)szMd5, 32, (unsigned char*)szBase64, &iBase64Len);
+        
+        //printf("计算完毕：%s，耗时%ld秒\n", szMd5, endTime - startTime);
+        return szMd5;
+    }
+    else
+    {
+        printf("无法打开文件：%s\n", pszFile);
+        return "";
+    }
 }
