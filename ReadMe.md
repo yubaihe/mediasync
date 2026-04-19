@@ -1,14 +1,15 @@
 # 1.安装必要工具
 
 ```shell
-sudo apt-get install git
-sudo apt install make
-sudo apt-get install gcc
-sudo apt-get install cmake
-sudo apt-get install g++
-sudo apt-get install yasm 
-sudo apt-get install autoreconf
-sudo apt-get install libtool
+sudo apt-get install git  -y
+sudo apt install make  -y
+sudo apt-get install gcc  -y
+sudo apt-get install cmake  -y
+sudo apt-get install g++  -y
+sudo apt-get install yasm  -y
+sudo apt-get install pkgconf  -y
+sudo apt-get install libtool  -y
+sudo apt-get install bzip2  -y
 ```
 
 # 2.拉代码
@@ -48,14 +49,22 @@ sudo $ROOTDIR/start.sh &
 # 5.支持samba访问
 
 ```shell
+# 安装samba
+sudo apt install samba
+# 创建samba用户s
+sudo smbpasswd -a relech
+# 修改samba配置文件
 sudo vi /etc/samba/smb.conf 
-# 增加
+# 增加 (检查一下 start.sh启动后默认会添加的，没有的话 手动添加上)
+# /home/relech/mediasync 这个需要修改为实际的地址
 include = /home/relech/mediasync/samba/lib/smbmedia.conf
 
-/home/relech/mediasync 这个需要修改为实际的地址
-
-重启
+# 重启
 sudo systemctl restart smbd
+
+# windows 建立samba连接
+net use \\xxx.xxx.xxx.xxx\* /delete
+net use Z: "\\xxx.xxx.xxx.xxx\media" /user:relech password 
 ```
 
 # 6.使用介绍
